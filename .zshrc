@@ -57,6 +57,9 @@ ulimit -n 2560
 # work around a compaudit problem
 chmod -R 755 ~/.zplug
 
+# aliases - note there is a hard-coded assumption of .dotfiles directory
+source ~/.dotfiles/.aliases
+
 # Install plugins if there are plugins that have not been installed
 if ! zplug check --verbose; then
   zplug install
