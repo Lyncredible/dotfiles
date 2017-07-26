@@ -8,7 +8,13 @@ popd >/dev/null
 # Using zplug to manage zsh plugins
 source ~/.zplug/init.zsh
 
-# Basic oh-my-zsh theme for colorful ls
+# Builtin libraries from on-my-zsh
+zplug "lib/directories", from:oh-my-zsh
+zplug "lib/functions", from:oh-my-zsh
+zplug "lib/grep", from:oh-my-zsh
+zplug "lib/history", from:oh-my-zsh
+zplug "lib/key-bindings", from:oh-my-zsh
+zplug "lib/termsupport", from:oh-my-zsh
 zplug "lib/theme-and-appearance", from:oh-my-zsh
 
 # Plugins from oh-my-zsh
