@@ -26,24 +26,16 @@ fi
 # which may fail on systems lacking tput or terminfo
 set -e
 
+# Create zshrc which simplies sources the one in repo.
+# Do not use a symlink because it allows customization.
+echo "source ~/.dotfiles/.zshrc" > ~/.zshrc
 
-# Make sure zsh is installed
-CHECK_ZSH_INSTALLED=$(grep /zsh$ /etc/shells | wc -l)
-if [ ! $CHECK_ZSH_INSTALLED -ge 1 ]; then
-  printf "${YELLOW}Zsh is not installed!${NORMAL} Please install zsh first!\n"
-  exit 1
-fi
-unset CHECK_ZSH_INSTALLED
+# Install zplug
+ZPLUG_DIR=$HOME/.zplug
+if [ ! -d "$ZPLUG_DIR" ]; then
+  printf "${BLUE}Installing zplug...${NORMAL}\n"
 
-# Check if git is installed
-hash git >/dev/null 2>&1 || {
-  echo "${YELLOW}Error: git is not installed${NORMAL}"
-  exit 1
-}
-
-git clone https://github.com/Lyncredible/dotfiles ~/.dotfiles
-if [ $? -ne 0 ]; then
-    echo "${RED}Failed to clone dotfiles repo.${NORMAL}"
+  curl -sL --proto-redir -all,https https://raw.githubusercontent.com/zplug/installer/master/installer.zsh| zsh
 fi
 
-~/.dotfiles/setup.sh
+chsh -s $(which zsh)
