@@ -1,7 +1,7 @@
 # Always update self
 pushd ~/.dotfiles >/dev/null
-env git pull || {
-  printf "${YELLOW}Warning: Failed to check update for dotfiles repo.${NORMAL}\n"
+env git pull >/dev/null || {
+  printf "Warning: Failed to check update for dotfiles repo.\n"
 }
 popd >/dev/null
 

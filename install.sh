@@ -41,7 +41,7 @@ hash git >/dev/null 2>&1 || {
   exit 1
 }
 
-git clone https://github.com/Lyncredible/dotfiles ~/.dotfiles
+git clone git@github.com:Lyncredible/dotfiles.git ~/.dotfiles
 if [ $? -ne 0 ]; then
     echo "${RED}Failed to clone dotfiles repo.${NORMAL}"
 fi
