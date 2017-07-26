@@ -1,3 +1,10 @@
+# Always update self
+pushd ~/.dotfiles >/dev/null
+env git pull || {
+  printf "${YELLOW}Warning: Failed to check update for dotfiles repo.${NORMAL}\n"
+}
+popd >/dev/null
+
 # Using zplug to manage zsh plugins
 source ~/.zplug/init.zsh
 
@@ -7,6 +14,7 @@ zplug "lib/theme-and-appearance", from:oh-my-zsh
 # Plugins from oh-my-zsh
 zplug "plugins/common-aliases", from:oh-my-zsh
 zplug "plugins/git", from:oh-my-zsh
+zplug "plugins/sublime", from:oh-my-zsh
 zplug "plugins/z", from:oh-my-zsh
 
 # Plugins from zsh-users
