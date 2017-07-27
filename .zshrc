@@ -42,9 +42,6 @@ else
   export EDITOR='subl -n -w'
 fi
 
-# Python
-[ -s "/usr/local/bin/virtualenvwrapper.sh" ] && . /usr/local/bin/virtualenvwrapper.sh
-
 # Node
 [ -s "$HOME/.nvm/nvm.sh" ] && . $HOME/.nvm/nvm.sh
 
