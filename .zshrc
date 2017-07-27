@@ -19,6 +19,8 @@ zplug "lib/theme-and-appearance", from:oh-my-zsh
 
 # Plugins from oh-my-zsh
 zplug "plugins/common-aliases", from:oh-my-zsh
+zplug "plugins/colored-man-pages", from:oh-my-zsh
+zplug "plugins/extract", from:oh-my-zsh
 zplug "plugins/git", from:oh-my-zsh
 zplug "plugins/sublime", from:oh-my-zsh
 zplug "plugins/z", from:oh-my-zsh
