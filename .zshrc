@@ -42,7 +42,7 @@ else
   export EDITOR='subl -n -w'
 fi
 
-export PATH="$PATH:/usr/local/bin:/usr/local/sbin:$HOME/bin"
+export PATH="$HOME/bin:/usr/local/bin:/usr/local/sbin:$PATH"
 
 # Node
 # nvm.sh is super slow to load, default to a known version at startup

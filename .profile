@@ -50,6 +50,12 @@ if [ ! -d "$DOTFILES_DIR" ]; then
 fi
 unset DOTFILES_DIR
 
+ZSH_PATH=$HOME/bin/zsh
+[ -x "$ZSH_PATH" ] || ZSH_PATH=/usr/local/bin/zsh
+[ -x "$ZSH_PATH" ] || ZSH_PATH=/usr/bin/zsh
+[ -x "$ZSH_PATH" ] || ZSH_PATH=/bin/zsh
+
 # Invoke zsh
-export SHELL=/bin/zsh
-[ -z "$ZSH_VERSION" ] && exec /bin/zsh -l
+export SHELL=$ZSH_PATH
+unset ZSH_PATH
+[ -z "$ZSH_VERSION" ] && exec $SHELL -l
