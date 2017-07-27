@@ -29,6 +29,10 @@ set -e
 # Create zshrc which simplies sources the one in repo.
 # Do not use a symlink because it allows customization.
 echo "source ~/.dotfiles/.zshrc" > ~/.zshrc
+echo "source ~/.zshrc_local" >> ~/.zshrc
+if [ ! -e ~/.zshrc_local ]; then
+  touch ~/.zshrc_local
+fi
 
 # Install zplug
 ZPLUG_DIR=$HOME/.zplug
