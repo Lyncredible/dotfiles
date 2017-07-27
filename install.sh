@@ -56,6 +56,7 @@ if [ "$CLONE_MODE" = "SSH" ]; then
 else
   git clone https://github.com/Lyncredible/dotfiles.git ~/.dotfiles
 fi
+unset CLONE_MODE
 
 if [ $? -ne 0 ]; then
     echo "${RED}Failed to clone dotfiles repo.${NORMAL}"

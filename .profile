@@ -48,6 +48,7 @@ if [ ! -d "$DOTFILES_DIR" ]; then
 
   curl -sL --proto-redir -all,https https://raw.githubusercontent.com/Lyncredible/dotfiles/master/install.sh | sh
 fi
+unset DOTFILES_DIR
 
 # Invoke zsh
 export SHELL=/bin/zsh
