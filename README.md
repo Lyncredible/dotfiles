@@ -7,6 +7,11 @@ Keeping my dotfiles organized across all devices.
 - Plugins for completion, auto suggestions, syntax highlighting, and more
 
 ## Installation
+Clone in HTTPS mode
 ```
-curl -sL --proto-redir -all,https https://raw.githubusercontent.com/Lyncredible/dotfiles/master/install.sh | sh
+sh -c "$(curl -sL --proto-redir -all,https https://raw.githubusercontent.com/Lyncredible/dotfiles/master/install.sh)"
+```
+Clone in SSH mode
+```
+sh -c "$(curl -sL --proto-redir -all,https https://raw.githubusercontent.com/Lyncredible/dotfiles/master/install.sh)" - -s
 ```

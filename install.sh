@@ -42,7 +42,16 @@ hash git >/dev/null 2>&1 || {
 }
 
 # Default to https and use ssh if -s argument is present
-if [ "$1" = "-s" ]; then
+CLONE_MODE="HTTPS"
+while [[ $# -gt 0 ]]
+do
+  if [ "$1" = "-s" ]; then
+    CLONE_MODE="SSH"
+  fi
+  shift
+done
+
+if [ "$CLONE_MODE" = "SSH" ]; then
   git clone git@github.com:Lyncredible/dotfiles.git ~/.dotfiles
 else
   git clone https://github.com/Lyncredible/dotfiles.git ~/.dotfiles
