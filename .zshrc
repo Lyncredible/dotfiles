@@ -31,14 +31,14 @@ zplug "zsh-users/zsh-syntax-highlighting"
 # Bullet train theme
 setopt prompt_subst # Make sure prompt is able to be generated properly.
 zplug "caiogondim/bullet-train.zsh", use:bullet-train.zsh-theme, defer:3
-
-BULLETTRAIN_CONTEXT_BG=magenta
 BULLETTRAIN_PROMPT_ORDER=(time status custom context dir ruby virtualenv nvm go git cmd_exec_time)
 
 # Preferred editor for local and remote sessions
 if [[ -n $SSH_CONNECTION ]]; then
+  BULLETTRAIN_CONTEXT_BG=cyan
   export EDITOR='vim'
 else
+  BULLETTRAIN_CONTEXT_BG=magenta
   export EDITOR='subl -n -w'
 fi
 
