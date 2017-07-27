@@ -43,7 +43,7 @@ hash git >/dev/null 2>&1 || {
 
 # Default to https and use ssh if -s argument is present
 CLONE_MODE="HTTPS"
-while [[ $# -gt 0 ]]
+while [ $# -gt 0 ]
 do
   if [ "$1" = "-s" ]; then
     CLONE_MODE="SSH"
