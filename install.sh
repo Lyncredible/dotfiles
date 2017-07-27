@@ -41,7 +41,13 @@ hash git >/dev/null 2>&1 || {
   exit 1
 }
 
-git clone git@github.com:Lyncredible/dotfiles.git ~/.dotfiles
+# Default to https and use ssh if -s argument is present
+if [ "$1" = "-s" ]; then
+  git clone git@github.com:Lyncredible/dotfiles.git ~/.dotfiles
+else
+  git clone https://github.com/Lyncredible/dotfiles.git ~/.dotfiles
+fi
+
 if [ $? -ne 0 ]; then
     echo "${RED}Failed to clone dotfiles repo.${NORMAL}"
 fi
