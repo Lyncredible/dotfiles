@@ -1,6 +1,9 @@
 # Using zplug to manage zsh plugins
 source ~/.zplug/init.zsh
 
+# Let zplug updates itself
+zplug 'zplug/zplug', hook-build:'zplug --self-manage'
+
 # Builtin libraries from on-my-zsh
 zplug "lib/directories", from:oh-my-zsh
 zplug "lib/functions", from:oh-my-zsh
@@ -85,6 +88,15 @@ source ~/.dotfiles/.aliases
 if ! zplug check --verbose; then
   zplug install
 fi
+
+# Update every once in a while
+UPDATE_TIMESTAMP_FILE=$HOME/.zplug-update
+if ! check_up_to_date $UPDATE_TIMESTAMP_FILE; then
+  if zplug update; then
+    write_update_timestamp $UPDATE_TIMESTAMP_FILE
+  fi
+fi
+unset UPDATE_TIMESTAMP_FILE
 
 # Then, source plugins and add commands to $PATH
 zplug load
