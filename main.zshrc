@@ -24,7 +24,7 @@ zplug "plugins/z", from:oh-my-zsh
 # Plugins from zsh-users
 zplug "zsh-users/zsh-autosuggestions"
 zplug "zsh-users/zsh-completions"
-zplug "zsh-users/zsh-syntax-highlighting"
+zplug "zsh-users/zsh-syntax-highlighting", defer:3
 
 # Bullet train theme
 setopt prompt_subst # Make sure prompt is able to be generated properly.
