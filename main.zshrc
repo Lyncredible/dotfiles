@@ -76,6 +76,8 @@ source ~/.dotfiles/.aliases
 UPDATE_TIMESTAMP_FILE=$HOME/.antigen-update
 if ! check_up_to_date $UPDATE_TIMESTAMP_FILE; then
   if antigen update; then
+    # work around a compaudit problem
+    chmod -R 755 ~/.antigen
     write_update_timestamp $UPDATE_TIMESTAMP_FILE
   fi
 fi
