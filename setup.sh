@@ -34,13 +34,13 @@ if [ ! -e ~/.zshrc_local ]; then
   touch ~/.zshrc_local
 fi
 
-# Install zplug
-ZPLUG_DIR=$HOME/.zplug
-if [ ! -d "$ZPLUG_DIR" ]; then
-  printf "${BLUE}Installing zplug...${NORMAL}\n"
+# Install antigen
+ANTIGEN_DIR=$HOME/.antigen
+if [ ! -d "$ANTIGEN_DIR" ]; then
+  printf "${BLUE}Installing antigen...${NORMAL}\n"
 
-  curl -sL --proto-redir -all,https https://raw.githubusercontent.com/zplug/installer/master/installer.zsh| zsh
+  git clone https://github.com/zsh-users/antigen.git $ANTIGEN_DIR
 fi
-unset ZPLUG_DIR
+unset ANTIGEN_DIR
 
 chsh -s $(which zsh)

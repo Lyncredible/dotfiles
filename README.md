@@ -2,7 +2,7 @@
 Keeping my dotfiles organized across all devices.
 
 ## Features
-- Use [zplug](https://github.com/zplug/zplug) to manage zsh plugins
+- Use [antigen](https://github.com/zsh-users/antigen) to manage zsh plugins
 - Default to [bullet-train](https://github.com/caiogondim/bullet-train.zsh) theme
 - Plugins for completion, auto suggestions, syntax highlighting, and more
 

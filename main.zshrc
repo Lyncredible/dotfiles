@@ -1,35 +1,25 @@
-# Using zplug to manage zsh plugins
-source ~/.zplug/init.zsh
+# Using antigen to manage zsh plugins
+source ~/.antigen/antigen.zsh
 
-# Let zplug updates itself
-zplug 'zplug/zplug', hook-build:'zplug --self-manage'
-
-# Builtin libraries from on-my-zsh
-zplug "lib/directories", from:oh-my-zsh
-zplug "lib/functions", from:oh-my-zsh
-zplug "lib/grep", from:oh-my-zsh
-zplug "lib/history", from:oh-my-zsh
-zplug "lib/key-bindings", from:oh-my-zsh
-zplug "lib/termsupport", from:oh-my-zsh
-zplug "lib/theme-and-appearance", from:oh-my-zsh
+# Use oh-my-zsh
+antigen use oh-my-zsh
 
 # Plugins from oh-my-zsh
-zplug "plugins/command-not-found", from:oh-my-zsh
-zplug "plugins/common-aliases", from:oh-my-zsh
-zplug "plugins/colored-man-pages", from:oh-my-zsh
-zplug "plugins/extract", from:oh-my-zsh
-zplug "plugins/git", from:oh-my-zsh
-zplug "plugins/sublime", from:oh-my-zsh
-zplug "plugins/z", from:oh-my-zsh
+antigen bundle command-not-found
+antigen bundle common-aliases
+antigen bundle colored-man-pages
+antigen bundle extract
+antigen bundle git
+antigen bundle sublime
+antigen bundle z
 
 # Plugins from zsh-users
-zplug "zsh-users/zsh-autosuggestions"
-zplug "zsh-users/zsh-completions"
-zplug "zsh-users/zsh-syntax-highlighting", defer:3
+antigen bundle zsh-users/zsh-autosuggestions
+antigen bundle zsh-users/zsh-completions
+antigen bundle zsh-users/zsh-syntax-highlighting
 
 # Bullet train theme
-setopt prompt_subst # Make sure prompt is able to be generated properly.
-zplug "caiogondim/bullet-train.zsh", use:bullet-train.zsh-theme, defer:3
+antigen theme https://github.com/caiogondim/bullet-train-oh-my-zsh-theme bullet-train
 BULLETTRAIN_PROMPT_ORDER=(time status custom context dir ruby virtualenv nvm go git cmd_exec_time)
 
 # Preferred editor for local and remote sessions
@@ -79,25 +69,17 @@ fi
 # Work around bug in browserify
 ulimit -n 2560
 
-# work around a compaudit problem
-chmod -R 755 ~/.zplug
-
 # aliases - note there is a hard-coded assumption of .dotfiles directory
 source ~/.dotfiles/.aliases
 
-# Install plugins if there are plugins that have not been installed
-if ! zplug check --verbose; then
-  zplug install
-fi
-
 # Update every once in a while
-UPDATE_TIMESTAMP_FILE=$HOME/.zplug-update
+UPDATE_TIMESTAMP_FILE=$HOME/.antigen-update
 if ! check_up_to_date $UPDATE_TIMESTAMP_FILE; then
-  if zplug update; then
+  if antigen update; then
     write_update_timestamp $UPDATE_TIMESTAMP_FILE
   fi
 fi
 unset UPDATE_TIMESTAMP_FILE
 
 # Then, source plugins and add commands to $PATH
-zplug load
+antigen apply
