@@ -36,7 +36,7 @@ export PATH="$HOME/bin:/usr/local/bin:/usr/local/sbin:$PATH"
 # Node
 # nvm.sh is super slow to load, default to a known version at startup
 # [ -s "$HOME/.nvm/nvm.sh" ] && . $HOME/.nvm/nvm.sh
-NODE_VERSION=v6.10.0
+NODE_VERSION=v8.4.0
 NODE_BIN=$HOME/.nvm/versions/node/$NODE_VERSION/bin
 if [ -d "$NODE_BIN" ]; then
   export PATH="$PATH:$NODE_BIN"
