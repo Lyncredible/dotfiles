@@ -72,16 +72,19 @@ ulimit -n 2560
 # aliases - note there is a hard-coded assumption of .dotfiles directory
 source ~/.dotfiles/.aliases
 
+# NOTE: Update seems to have racing conditions when multiple
+# tabs are launched at the same time. Disabled for now.
+
 # Update every once in a while
-UPDATE_TIMESTAMP_FILE=$HOME/.antigen-update
-if ! check_up_to_date $UPDATE_TIMESTAMP_FILE; then
-  if antigen update; then
-    # work around a compaudit problem
-    chmod -R 755 ~/.antigen
-    write_update_timestamp $UPDATE_TIMESTAMP_FILE
-  fi
-fi
-unset UPDATE_TIMESTAMP_FILE
+# UPDATE_TIMESTAMP_FILE=$HOME/.antigen-update
+# if ! check_up_to_date $UPDATE_TIMESTAMP_FILE; then
+#   if antigen update; then
+#     # work around a compaudit problem
+#     chmod -R 755 ~/.antigen
+#     write_update_timestamp $UPDATE_TIMESTAMP_FILE
+#   fi
+# fi
+# unset UPDATE_TIMESTAMP_FILE
 
 # Then, source plugins and add commands to $PATH
 antigen apply

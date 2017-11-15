@@ -2,3 +2,4 @@ alias venv='virtualenv env'
 alias act='source env/bin/activate'
 alias dact='deactivate'
 alias rmo='find . -name *.orig -delete'%
+alias aup='antigen selfupdate && antigen update'
