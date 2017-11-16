@@ -72,6 +72,9 @@ ulimit -n 2560
 # aliases - note there is a hard-coded assumption of .dotfiles directory
 source ~/.dotfiles/.aliases
 
+# Then, source plugins and add commands to $PATH
+antigen apply
+
 # Update every once in a while
 UPDATE_TIMESTAMP_FILE=$HOME/.antigen-update
 if ! check_up_to_date $UPDATE_TIMESTAMP_FILE; then
@@ -82,10 +85,11 @@ if ! check_up_to_date $UPDATE_TIMESTAMP_FILE; then
       # See http://www.wezm.net/technical/2008/09/zsh-cygwin-and-insecure-directories/
       chmod -R g-w ~/.antigen
       write_update_timestamp $UPDATE_TIMESTAMP_FILE
+    else
+      printf 'Failed to update antigen bundles\n'
     fi
+  else
+    printf 'Failed to update antigen\n'
   fi
 fi
 unset UPDATE_TIMESTAMP_FILE
-
-# Then, source plugins and add commands to $PATH
-antigen apply
