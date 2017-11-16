@@ -4,6 +4,7 @@ source ~/.dotfiles/common.sh
 # Update every once in a while
 UPDATE_TIMESTAMP_FILE=$HOME/.dotfiles-update
 if ! check_up_to_date $UPDATE_TIMESTAMP_FILE; then
+  printf 'Updating dotfiles\n'
   pushd ~/.dotfiles >/dev/null
   env git pull >/dev/null
   if [ $? -ne 0 ]; then
