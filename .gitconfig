@@ -1,0 +1,19 @@
+[branch]
+	autosetuprebase = always
+[rerere]
+	enabled = true
+[push]
+	default = simple
+[core]
+	editor = subl -n -w
+[diff]
+  tool = kdiff3
+[difftool]
+  prompt = false
+[merge]
+  tool = kdiff3
+[mergetool]
+  prompt = false
+  cmd = open -W -a Meld --args --auto-merge \"$LOCAL\" \"$BASE\" \"$REMOTE\" --output=\"$MERGED\"
+[mergetool "kdiff3"]
+	path = /Applications/kdiff3.app/Contents/MacOS/kdiff3
