@@ -65,6 +65,20 @@ export GOROOT=/usr/local/opt/go/libexec
 export GOPATH=~/gocode
 export PATH="$PATH:$GOPATH/bin:$GOROOT/bin"
 
+# More friendly less
+export LESS="-F -X -R $LESS"
+
+# Personalized clone when multiple github keys are present
+function lynclone() {
+  GIT_URL=$1
+  LYNC_URL=`echo $GIT_URL | sed 's/github\.com\:/github\.lync\:/g'`
+  REPO_NAME=`echo $GIT_URL | sed 's/[^\/]*\/\([^\.]*\)\.git/\1/g'`
+  git clone $LYNC_URL
+  cd $REPO_NAME
+  git config user.name 'Yuan Liu'
+  git config user.email lyncredible@outlook.com
+}
+
 # Update SSH agent on every command prompt in TMUX
 _update_ssh_agent() {
     local var
