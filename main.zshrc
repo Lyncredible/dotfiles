@@ -65,9 +65,6 @@ export GOROOT=/usr/local/opt/go/libexec
 export GOPATH=~/gocode
 export PATH="$PATH:$GOPATH/bin:$GOROOT/bin"
 
-# More friendly less
-export LESS="-F -X -R $LESS"
-
 # Personalized clone when multiple github keys are present
 function lynclone() {
   GIT_URL=$1
@@ -77,6 +74,7 @@ function lynclone() {
   cd $REPO_NAME
   git config user.name 'Yuan Liu'
   git config user.email lyncredible@outlook.com
+  git config commit.gpgsign false
 }
 
 # Update SSH agent on every command prompt in TMUX
@@ -99,3 +97,6 @@ source ~/.dotfiles/.aliases
 
 # Then, source plugins and add commands to $PATH
 antigen apply
+
+# oh-my-zsh has strange defaults for LESS
+unset LESS
