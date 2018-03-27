@@ -1,11 +1,14 @@
 hs.application.enableSpotlightForNameSearches(true)
 
-hs.hotkey.bind({"cmd", "alt"}, "M", function()
+local baseKey = {"cmd", "ctrl"}
+local hyperKey = {"cmd", "alt", "ctrl"}
+
+hs.hotkey.bind(baseKey, "M", function()
   local win = hs.window.focusedWindow()
   win:maximize()
 end)
 
-hs.hotkey.bind({"cmd", "alt"}, "O", function()
+hs.hotkey.bind(baseKey, "O", function()
   local win = hs.window.focusedWindow()
   local f = win:frame()
   local screen = win:screen()
@@ -18,7 +21,7 @@ hs.hotkey.bind({"cmd", "alt"}, "O", function()
   win:setFrame(f)
 end)
 
-hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Left", function()
+hs.hotkey.bind(hyperKey, "Left", function()
   local win = hs.window.focusedWindow()
   local f = win:frame()
   local screen = win:screen()
@@ -31,7 +34,7 @@ hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Left", function()
   win:setFrame(f)
 end)
 
-hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Right", function()
+hs.hotkey.bind(hyperKey, "Right", function()
   local win = hs.window.focusedWindow()
   local f = win:frame()
   local screen = win:screen()
@@ -44,7 +47,7 @@ hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Right", function()
   win:setFrame(f)
 end)
 
-hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Up", function()
+hs.hotkey.bind(hyperKey, "Up", function()
   local win = hs.window.focusedWindow()
   local f = win:frame()
   local screen = win:screen()
@@ -57,7 +60,7 @@ hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Up", function()
   win:setFrame(f)
 end)
 
-hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Down", function()
+hs.hotkey.bind(hyperKey, "Down", function()
   local win = hs.window.focusedWindow()
   local f = win:frame()
   local screen = win:screen()
@@ -75,7 +78,7 @@ function shouldRetainSizeAcrossScreen(window)
   return app == 'iTerm2' or app == 'Terminal'
 end
 
-hs.hotkey.bind({"cmd", "alt"}, "Left", function()
+hs.hotkey.bind(baseKey, "Left", function()
   local win = hs.window.focusedWindow()
   retainSize = shouldRetainSizeAcrossScreen(win)
   ensureInScreenBounds = false
@@ -85,7 +88,7 @@ hs.hotkey.bind({"cmd", "alt"}, "Left", function()
   end
 end)
 
-hs.hotkey.bind({"cmd", "alt"}, "Right", function()
+hs.hotkey.bind(baseKey, "Right", function()
   local win = hs.window.focusedWindow()
   local retainSize = shouldRetainSizeAcrossScreen(win)
   local ensureInScreenBounds = false
@@ -106,4 +109,26 @@ function codingLayout()
   hs.layout.apply(windowLayout)
 end
 
-hs.hotkey.bind({"cmd", "alt"}, "P", codingLayout)
+hs.hotkey.bind(baseKey, "P", codingLayout)
+
+hs.loadSpoon("SpoonInstall")
+
+spoon.SpoonInstall:andUse("KSheet", {fn = function()
+  spoon.KSheet.visible = false
+end})
+
+function toggleKSheet()
+  if spoon.KSheet.visible then
+    spoon.KSheet:hide()
+    spoon.KSheet.visible = false
+  else
+    spoon.KSheet:show()
+    spoon.KSheet.visible = true
+  end
+end
+
+hs.hotkey.bind(baseKey, "K", toggleKSheet)
+
+spoon.SpoonInstall:andUse("ReloadConfiguration", {fn = function()
+  spoon.ReloadConfiguration:start()
+end})

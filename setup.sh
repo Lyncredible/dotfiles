@@ -35,9 +35,8 @@ if [ ! -e ~/.zshrc_local ]; then
 fi
 
 # Hammerspoon config
-mkdir -p ~/.hammerspoon
-if [ ! -e ~/.hammerspoon/init.lua ]; then
-  ln -s ~/.dotfiles/.hammerspoon/init.lua ~/.hammerspoon/init.lua
+if [ ! -d ~/.hammerspoon ]; then
+  ln -s ~/.dotfiles/.hammerspoon ~/.hammerspoon
 fi
 
 # Install antigen
