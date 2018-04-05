@@ -5,7 +5,15 @@ local hyperKey = {"cmd", "alt", "ctrl"}
 
 hs.hotkey.bind(baseKey, "M", function()
   local win = hs.window.focusedWindow()
-  win:maximize()
+  local f = win:frame()
+  local screen = win:screen()
+  local max = screen:frame()
+
+  f.x = max.x
+  f.y = max.y
+  f.w = max.w
+  f.h = max.h
+  win:setFrame(f)
 end)
 
 hs.hotkey.bind(baseKey, "O", function()
@@ -102,9 +110,10 @@ function codingLayout()
   local screen = hs.screen.primaryScreen()
   local windowLayout = {
       {"Code",                nil, screen, hs.layout.maximized, nil, nil},
-      {"Slack",               nil, screen, hs.layout.maximized, nil, nil},
       {"Google Chrome",       nil, screen, hs.layout.maximized, nil, nil},
       {"Microsoft OneNote",   nil, screen, hs.layout.maximized, nil, nil},
+      {"Slack",               nil, screen, hs.layout.maximized, nil, nil},
+      {"Sublime Text",        nil, screen, hs.layout.maximized, nil, nil},
   }
   hs.layout.apply(windowLayout)
 end

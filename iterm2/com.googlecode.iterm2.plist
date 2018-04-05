@@ -1181,9 +1181,9 @@
 	<key>NSWindow Frame SessionsPreferences</key>
 	<string>269 126 606 469 0 0 1920 1057 </string>
 	<key>NSWindow Frame SharedPreferences</key>
-	<string>435 606 958 451 0 0 1920 1057 </string>
+	<string>435 617 937 401 0 0 1920 1057 </string>
 	<key>NSWindow Frame iTerm Window 0</key>
-	<string>299 67 1299 798 0 0 1920 1057 </string>
+	<string>148 118 1270 798 0 0 1680 1027 </string>
 	<key>New Bookmarks</key>
 	<array>
 		<dict>
@@ -1865,7 +1865,7 @@
 	<key>SUHasLaunchedBefore</key>
 	<true/>
 	<key>SULastCheckTime</key>
-	<date>2018-02-27T21:47:18Z</date>
+	<date>2018-04-04T16:35:43Z</date>
 	<key>SUSendProfileInfo</key>
 	<false/>
 	<key>SavePasteHistory</key>
@@ -1878,6 +1878,15 @@
 	<integer>1</integer>
 	<key>TabViewType</key>
 	<integer>0</integer>
+	<key>ToolbeltTools</key>
+	<array>
+		<string>Command History</string>
+		<string>Captured Output</string>
+		<string>Paste History</string>
+		<string>Recent Directories</string>
+		<string>Jobs</string>
+		<string>Notes</string>
+	</array>
 	<key>UseBorder</key>
 	<false/>
 	<key>findMode_iTerm</key>
