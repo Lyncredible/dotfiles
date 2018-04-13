@@ -61,9 +61,8 @@ unset NVM_HOME
 unset NVM_DEFAULT
 
 # Golang
-export GOROOT=/usr/local/opt/go/libexec
 export GOPATH=~/gocode
-export PATH="$PATH:$GOPATH/bin:$GOROOT/bin"
+export PATH="$PATH:$GOPATH/bin"
 
 # Personalized clone when multiple github keys are present
 function lynclone() {

@@ -3,6 +3,22 @@ hs.application.enableSpotlightForNameSearches(true)
 local baseKey = {"cmd", "ctrl"}
 local hyperKey = {"cmd", "alt", "ctrl"}
 
+hs.hotkey.bind(baseKey, "S", function()
+  hs.spotify.playpause()
+end)
+
+hs.hotkey.bind(baseKey, "D", function()
+  hs.spotify.displayCurrentTrack()
+end)
+
+hs.hotkey.bind(baseKey, "B", function()
+  hs.spotify.previous()
+end)
+
+hs.hotkey.bind(baseKey, "F", function()
+  hs.spotify.next()
+end)
+
 hs.hotkey.bind(baseKey, "M", function()
   local win = hs.window.focusedWindow()
   local f = win:frame()
