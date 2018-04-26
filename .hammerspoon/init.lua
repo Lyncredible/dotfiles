@@ -45,7 +45,7 @@ hs.hotkey.bind(baseKey, "O", function()
   win:setFrame(f)
 end)
 
-hs.hotkey.bind(hyperKey, "Left", function()
+hs.hotkey.bind(baseKey, "Left", function()
   local win = hs.window.focusedWindow()
   local f = win:frame()
   local screen = win:screen()
@@ -58,7 +58,7 @@ hs.hotkey.bind(hyperKey, "Left", function()
   win:setFrame(f)
 end)
 
-hs.hotkey.bind(hyperKey, "Right", function()
+hs.hotkey.bind(baseKey, "Right", function()
   local win = hs.window.focusedWindow()
   local f = win:frame()
   local screen = win:screen()
@@ -71,7 +71,7 @@ hs.hotkey.bind(hyperKey, "Right", function()
   win:setFrame(f)
 end)
 
-hs.hotkey.bind(hyperKey, "Up", function()
+hs.hotkey.bind(baseKey, "Up", function()
   local win = hs.window.focusedWindow()
   local f = win:frame()
   local screen = win:screen()
@@ -84,7 +84,7 @@ hs.hotkey.bind(hyperKey, "Up", function()
   win:setFrame(f)
 end)
 
-hs.hotkey.bind(hyperKey, "Down", function()
+hs.hotkey.bind(baseKey, "Down", function()
   local win = hs.window.focusedWindow()
   local f = win:frame()
   local screen = win:screen()
@@ -102,7 +102,7 @@ function shouldRetainSizeAcrossScreen(window)
   return app == 'iTerm2' or app == 'Terminal'
 end
 
-hs.hotkey.bind(baseKey, "Left", function()
+hs.hotkey.bind(hyperKey, "Left", function()
   local win = hs.window.focusedWindow()
   retainSize = shouldRetainSizeAcrossScreen(win)
   ensureInScreenBounds = false
@@ -112,7 +112,7 @@ hs.hotkey.bind(baseKey, "Left", function()
   end
 end)
 
-hs.hotkey.bind(baseKey, "Right", function()
+hs.hotkey.bind(hyperKey, "Right", function()
   local win = hs.window.focusedWindow()
   local retainSize = shouldRetainSizeAcrossScreen(win)
   local ensureInScreenBounds = false
