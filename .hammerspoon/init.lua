@@ -1,4 +1,5 @@
 hs.application.enableSpotlightForNameSearches(true)
+hs.window.animationDuration = 0
 
 local baseKey = {"cmd", "ctrl"}
 local hyperKey = {"cmd", "alt", "ctrl"}
