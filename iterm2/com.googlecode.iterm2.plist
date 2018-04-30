@@ -1177,13 +1177,13 @@
 	<key>NSTableView Supports v2 KeyBingingTable</key>
 	<true/>
 	<key>NSWindow Frame SUUpdateAlert</key>
-	<string>532 476 620 392 0 0 1680 1027 </string>
+	<string>650 498 620 392 0 0 1920 1057 </string>
 	<key>NSWindow Frame SessionsPreferences</key>
 	<string>269 126 606 469 0 0 1920 1057 </string>
 	<key>NSWindow Frame SharedPreferences</key>
 	<string>435 617 937 401 0 0 1920 1057 </string>
 	<key>NSWindow Frame iTerm Window 0</key>
-	<string>148 118 1270 798 0 0 1680 1027 </string>
+	<string>319 94 1179 798 0 0 1680 1027 </string>
 	<key>New Bookmarks</key>
 	<array>
 		<dict>
@@ -1821,6 +1821,8 @@
 	<false/>
 	<key>NoSyncTimeOfFirstLaunchOfVersionWithTip</key>
 	<real>537165766.62510502</real>
+	<key>PasteTabToStringTabStopSize</key>
+	<integer>2</integer>
 	<key>PointerActions</key>
 	<dict>
 		<key>Button,1,1,,</key>
@@ -1865,7 +1867,7 @@
 	<key>SUHasLaunchedBefore</key>
 	<true/>
 	<key>SULastCheckTime</key>
-	<date>2018-04-04T16:35:43Z</date>
+	<date>2018-04-30T04:00:32Z</date>
 	<key>SUSendProfileInfo</key>
 	<false/>
 	<key>SavePasteHistory</key>
@@ -1892,6 +1894,6 @@
 	<key>findMode_iTerm</key>
 	<integer>0</integer>
 	<key>iTerm Version</key>
-	<string>3.1.5</string>
+	<string>3.1.6</string>
 </dict>
 </plist>
