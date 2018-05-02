@@ -34,6 +34,11 @@ if [ ! -e ~/.zshrc_local ]; then
   touch ~/.zshrc_local
 fi
 
+# .vimrc
+if [ ! -e ~/.vimrc ]; then
+  ln -s ~/.dotfiles/.vimrc ~/.vimrc
+fi
+
 # Hammerspoon config
 if [ ! -d ~/.hammerspoon ]; then
   ln -s ~/.dotfiles/.hammerspoon ~/.hammerspoon
