@@ -96,6 +96,3 @@ source ~/.dotfiles/.aliases
 
 # Then, source plugins and add commands to $PATH
 antigen apply
-
-# oh-my-zsh has strange defaults for LESS
-unset LESS

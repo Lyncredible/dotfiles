@@ -126,8 +126,10 @@ end)
 function codingLayout()
   local screen = hs.screen.primaryScreen()
   local windowLayout = {
+      {"Boostnote",           nil, screen, hs.layout.maximized, nil, nil},
       {"Code",                nil, screen, hs.layout.maximized, nil, nil},
       {"Google Chrome",       nil, screen, hs.layout.maximized, nil, nil},
+      {"iTerm2",              nil, screen, nil, hs.geometry.rect(183.0,165.0,1285.0,798.0), nil},
       {"Microsoft OneNote",   nil, screen, hs.layout.maximized, nil, nil},
       {"Slack",               nil, screen, hs.layout.maximized, nil, nil},
       {"Sublime Text",        nil, screen, hs.layout.maximized, nil, nil},
@@ -136,6 +138,9 @@ function codingLayout()
 end
 
 hs.hotkey.bind(baseKey, "P", codingLayout)
+
+local screenWatcher = hs.screen.watcher.new(codingLayout)
+screenWatcher:start()
 
 hs.loadSpoon("SpoonInstall")
 
