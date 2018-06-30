@@ -123,13 +123,19 @@ hs.hotkey.bind(hyperKey, "Right", function()
   end
 end)
 
+function centerInParent(size, parentRect)
+  local left = (parentRect.x1 + parentRect.x2 - size.w) / 2.0
+  local top = (parentRect.y1 + parentRect.y2 - size.h) / 2.0
+  return hs.geometry.rect(left, top, size.w, size.h)
+end
+
 function codingLayout()
   local screen = hs.screen.primaryScreen()
   local windowLayout = {
       {"Boostnote",           nil, screen, hs.layout.maximized, nil, nil},
       {"Code",                nil, screen, hs.layout.maximized, nil, nil},
       {"Google Chrome",       nil, screen, hs.layout.maximized, nil, nil},
-      {"iTerm2",              nil, screen, nil, hs.geometry.rect(183.0,165.0,1285.0,798.0), nil},
+      {"iTerm2",              nil, screen, nil, nil, centerInParent(hs.geometry.size(1285.0, 798.0), screen:fullFrame())},
       {"Microsoft OneNote",   nil, screen, hs.layout.maximized, nil, nil},
       {"Slack",               nil, screen, hs.layout.maximized, nil, nil},
       {"Sublime Text",        nil, screen, hs.layout.maximized, nil, nil},
