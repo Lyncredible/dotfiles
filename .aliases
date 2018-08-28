@@ -4,3 +4,4 @@ alias dact='deactivate'
 alias rmo='find . -name *.orig -delete'%
 alias aup='antigen selfupdate && antigen update && chmod -R g-w ~/.antigen'
 alias grpo='git remote prune origin'
+alias gbdm='git branch --merged | egrep -v "(^\*|master|dev)" | xargs git branch -d'

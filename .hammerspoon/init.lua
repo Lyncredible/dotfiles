@@ -183,6 +183,7 @@ function codingLayout()
       {"Microsoft OneNote",   nil, screen, hs.layout.maximized, nil, nil},
       {"Slack",               nil, screen, hs.layout.maximized, nil, nil},
       {"Sublime Text",        nil, screen, hs.layout.maximized, nil, nil},
+      {"Xcode",               nil, screen, hs.layout.maximized, nil, nil},
   }
   hs.layout.apply(windowLayout)
 end

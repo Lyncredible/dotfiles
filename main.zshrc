@@ -96,3 +96,6 @@ source ~/.dotfiles/.aliases
 
 # Then, source plugins and add commands to $PATH
 antigen apply
+
+# fzf is installed via brew
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
