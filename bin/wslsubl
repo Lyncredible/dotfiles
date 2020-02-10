@@ -1,0 +1,10 @@
+#!/bin/zsh
+
+# extract last argument (the file path)
+for last; do true; done
+
+# get all the initial command arguments
+all=( "${@:1:$(($# - 1))}" "$(wslpath -w $last)" )
+
+# launch with windows path
+subl.exe "${all[@]}"

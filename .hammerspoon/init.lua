@@ -190,9 +190,6 @@ end
 
 hs.hotkey.bind(BaseKey, "P", codingLayout)
 
-local screenWatcher = hs.screen.watcher.new(codingLayout)
-screenWatcher:start()
-
 hs.loadSpoon("SpoonInstall")
 
 spoon.SpoonInstall:andUse("KSheet", {fn = function()

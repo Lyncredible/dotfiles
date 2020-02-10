@@ -22,16 +22,22 @@ antigen bundle zsh-users/zsh-syntax-highlighting
 antigen theme https://github.com/caiogondim/bullet-train-oh-my-zsh-theme bullet-train
 BULLETTRAIN_PROMPT_ORDER=(time status custom context dir ruby virtualenv nvm go git cmd_exec_time)
 
-# Preferred editor for local and remote sessions
+# Preferred editor
 if [[ -n $SSH_CONNECTION ]]; then
+  # Over SSH
   BULLETTRAIN_CONTEXT_BG=cyan
   export EDITOR='vim'
+elif grep -q Microsoft /proc/version; then
+  # Windows Subsystem for Linux
+  BULLETTRAIN_CONTEXT_BG=magenta
+  export EDITOR='wslsubl -n -w'
 else
+  # Regular setup
   BULLETTRAIN_CONTEXT_BG=magenta
   export EDITOR='subl -n -w'
 fi
 
-export PATH="$HOME/bin:/usr/local/bin:/usr/local/sbin:$PATH"
+export PATH="$HOME/bin:$HOME/.dotfiles/bin:/usr/local/bin:/usr/local/sbin:$PATH"
 
 if [ -d /home/linuxbrew/.linuxbrew/ ]; then
   export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
@@ -71,8 +77,10 @@ export GOPATH=~/gocode
 export PATH="$PATH:$GOPATH/bin"
 
 # Ruby
-export PATH="$PATH:$HOME/.rbenv/bin"
-eval "$(rbenv init -)"
+if [ -d "$HOME/.rbenv" ]; then
+  export PATH="$PATH:$HOME/.rbenv/bin"
+  eval "$(rbenv init -)"
+fi
 
 # Personalized clone when multiple github keys are present
 function lynclone() {
