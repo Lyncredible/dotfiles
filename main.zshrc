@@ -27,7 +27,7 @@ if [[ -n $SSH_CONNECTION ]]; then
   # Over SSH
   BULLETTRAIN_CONTEXT_BG=cyan
   export EDITOR='vim'
-elif grep -q Microsoft /proc/version; then
+elif [ -e /proc/version ] && grep -q Microsoft /proc/version; then
   # Windows Subsystem for Linux
   BULLETTRAIN_CONTEXT_BG=magenta
   export EDITOR='wslsubl -n -w'
