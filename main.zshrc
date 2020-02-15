@@ -78,6 +78,7 @@ export PATH="$PATH:$GOPATH/bin"
 
 # Ruby
 if [ -d "$HOME/.rbenv" ]; then
+  export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
   export PATH="$PATH:$HOME/.rbenv/bin"
   eval "$(rbenv init -)"
 fi
