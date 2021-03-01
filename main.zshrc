@@ -39,12 +39,6 @@ fi
 
 export PATH="$HOME/bin:$HOME/.dotfiles/bin:/usr/local/bin:/usr/local/sbin:$PATH"
 
-if [ -d /home/linuxbrew/.linuxbrew/ ]; then
-  export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
-  export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
-  export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
-fi
-
 # Node
 # nvm.sh is super slow to load, default to a known version at startup
 # [ -s "$HOME/.nvm/nvm.sh" ] && . $HOME/.nvm/nvm.sh
@@ -73,7 +67,7 @@ unset NVM_HOME
 unset NVM_DEFAULT
 
 # Golang
-export GOPATH=~/gocode
+export GOPATH=~/go
 export PATH="$PATH:$GOPATH/bin"
 
 # Ruby
