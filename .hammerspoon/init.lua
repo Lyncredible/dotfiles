@@ -100,6 +100,32 @@ hs.hotkey.bind(BaseKey, "Down", function()
   window:setFrame(f)
 end)
 
+hs.hotkey.bind(BaseKey, "[", function()
+  local window = hs.window.focusedWindow()
+  local f = window:frame()
+  local screen = window:screen()
+  local max = screen:frame()
+
+  f.x = max.x
+  f.y = max.y
+  f.w = max.w * 3 / 4
+  f.h = max.h
+  window:setFrame(f)
+end)
+
+hs.hotkey.bind(BaseKey, "]", function()
+  local window = hs.window.focusedWindow()
+  local f = window:frame()
+  local screen = window:screen()
+  local max = screen:frame()
+
+  f.x = max.x + max.w * 3 / 4
+  f.y = max.y
+  f.w = max.w / 4
+  f.h = max.h
+  window:setFrame(f)
+end)
+
 function shouldRetainSizeAcrossScreen(window)
   app = window:application():name()
   return app == 'iTerm2' or app == 'Terminal'
