@@ -71,9 +71,13 @@ export GOPATH=~/go
 export PATH="$PATH:$GOPATH/bin"
 
 # Ruby
-if [ -d "$HOME/.rbenv" ]; then
-  export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
-  export PATH="$PATH:$HOME/.rbenv/bin"
+if command -v rbenv > /dev/null; then
+  if command -v brew > /dev/null; then
+    export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
+  fi
+  if [ -d "$HOME/.rbenv" ]; then
+    export PATH="$PATH:$HOME/.rbenv/bin"
+  fi
   eval "$(rbenv init -)"
 fi
 
