@@ -19,21 +19,17 @@ antigen bundle zsh-users/zsh-completions
 antigen bundle zsh-users/zsh-syntax-highlighting
 
 # Bullet train theme
-antigen theme https://github.com/caiogondim/bullet-train-oh-my-zsh-theme bullet-train
-BULLETTRAIN_PROMPT_ORDER=(time status custom context dir ruby virtualenv nvm go git cmd_exec_time)
+antigen theme romkatv/powerlevel10k
 
 # Preferred editor
 if [[ -n $SSH_CONNECTION ]]; then
   # Over SSH
-  BULLETTRAIN_CONTEXT_BG=cyan
   export EDITOR='vim'
 elif [ -e /proc/version ] && grep -q Microsoft /proc/version; then
   # Windows Subsystem for Linux
-  BULLETTRAIN_CONTEXT_BG=magenta
   export EDITOR='wslsubl -n -w'
 else
   # Regular setup
-  BULLETTRAIN_CONTEXT_BG=magenta
   export EDITOR='subl -n -w'
 fi
 
@@ -111,6 +107,9 @@ source ~/.dotfiles/.aliases
 
 # Then, source plugins and add commands to $PATH
 antigen apply
+
+# Load Powerlevel10k
+[[ ! -f ~/.dotfiles/.p10k.zsh ]] || source ~/.dotfiles/.p10k.zsh
 
 # fzf is installed via brew
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh

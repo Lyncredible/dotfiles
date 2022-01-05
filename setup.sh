@@ -34,6 +34,11 @@ if [ ! -e ~/.zshrc_local ]; then
   touch ~/.zshrc_local
 fi
 
+# Powerlevel10k
+if [ ! -e ~/.p10k.zsh ]; then
+  ln -s ~/.dotfiles/.p10k.zsh ~/.p10k.zsh
+fi
+
 # .vimrc
 if [ ! -e ~/.vimrc ]; then
   ln -s ~/.dotfiles/.vimrc ~/.vimrc
