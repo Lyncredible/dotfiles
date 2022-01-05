@@ -58,4 +58,6 @@ if [ ! -d "$ANTIGEN_DIR" ]; then
 fi
 unset ANTIGEN_DIR
 
-chsh -s $(which zsh)
+if [ ! "$(which zsh)" = "$SHELL" ]; then
+  chsh -s $(which zsh)
+fi
