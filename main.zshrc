@@ -36,31 +36,12 @@ fi
 export PATH="$HOME/bin:$HOME/.dotfiles/bin:/usr/local/bin:/usr/local/sbin:$PATH"
 
 # Node
-# nvm.sh is super slow to load, default to a known version at startup
-# [ -s "$HOME/.nvm/nvm.sh" ] && . $HOME/.nvm/nvm.sh
 NVM_HOME=$HOME/.nvm
 if [ -d "$NVM_HOME" ]; then
-  # This function loads nvm
-  export NVM_DIR="$NVM_HOME"
-  function lnvm {
-    . "$NVM_DIR/nvm.sh"
-    [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
-  }
-
-  NVM_DEFAULT=$NVM_HOME/alias/default
-  if [ -e "$NVM_DEFAULT" ]; then
-    NODE_VERSION=`cat $NVM_DEFAULT`
-    NODE_BIN=$HOME/.nvm/versions/node/v$NODE_VERSION/bin
-
-    if [ -d "$NODE_BIN" ]; then
-      export PATH="$PATH:$NODE_BIN"
-    fi
-  fi
+  . "$NVM_HOME/nvm.sh"
+  [ -s "$NVM_HOME/bash_completion" ] && . "$NVM_HOME/bash_completion"
 fi
-unset NODE_VERSION
-unset NODE_BIN
 unset NVM_HOME
-unset NVM_DEFAULT
 
 # Golang
 export GOPATH=~/go
