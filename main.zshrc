@@ -92,8 +92,21 @@ antigen apply
 # Load Powerlevel10k
 [[ ! -f ~/.dotfiles/.p10k.zsh ]] || source ~/.dotfiles/.p10k.zsh
 
-# fzf is installed via brew
+# fzf via brew
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# fzf via apt on Ubuntu
+[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ] && source /usr/share/doc/fzf/examples/key-bindings.zsh
+
+if ! command -v fzf > /dev/null; then
+  echo 'WARNING: fzf is not installed'
+fi
+
+if command -v thefuck > /dev/null; then
+  eval $(thefuck --alias)
+else
+  echo 'WARNING: thefuck is not installed'
+fi
 
 # This speeds up pasting w/ autosuggest
 # https://github.com/zsh-users/zsh-autosuggestions/issues/238
