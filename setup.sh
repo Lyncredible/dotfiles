@@ -39,6 +39,11 @@ if [ ! -e ~/.p10k.zsh ]; then
   ln -s ~/.dotfiles/.p10k.zsh ~/.p10k.zsh
 fi
 
+# git config
+if [ ! $(git config --global --get-all include.path | grep '~/.dotfiles/.gitconfig') ]; then
+  git config --global include.path '~/.dotfiles/.gitconfig'
+fi
+
 # .vimrc
 if [ ! -e ~/.vimrc ]; then
   ln -s ~/.dotfiles/.vimrc ~/.vimrc
