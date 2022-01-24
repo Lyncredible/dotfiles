@@ -108,7 +108,7 @@ hs.hotkey.bind(BaseKey, "[", function()
 
   f.x = max.x
   f.y = max.y
-  f.w = max.w * 3 / 4
+  f.w = max.w * 2 / 3
   f.h = max.h
   window:setFrame(f)
 end)
@@ -119,9 +119,9 @@ hs.hotkey.bind(BaseKey, "]", function()
   local screen = window:screen()
   local max = screen:frame()
 
-  f.x = max.x + max.w * 3 / 4
+  f.x = max.x + max.w * 2 / 3
   f.y = max.y
-  f.w = max.w / 4
+  f.w = max.w / 3
   f.h = max.h
   window:setFrame(f)
 end)
