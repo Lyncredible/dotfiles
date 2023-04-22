@@ -33,7 +33,7 @@ else
   export EDITOR='subl -n -w'
 fi
 
-export PATH="$HOME/bin:$HOME/.dotfiles/bin:/usr/local/bin:/usr/local/sbin:$PATH"
+export PATH="$HOME/bin:$HOME/.dotfiles/bin:$HOME/.local/bin:/usr/local/bin:/usr/local/sbin:$PATH"
 
 # Node
 NVM_HOME=$HOME/.nvm
