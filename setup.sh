@@ -54,6 +54,11 @@ if [ ! -d ~/.hammerspoon ]; then
   ln -s ~/.dotfiles/.hammerspoon ~/.hammerspoon
 fi
 
+# Karabiner config
+if [ ! -d ~/.config/karabiner ]; then
+  ln -s ~/.dotfiles/karabiner ~/.config/karabiner
+fi
+
 # Install antigen
 ANTIGEN_DIR=$HOME/.antigen
 if [ ! -d "$ANTIGEN_DIR" ]; then
