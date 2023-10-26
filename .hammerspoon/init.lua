@@ -6,6 +6,33 @@ local HyperKey = {"cmd", "alt", "ctrl"}
 local UniversalKey = {"cmd", "alt", "ctrl", "shift"}
 local Direction = { Left = "Left", Up = "Up", right = "Right", down = "Down" }
 
+function toggleAudioVideo(audioOrVideo)
+  local zoom = hs.application.find("us.zoom.xos")
+  local teams = hs.application.find("com.microsoft.teams")
+  if not (zoom == nil) then
+    if audioOrVideo == "audio" then
+      hs.eventtap.keyStroke({"cmd","shift"}, "a", 0, zoom)
+    else
+      hs.eventtap.keyStroke({"cmd","shift"}, "v", 0, zoom)
+    end
+  end
+  if not (teams == null) then
+    if audioOrVideo == "audio" then
+      hs.eventtap.keyStroke({"cmd","shift"}, "m", 0, teams)
+    else
+      hs.eventtap.keyStroke({"cmd","shift"}, "o", 0, teams)
+    end
+  end
+end
+
+hs.hotkey.bind(BaseKey, "A", function()
+  toggleAudioVideo("audio")
+end)
+
+hs.hotkey.bind(BaseKey, "V", function()
+  toggleAudioVideo("video")
+end)
+
 hs.hotkey.bind(BaseKey, "S", function()
   hs.spotify.playpause()
 end)
