@@ -33,7 +33,7 @@ else
   export EDITOR='subl -n -w'
 fi
 
-export PATH="$HOME/bin:$HOME/.dotfiles/bin:$HOME/.local/bin:/usr/local/bin:/usr/local/sbin:$PATH"
+export PATH="$HOME/bin:$HOME/.dotfiles/bin:$HOME/.local/bin:/usr/local/bin:/usr/local/sbin:/opt/homebrew/bin:$PATH"
 
 # Node
 NVM_HOME=$HOME/.nvm
@@ -100,12 +100,6 @@ antigen apply
 
 if ! command -v fzf > /dev/null; then
   echo 'WARNING: fzf is not installed'
-fi
-
-if command -v thefuck > /dev/null; then
-  eval $(thefuck --alias)
-else
-  echo 'WARNING: thefuck is not installed'
 fi
 
 # This speeds up pasting w/ autosuggest
