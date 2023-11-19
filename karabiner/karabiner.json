@@ -35,11 +35,11 @@
                                     }
                                 ],
                                 "from": {
-                                    "key_code": "left_alt"
+                                    "key_code": "left_option"
                                 },
                                 "to": [
                                     {
-                                        "key_code": "left_gui"
+                                        "key_code": "left_command"
                                     }
                                 ],
                                 "type": "basic"
@@ -64,11 +64,11 @@
                                     }
                                 ],
                                 "from": {
-                                    "key_code": "right_alt"
+                                    "key_code": "right_option"
                                 },
                                 "to": [
                                     {
-                                        "key_code": "right_gui"
+                                        "key_code": "right_command"
                                     }
                                 ],
                                 "type": "basic"
@@ -93,12 +93,11 @@
                                     }
                                 ],
                                 "from": {
-                                    "key_code": "left_gui"
+                                    "key_code": "left_command"
                                 },
                                 "to": [
                                     {
-                                        "key_code": "left_alt",
-                                        "repeat": false
+                                        "key_code": "left_option"
                                     }
                                 ],
                                 "type": "basic"
@@ -123,12 +122,11 @@
                                     }
                                 ],
                                 "from": {
-                                    "key_code": "right_gui"
+                                    "key_code": "right_command"
                                 },
                                 "to": [
                                     {
-                                        "key_code": "right_alt",
-                                        "repeat": false
+                                        "key_code": "right_option"
                                     }
                                 ],
                                 "type": "basic"
