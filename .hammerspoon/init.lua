@@ -4,7 +4,20 @@ hs.window.animationDuration = 0
 local BaseKey = {"cmd", "ctrl"}
 local HyperKey = {"cmd", "alt", "ctrl"}
 local UniversalKey = {"cmd", "alt", "ctrl", "shift"}
-local Direction = { Left = "Left", Up = "Up", right = "Right", down = "Down" }
+local Direction = { Left = "Left", Up = "Up", Right = "Right", Down = "Down" }
+local SnapTo = {
+  Left = "Left",
+  Right = "Right",
+  Top = "Top",
+  Bottom = "Bottom",
+  Max = "Max",
+  Center = "Center",
+  Middle = "Middle",
+  LeftThird = "LeftThird",
+  LeftTwoThirds = "LeftTwoThirds",
+  RightThird = "RightThird",
+  RightTwoThirds = "RightTwoThirds"
+}
 
 function toggleAudioVideo(audioOrVideo)
   local zoom = hs.application.find("us.zoom.xos")
@@ -49,7 +62,7 @@ hs.hotkey.bind(BaseKey, "F", function()
   hs.spotify.next()
 end)
 
-hs.hotkey.bind(BaseKey, "M", function()
+function snapWindowTo(window, snapTo)
   local window = hs.window.focusedWindow()
   local f = window:frame()
   local screen = window:screen()
@@ -59,98 +72,95 @@ hs.hotkey.bind(BaseKey, "M", function()
   f.y = max.y
   f.w = max.w
   f.h = max.h
+
+  local ultraWideRatio = 21.0 / 9.0
+  local widthFactor = 2.0 / 3.0
+  if max.w / max.h >= ultraWideRatio then
+    widthFactor = 16.0 / (max.w / max.h * 9.0)
+  end
+
+  if snapTo == SnapTo.Left then
+    f.w = max.w / 2    
+  elseif snapTo == SnapTo.Right then
+    f.x = max.x + max.w / 2
+    f.w = max.w - (f.x - max.x)
+  elseif snapTo == SnapTo.Top then
+    f.h = max.h / 2
+  elseif snapTo == SnapTo.Bottom then
+    f.y = max.y + max.h / 2
+    f.h = max.h - (f.y - max.y)
+  elseif snapTo == SnapTo.Max then
+    -- Do nothing
+  elseif snapTo == SnapTo.Center then
+    f.h = max.h * 3 // 4
+    f.w = f.h / 9 * 16
+    f.x = max.x + (max.w - f.w) / 2
+    f.y = max.y + (max.h - f.h) / 2
+  elseif snapTo == SnapTo.Middle then
+    f.w = max.w * widthFactor
+    f.x = max.x + (max.w - f.w) / 2
+  elseif snapTo == SnapTo.LeftThird then
+    f.w = max.w - max.w * widthFactor
+  elseif snapTo == SnapTo.RightThird then
+    f.w = max.w - max.w * widthFactor
+    f.x = max.x + (max.w - f.w)
+  elseif snapTo == SnapTo.LeftTwoThirds then
+    f.w = max.w * widthFactor
+  elseif snapTo == SnapTo.RightTwoThirds then
+    f.w = max.w * widthFactor
+    f.x = max.x + (max.w - f.w)
+  end
+
   window:setFrame(f)
+end
+
+function snapCurrentWindowTo(snapTo)
+  local window = hs.window.focusedWindow()
+  snapWindowTo(window, snapTo)
+end
+
+hs.hotkey.bind(BaseKey, "M", function()
+  snapCurrentWindowTo(SnapTo.Max)
 end)
 
 hs.hotkey.bind(BaseKey, "O", function()
-  local window = hs.window.focusedWindow()
-  local f = window:frame()
-  local screen = window:screen()
-  local max = screen:frame()
+  snapCurrentWindowTo(SnapTo.Middle)
+end)
 
-  f.x = max.x + (max.w / 6)
-  f.y = max.y + (max.h / 6)
-  f.w = max.w * 2 / 3
-  f.h = max.h * 2 / 3
-  window:setFrame(f)
+hs.hotkey.bind(BaseKey, "C", function()
+  snapCurrentWindowTo(SnapTo.Center)
 end)
 
 hs.hotkey.bind(BaseKey, "Left", function()
-  local window = hs.window.focusedWindow()
-  local f = window:frame()
-  local screen = window:screen()
-  local max = screen:frame()
-
-  f.x = max.x
-  f.y = max.y
-  f.w = max.w / 2
-  f.h = max.h
-  window:setFrame(f)
+  snapCurrentWindowTo(SnapTo.Left)
 end)
 
 hs.hotkey.bind(BaseKey, "Right", function()
-  local window = hs.window.focusedWindow()
-  local f = window:frame()
-  local screen = window:screen()
-  local max = screen:frame()
-
-  f.x = max.x + (max.w / 2)
-  f.y = max.y
-  f.w = max.w / 2
-  f.h = max.h
-  window:setFrame(f)
+  snapCurrentWindowTo(SnapTo.Right)
 end)
 
 hs.hotkey.bind(BaseKey, "Up", function()
-  local window = hs.window.focusedWindow()
-  local f = window:frame()
-  local screen = window:screen()
-  local max = screen:frame()
-
-  f.x = max.x
-  f.y = max.y
-  f.w = max.w
-  f.h = max.h / 2
-  window:setFrame(f)
+  snapCurrentWindowTo(SnapTo.Top)
 end)
 
 hs.hotkey.bind(BaseKey, "Down", function()
-  local window = hs.window.focusedWindow()
-  local f = window:frame()
-  local screen = window:screen()
-  local max = screen:frame()
-
-  f.x = max.x
-  f.y = max.y + (max.h / 2)
-  f.w = max.w
-  f.h = max.h / 2
-  window:setFrame(f)
+  snapCurrentWindowTo(SnapTo.Bottom)
 end)
 
 hs.hotkey.bind(BaseKey, "[", function()
-  local window = hs.window.focusedWindow()
-  local f = window:frame()
-  local screen = window:screen()
-  local max = screen:frame()
-
-  f.x = max.x
-  f.y = max.y
-  f.w = max.w * 2 / 3
-  f.h = max.h
-  window:setFrame(f)
+  snapCurrentWindowTo(SnapTo.LeftTwoThirds)
 end)
 
 hs.hotkey.bind(BaseKey, "]", function()
-  local window = hs.window.focusedWindow()
-  local f = window:frame()
-  local screen = window:screen()
-  local max = screen:frame()
+  snapCurrentWindowTo(SnapTo.RightThird)
+end)
 
-  f.x = max.x + max.w * 2 / 3
-  f.y = max.y
-  f.w = max.w / 3
-  f.h = max.h
-  window:setFrame(f)
+hs.hotkey.bind(BaseKey, ",", function()
+  snapCurrentWindowTo(SnapTo.LeftThird)
+end)
+
+hs.hotkey.bind(BaseKey, ".", function()
+  snapCurrentWindowTo(SnapTo.RightTwoThirds)
 end)
 
 function shouldRetainSizeAcrossScreen(window)
@@ -229,14 +239,12 @@ end
 function codingLayout()
   local screen = hs.screen.primaryScreen()
   local windowLayout = {
-      {"Boostnote",           nil, screen, hs.layout.maximized, nil, nil},
       {"Code",                nil, screen, hs.layout.maximized, nil, nil},
       {"Google Chrome",       nil, screen, hs.layout.maximized, nil, nil},
       {"iTerm2",              nil, screen, nil, nil, centerInParent(hs.geometry.size(1285.0, 798.0), screen:fullFrame())},
       {"Microsoft OneNote",   nil, screen, hs.layout.maximized, nil, nil},
       {"Slack",               nil, screen, hs.layout.maximized, nil, nil},
       {"Sublime Text",        nil, screen, hs.layout.maximized, nil, nil},
-      {"Xcode",               nil, screen, hs.layout.maximized, nil, nil},
   }
   hs.layout.apply(windowLayout)
 end
