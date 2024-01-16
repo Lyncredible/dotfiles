@@ -7,3 +7,6 @@
 	rebase = true
 [push]
 	default = current
+[user]
+	email = lyncredible@outlook.com
+	name = Yuan Liu
