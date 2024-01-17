@@ -49,12 +49,21 @@ export PATH="$PATH:$GOPATH/bin"
 
 # Ruby
 if [ -d "$HOME/.rbenv" ]; then
-  if command -v brew > /dev/null; then
-    export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
-  fi
-  export PATH="$PATH:$HOME/.rbenv/bin"
+  export PATH="$HOME/.rbenv/bin:$PATH"
   eval "$(rbenv init -)"
 fi
+
+# Python
+if [ -d "$HOME/.pyenv" ]; then
+  export PYENV_ROOT="$HOME/.pyenv"
+  export PATH="$PYENV_ROOT/bin:$PATH"
+  eval "$(pyenv init -)"
+  eval "$(pyenv virtualenv-init -)"
+fi
+
+# Homebrew
+export HOMEBREW_NO_ANALYTICS=1
+export HOMEBREW_NO_ENV_HINTS=1
 
 # Personalized clone when multiple github keys are present
 function lynclone() {
