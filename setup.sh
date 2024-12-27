@@ -49,6 +49,11 @@ if [ ! -e ~/.vimrc ]; then
   ln -s ~/.dotfiles/.vimrc ~/.vimrc
 fi
 
+# .tmux.conf
+if [ ! -e ~/.tmux.conf ]; then
+  ln -s ~/.dotfiles/.tmux.conf ~/.tmux.conf
+fi
+
 # Hammerspoon config
 if [ ! -d ~/.hammerspoon ]; then
   ln -s ~/.dotfiles/.hammerspoon ~/.hammerspoon
