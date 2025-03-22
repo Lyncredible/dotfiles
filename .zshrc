@@ -8,16 +8,32 @@ fi
 # Import common functions
 source ~/.dotfiles/common.sh
 
+update_repo() {
+  git fetch >/dev/null
+  if [ $? -ne 0 ]; then
+    printf "Warning: Failed to fetch dotfiles repo.\n"
+    return 1
+  fi
+
+  git rebase origin/master >/dev/null
+  if [ $? -ne 0 ]; then
+    printf "Warning: Failed to rebase dotfiles repo.\n"
+    return 1
+  fi
+  
+  return 0
+}
+
 # Update every once in a while
 UPDATE_TIMESTAMP_FILE=$HOME/.dotfiles-update
+DOTFILES_UPDATED=0
 if ! check_up_to_date $UPDATE_TIMESTAMP_FILE; then
-  printf 'Updating dotfiles\n'
+  printf 'Updating dotfiles...\n'
   pushd ~/.dotfiles >/dev/null
-  env git pull >/dev/null
-  if [ $? -ne 0 ]; then
-    printf "Warning: Failed to check update for dotfiles repo.\n"
-  else
+  update_repo
+  if [ $? -eq 0 ]; then
     write_update_timestamp $UPDATE_TIMESTAMP_FILE
+    DOTFILES_UPDATED=1
   fi
   popd >/dev/null
 fi

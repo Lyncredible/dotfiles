@@ -98,6 +98,13 @@ source ~/.dotfiles/.aliases
 # Then, source plugins and add commands to $PATH
 antigen apply
 
+# Update antigen whenever the dotfiles repo is updated
+if [ $DOTFILES_UPDATED -eq 1 ]; then
+  printf "Updating antigen...\n"
+  antigen selfupdate
+  antigen update
+fi
+
 # Load Powerlevel10k
 [[ ! -f ~/.dotfiles/.p10k.zsh ]] || source ~/.dotfiles/.p10k.zsh
 
