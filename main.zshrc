@@ -54,11 +54,8 @@ if [ -d "$HOME/.rbenv" ]; then
 fi
 
 # Python
-if [ -d "$HOME/.pyenv" ]; then
-  export PYENV_ROOT="$HOME/.pyenv"
-  export PATH="$PYENV_ROOT/bin:$PATH"
-  eval "$(pyenv init -)"
-  eval "$(pyenv virtualenv-init -)"
+if ! command -v uv > /dev/null; then
+  echo 'WARNING: uv is not installed'
 fi
 
 # Homebrew
