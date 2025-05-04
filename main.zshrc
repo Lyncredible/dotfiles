@@ -54,7 +54,7 @@ if [ -d "$HOME/.rbenv" ]; then
 fi
 
 # Python
-if ! command -v uv > /dev/null; then
+if [ "$NO_UV" != "true" ] && ! command -v uv > /dev/null; then
   echo 'WARNING: uv is not installed'
 fi
 
