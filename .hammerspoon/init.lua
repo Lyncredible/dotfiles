@@ -240,6 +240,7 @@ function codingLayout()
   local screen = hs.screen.primaryScreen()
   local windowLayout = {
       {"Code",                nil, screen, hs.layout.maximized, nil, nil},
+      {"Cursor",              nil, screen, hs.layout.maximized, nil, nil},
       {"Google Chrome",       nil, screen, hs.layout.maximized, nil, nil},
       {"iTerm2",              nil, screen, nil, nil, centerInParent(hs.geometry.size(1285.0, 798.0), screen:fullFrame())},
       {"Microsoft OneNote",   nil, screen, hs.layout.maximized, nil, nil},

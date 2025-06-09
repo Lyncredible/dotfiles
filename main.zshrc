@@ -130,3 +130,12 @@ zstyle :bracketed-paste-magic paste-finish pastefinish
 
 # https://github.com/zsh-users/zsh-autosuggestions/issues/351
 ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(bracketed-paste)
+
+# Reset the prompt, useful after abnormal exit from tmux
+function reset-terminal() {
+  stty sane < /dev/tty
+  tput reset
+  zle redisplay
+}
+zle -N reset-terminal
+bindkey '^Z' reset-terminal
