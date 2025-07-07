@@ -1,3 +1,8 @@
+# Hack for coding agents
+if [[ -n "$npm_config_yes" ]]; then
+  POWERLEVEL9K_INSTANT_PROMPT=off
+fi
+
 # Using antigen to manage zsh plugins
 source ~/.antigen/antigen.zsh
 
