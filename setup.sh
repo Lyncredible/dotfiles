@@ -61,7 +61,7 @@ fi
 
 # Config directory
 if [ ! -d ~/.config ]; then
-  mkdir ~/.configs
+  mkdir ~/.config
 fi
 
 # Karabiner config
