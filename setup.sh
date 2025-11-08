@@ -59,12 +59,19 @@ if [ ! -d ~/.hammerspoon ]; then
   ln -s ~/.dotfiles/.hammerspoon ~/.hammerspoon
 fi
 
+# Config directory
+if [ ! -d ~/.config ]; then
+  ln -s ~/.dotfiles/.config ~/.config
+fi
+
 # Karabiner config
 if [ ! -d ~/.config/karabiner ]; then
-  if [ ! -d ~/.config ]; then
-    mkdir ~/.config
-  fi
   ln -s ~/.dotfiles/karabiner ~/.config/karabiner
+fi
+
+# ghostty config
+if [ ! -d ~/.config/ghostty ]; then
+  ln -s ~/.dotfiles/ghostty ~/.config/ghostty
 fi
 
 # Install antigen

@@ -1,0 +1,9 @@
+theme = Dimmed Monokai
+font-family = MesloLGM Nerd Font
+font-size = 12
+font-thicken = true
+adjust-cell-width = -1
+shell-integration-features = ssh-terminfo
+
+keybind = cmd+arrow_left=previous_tab
+keybind = cmd+arrow_right=next_tab
