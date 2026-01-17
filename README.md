@@ -1,10 +1,15 @@
 ## My dotfiles
-Keeping my dotfiles organized across all devices.
+Multi-platform development environment configuration for macOS, Linux, WSL, and Windows.
 
 ## Features
-- Use [antigen](https://github.com/zsh-users/antigen) to manage zsh plugins
-- Default to [bullet-train](https://github.com/caiogondim/bullet-train.zsh) theme
-- Plugins for completion, auto suggestions, syntax highlighting, and more
+- **Shell**: Zsh with [antigen](https://github.com/zsh-users/antigen) and [Powerlevel10k](https://github.com/romkatv/powerlevel10k) theme
+- **Plugins**: Auto-suggestions, syntax highlighting, completions, git integration
+- **Window Management**: Hammerspoon (macOS) and AutoHotkey (Windows) with unified keybindings
+- **Terminal Emulators**: Ghostty, iTerm2, Terminal.app configurations
+- **Keyboard Remapping**: Karabiner-Elements for RDP/remote desktop workflows
+- **Development Tools**: Git, Vim, Tmux configs with NVM, rbenv, Go, Python support
+- **Auto-Update**: Automatic dotfiles and plugin updates every 24 hours
+- **Non-Destructive**: Preserves local customizations via `~/.zshrc_local`
 
 ## Installation
 Clone in HTTPS mode
