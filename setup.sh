@@ -74,6 +74,11 @@ if [ ! -d ~/.config/ghostty ]; then
   ln -s ~/.dotfiles/ghostty ~/.config/ghostty
 fi
 
+# Claude Code config
+if [ ! -d ~/.claude ]; then
+  ln -s ~/.dotfiles/.claude ~/.claude
+fi
+
 # Install antigen
 ANTIGEN_DIR=$HOME/.antigen
 if [ ! -d "$ANTIGEN_DIR" ]; then

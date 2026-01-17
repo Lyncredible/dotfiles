@@ -27,6 +27,12 @@ This repository contains personal dotfiles for managing development environment 
 ├── karabiner/                 # Karabiner-Elements keyboard remapping
 │   ├── karabiner.json         # RDP/remote desktop key remapping
 │   └── automatic_backups/     # Config version history
+├── .claude/                   # Claude Code AI assistant config
+│   ├── .gitignore             # Exclude runtime dirs (debug/, plans/, todos/, etc.)
+│   ├── settings.json          # Core settings (attribution, telemetry)
+│   ├── CLAUDE.md              # Template for custom instructions
+│   ├── rules/                 # Custom rules directory
+│   └── agents/                # Custom agents directory
 ├── Shell configuration files
 │   ├── .zshrc                 # Entry point (sources main.zshrc + local)
 │   ├── main.zshrc             # Primary zsh config with plugins
@@ -242,6 +248,8 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Lyncredible/dotfiles/mas
 | `.aliases` | Shell shortcuts | Python venv, git shortcuts |
 | `setup.sh` | Installation script | Creates symlinks, installs plugins |
 | `common.sh` | Utility functions | Update checks, timestamps |
+| `.claude/settings.json` | Claude Code settings | Attribution, notifications, telemetry |
+| `.claude/CLAUDE.md` | AI instruction template | Starter for project-specific guidance |
 
 ## Development Environment Support
 
@@ -270,6 +278,32 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Lyncredible/dotfiles/mas
 ### Homebrew (macOS/Linux)
 - Analytics disabled
 - Added to PATH if installed
+
+### Claude Code (AI Assistant)
+
+**Configuration** (`.claude/`):
+- Per-user settings for Claude Code CLI
+- Template for project-specific instructions
+- Custom rules and agents support
+
+**Files:**
+- `settings.json` - Minimal defaults (empty attribution, notifications off, telemetry disabled)
+- `CLAUDE.md` - Starter template for custom instructions
+- `rules/` - Directory for custom rules (empty by default)
+- `agents/` - Directory for custom agents (empty by default)
+
+**Key Features:**
+- Symlinked to `~/.claude` for system-wide availability
+- Template-based approach for project customization
+- Privacy-conscious defaults (no telemetry, no notifications)
+- Empty attribution strings for clean commit messages
+- Plans directory excluded from git (ephemeral artifacts)
+
+**Plan Mode:**
+- Cannot be configured in `settings.json`
+- Must be set per-session via CLI flag: `claude code --plan`
+- Or in-session via command: `/config plan_mode=enabled`
+- Allows read-only analysis and planning without file modifications
 
 ## Common Tasks
 
@@ -318,6 +352,28 @@ antigen update
 **Automatic:**
 - Runs every 24 hours automatically
 - No action needed
+
+### Customizing Claude Code Behavior
+
+**For Global Instructions:**
+1. Edit `~/.claude/CLAUDE.md`
+2. Add instructions that apply across all projects
+3. No reload needed - changes take effect in next session
+
+**For Project-Specific Instructions:**
+1. Create `CLAUDE.md` in project root (not in dotfiles)
+2. Add project-specific context, patterns, requirements
+3. Claude Code automatically reads this file when working in that project
+
+**For Custom Rules or Agents:**
+1. Add files to `~/.claude/rules/` or `~/.claude/agents/`
+2. Follow Claude Code documentation for rule/agent syntax
+3. Remove `.gitkeep` files after adding your own content
+
+**Enabling Plan Mode:**
+- Start Claude Code with: `claude code --plan`
+- Or in-session: `/config plan_mode=enabled`
+- Plan mode allows read-only analysis without file modifications
 
 ## Gotchas & Notes
 
@@ -372,6 +428,21 @@ antigen update
     - `wslsubl` script converts WSL paths to Windows paths
     - Required for WSL → Windows GUI integration
     - Uses `wslpath` utility
+
+11. **Claude Code Plan Mode Configuration**
+    - Plan mode cannot be set in `settings.json`
+    - Must use CLI flag (`--plan`) or in-session command (`/config plan_mode=enabled`)
+    - Plans are stored in `~/.claude/plans/` (excluded from git)
+    - Each plan mode session creates a new markdown file
+    - Plans are machine-specific and should not be synced
+
+12. **Claude Code Configuration Updates**
+    - `~/.claude/` is symlinked to `~/.dotfiles/.claude/`
+    - Runtime directories (debug/, plans/, todos/) coexist with config files
+    - Only portable files (settings.json, CLAUDE.md, rules/, agents/) are tracked by git
+    - Auto-updates will overwrite tracked config files
+    - To customize permanently, edit `~/.dotfiles/.claude/` files directly
+    - Project-specific instructions should go in each project's `CLAUDE.md`, not the dotfiles version
 
 ## Best Practices for AI Agents
 
