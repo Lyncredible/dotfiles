@@ -47,7 +47,7 @@ This repository contains personal dotfiles for managing development environment 
 ├── init.ahk                   # AutoHotkey v2.0 script for Windows
 ├── spec/                      # shellspec BDD tests
 │   ├── spec_helper.sh         # Sources common.sh, custom matchers
-│   └── merge_claude_settings_spec.sh  # Claude settings merge specs
+│   └── common_spec.sh         # Tests for common.sh functions
 ├── .shellspec                 # shellspec config (format, shell)
 ├── Makefile                   # Test runner (make test)
 ├── install.sh                 # Initial clone and setup
@@ -254,7 +254,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Lyncredible/dotfiles/mas
 | `setup.sh` | Installation script | Creates symlinks, installs plugins |
 | `common.sh` | Utility functions | Update checks, settings merge |
 | `Makefile` | Test runner | `make test` |
-| `spec/merge_claude_settings_spec.sh` | Settings merge specs | 4 shellspec examples |
+| `spec/common_spec.sh` | Tests for common.sh | 9 shellspec examples |
 | `.claude/settings.json` | Claude Code settings | Attribution, notifications, telemetry |
 | `.claude/CLAUDE.md` | AI instruction template | Starter for project-specific guidance |
 

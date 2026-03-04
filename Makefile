@@ -4,4 +4,4 @@ test:
 	shellspec
 
 lint:
-	shellcheck common.sh install.sh setup.sh spec/spec_helper.sh spec/merge_claude_settings_spec.sh
+	shellcheck common.sh install.sh setup.sh spec/spec_helper.sh spec/common_spec.sh
