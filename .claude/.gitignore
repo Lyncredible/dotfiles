@@ -1,17 +1,22 @@
 # Runtime and state directories (not portable across machines)
+backups/
 debug/
 file-history/
 ide/
 plans/
+plugins/
 projects/
 session-env/
 shell-snapshots/
+tasks/
 todos/
 
 # Runtime files
 history.jsonl
+stats-cache.json
 *.log
 
 # Local overrides
+settings.json
 settings.local.json
 CLAUDE.local.md

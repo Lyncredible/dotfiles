@@ -67,6 +67,21 @@ fi
 export HOMEBREW_NO_ANALYTICS=1
 export HOMEBREW_NO_ENV_HINTS=1
 
+# Sync Claude Code settings from dist template
+_claude_dist="$HOME/.dotfiles/.claude/settings.json.dist"
+_claude_settings="$HOME/.dotfiles/.claude/settings.json"
+if [[ -f "$_claude_dist" ]]; then
+  if [[ ! -f "$_claude_settings" ]]; then
+    cp "$_claude_dist" "$_claude_settings"
+  elif command -v jq > /dev/null; then
+    _merged=$(jq -s '.[0] * .[1]' "$_claude_settings" "$_claude_dist" 2>/dev/null)
+    if [[ $? -eq 0 && -n "$_merged" ]]; then
+      printf '%s\n' "$_merged" > "$_claude_settings"
+    fi
+  fi
+fi
+unset _claude_dist _claude_settings _merged
+
 # Personalized clone when multiple github keys are present
 function lynclone() {
   GIT_URL=$1
