@@ -45,8 +45,10 @@ This repository contains personal dotfiles for managing development environment 
 │   ├── .tmux.conf             # Tmux configuration
 │   └── Pro.terminal           # Terminal.app profile
 ├── init.ahk                   # AutoHotkey v2.0 script for Windows
-├── tests/                     # Automated tests
-│   └── test_claude_settings_merge.sh  # Claude settings merge tests
+├── spec/                      # shellspec BDD tests
+│   ├── spec_helper.sh         # Sources common.sh, custom matchers
+│   └── merge_claude_settings_spec.sh  # Claude settings merge specs
+├── .shellspec                 # shellspec config (format, shell)
 ├── Makefile                   # Test runner (make test)
 ├── install.sh                 # Initial clone and setup
 ├── setup.sh                   # Symlink creation and plugin install
@@ -252,7 +254,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Lyncredible/dotfiles/mas
 | `setup.sh` | Installation script | Creates symlinks, installs plugins |
 | `common.sh` | Utility functions | Update checks, settings merge |
 | `Makefile` | Test runner | `make test` |
-| `tests/test_claude_settings_merge.sh` | Settings merge tests | 4 scenarios |
+| `spec/merge_claude_settings_spec.sh` | Settings merge specs | 4 shellspec examples |
 | `.claude/settings.json` | Claude Code settings | Attribution, notifications, telemetry |
 | `.claude/CLAUDE.md` | AI instruction template | Starter for project-specific guidance |
 
@@ -318,7 +320,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Lyncredible/dotfiles/mas
 make test
 ```
 
-Runs all test scripts under `tests/`. Tests use temp directories for isolation and exit non-zero on failure.
+Runs [shellspec](https://shellspec.info/) BDD specs under `spec/`. Requires `brew install shellspec`.
 
 ### Adding New Dotfiles
 

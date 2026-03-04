@@ -23,6 +23,7 @@ sh -c "$(curl -sL --proto-redir -all,https https://raw.githubusercontent.com/Lyn
 ```
 
 ## Testing
+Requires [shellspec](https://shellspec.info/) (`brew install shellspec`).
 ```
 make test
 ```
