@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2034,SC2059
 
 # Use colors, but only if connected to a terminal, and that terminal
 # supports them.
@@ -40,8 +41,8 @@ if [ ! -e ~/.p10k.zsh ]; then
 fi
 
 # git config
-if [ ! $(git config --global --get-all include.path | grep '~/.dotfiles/.gitconfig') ]; then
-  git config --global include.path '~/.dotfiles/.gitconfig'
+if ! git config --global --get-all include.path | grep -q "$HOME/.dotfiles/.gitconfig"; then
+  git config --global include.path "$HOME/.dotfiles/.gitconfig"
 fi
 
 # .vimrc
@@ -82,12 +83,12 @@ fi
 # Install antigen
 ANTIGEN_DIR=$HOME/.antigen
 if [ ! -d "$ANTIGEN_DIR" ]; then
-  printf "${BLUE}Installing antigen...${NORMAL}\n"
+  echo "${BLUE}Installing antigen...${NORMAL}"
 
-  git clone https://github.com/zsh-users/antigen.git $ANTIGEN_DIR
+  git clone https://github.com/zsh-users/antigen.git "$ANTIGEN_DIR"
 fi
 unset ANTIGEN_DIR
 
 if [ ! "$(which zsh)" = "$SHELL" ]; then
-  chsh -s $(which zsh)
+  chsh -s "$(which zsh)"
 fi

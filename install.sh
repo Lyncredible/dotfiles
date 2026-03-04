@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2034,SC2059
 
 # Use colors, but only if connected to a terminal, and that terminal
 # supports them.
@@ -28,9 +29,9 @@ set -e
 
 
 # Make sure zsh is installed
-CHECK_ZSH_INSTALLED=$(grep /zsh$ /etc/shells | wc -l)
-if [ ! $CHECK_ZSH_INSTALLED -ge 1 ]; then
-  printf "${YELLOW}Zsh is not installed!${NORMAL} Please install zsh first!\n"
+CHECK_ZSH_INSTALLED=$(grep -c /zsh$ /etc/shells)
+if [ ! "$CHECK_ZSH_INSTALLED" -ge 1 ]; then
+  echo "${YELLOW}Zsh is not installed!${NORMAL} Please install zsh first!"
   exit 1
 fi
 unset CHECK_ZSH_INSTALLED
@@ -58,8 +59,10 @@ else
 fi
 unset CLONE_MODE
 
+# shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
     echo "${RED}Failed to clone dotfiles repo.${NORMAL}"
+    exit 1
 fi
 
 ~/.dotfiles/setup.sh

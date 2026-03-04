@@ -1,4 +1,5 @@
-# shellcheck disable=SC1091,SC2034
+#!/bin/zsh
+# shellcheck shell=bash disable=SC1091,SC2034
 
 spec_helper_configure() {
   . "$SHELLSPEC_PROJECT_ROOT/common.sh"
