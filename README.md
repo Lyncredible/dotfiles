@@ -21,3 +21,8 @@ Clone in SSH mode
 ```
 sh -c "$(curl -sL --proto-redir -all,https https://raw.githubusercontent.com/Lyncredible/dotfiles/master/install.sh)" - -s
 ```
+
+## Testing
+```
+make test
+```

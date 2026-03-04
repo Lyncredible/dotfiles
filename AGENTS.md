@@ -45,6 +45,9 @@ This repository contains personal dotfiles for managing development environment 
 │   ├── .tmux.conf             # Tmux configuration
 │   └── Pro.terminal           # Terminal.app profile
 ├── init.ahk                   # AutoHotkey v2.0 script for Windows
+├── tests/                     # Automated tests
+│   └── test_claude_settings_merge.sh  # Claude settings merge tests
+├── Makefile                   # Test runner (make test)
 ├── install.sh                 # Initial clone and setup
 ├── setup.sh                   # Symlink creation and plugin install
 └── README.md                  # Installation instructions
@@ -247,7 +250,9 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Lyncredible/dotfiles/mas
 | `.gitconfig` | Git global settings | Rerere, rebase, user info |
 | `.aliases` | Shell shortcuts | Python venv, git shortcuts |
 | `setup.sh` | Installation script | Creates symlinks, installs plugins |
-| `common.sh` | Utility functions | Update checks, timestamps |
+| `common.sh` | Utility functions | Update checks, settings merge |
+| `Makefile` | Test runner | `make test` |
+| `tests/test_claude_settings_merge.sh` | Settings merge tests | 4 scenarios |
 | `.claude/settings.json` | Claude Code settings | Attribution, notifications, telemetry |
 | `.claude/CLAUDE.md` | AI instruction template | Starter for project-specific guidance |
 
@@ -306,6 +311,14 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Lyncredible/dotfiles/mas
 - Allows read-only analysis and planning without file modifications
 
 ## Common Tasks
+
+### Running Tests
+
+```bash
+make test
+```
+
+Runs all test scripts under `tests/`. Tests use temp directories for isolation and exit non-zero on failure.
 
 ### Adding New Dotfiles
 
