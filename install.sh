@@ -1,68 +1,92 @@
 #!/bin/sh
 # shellcheck disable=SC2034,SC2059
 
-# Use colors, but only if connected to a terminal, and that terminal
-# supports them.
-if which tput >/dev/null 2>&1; then
-  ncolors=$(tput colors)
-fi
-
-if [ -t 1 ] && [ -n "$ncolors" ] && [ "$ncolors" -ge 8 ]; then
-  RED="$(tput setaf 1)"
-  GREEN="$(tput setaf 2)"
-  YELLOW="$(tput setaf 3)"
-  BLUE="$(tput setaf 4)"
-  BOLD="$(tput bold)"
-  NORMAL="$(tput sgr0)"
-else
-  RED=""
-  GREEN=""
-  YELLOW=""
-  BLUE=""
-  BOLD=""
-  NORMAL=""
-fi
-
-# Only enable exit-on-error after the non-critical colorization stuff,
-# which may fail on systems lacking tput or terminfo
 set -e
 
+init_colors() {
+  TPUT_BIN="${TPUT_BIN:-tput}"
+  if command -v "$TPUT_BIN" >/dev/null 2>&1; then
+    ncolors=$("$TPUT_BIN" colors 2>/dev/null || true)
+  fi
 
-# Make sure zsh is installed
-CHECK_ZSH_INSTALLED=$(grep -c /zsh$ /etc/shells)
-if [ ! "$CHECK_ZSH_INSTALLED" -ge 1 ]; then
-  echo "${YELLOW}Zsh is not installed!${NORMAL} Please install zsh first!"
-  exit 1
-fi
-unset CHECK_ZSH_INSTALLED
-
-# Check if git is installed
-hash git >/dev/null 2>&1 || {
-  echo "${YELLOW}Error: git is not installed${NORMAL}"
-  exit 1
+  if [ -t 1 ] && [ -n "${ncolors:-}" ] && [ "${ncolors:-0}" -ge 8 ]; then
+    RED=$("$TPUT_BIN" setaf 1)
+    GREEN=$("$TPUT_BIN" setaf 2)
+    YELLOW=$("$TPUT_BIN" setaf 3)
+    BLUE=$("$TPUT_BIN" setaf 4)
+    BOLD=$("$TPUT_BIN" bold)
+    NORMAL=$("$TPUT_BIN" sgr0)
+  else
+    RED=""
+    GREEN=""
+    YELLOW=""
+    BLUE=""
+    BOLD=""
+    NORMAL=""
+  fi
 }
 
-# Default to https and use ssh if -s argument is present
-CLONE_MODE="HTTPS"
-while [ $# -gt 0 ]
-do
-  if [ "$1" = "-s" ]; then
-    CLONE_MODE="SSH"
+set_defaults() {
+  DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.dotfiles}"
+  SHELLS_FILE="${SHELLS_FILE:-/etc/shells}"
+  SETUP_SCRIPT="${SETUP_SCRIPT:-$DOTFILES_DIR/setup.sh}"
+  GIT_BIN="${GIT_BIN:-git}"
+  GREP_BIN="${GREP_BIN:-grep}"
+}
+
+check_zsh_installed() {
+  count=$("$GREP_BIN" -c /zsh$ "$SHELLS_FILE" 2>/dev/null || true)
+  if [ ! "${count:-0}" -ge 1 ]; then
+    echo "${YELLOW}Zsh is not installed!${NORMAL} Please install zsh first!"
+    return 1
   fi
-  shift
-done
+}
 
-if [ "$CLONE_MODE" = "SSH" ]; then
-  git clone git@github.com:Lyncredible/dotfiles.git ~/.dotfiles
-else
-  git clone https://github.com/Lyncredible/dotfiles.git ~/.dotfiles
-fi
-unset CLONE_MODE
+check_git_installed() {
+  if ! command -v "$GIT_BIN" >/dev/null 2>&1; then
+    echo "${YELLOW}Error: git is not installed${NORMAL}"
+    return 1
+  fi
+}
 
-# shellcheck disable=SC2181
-if [ $? -ne 0 ]; then
+parse_clone_mode() {
+  clone_mode="HTTPS"
+  while [ $# -gt 0 ]; do
+    if [ "$1" = "-s" ]; then
+      clone_mode="SSH"
+    fi
+    shift
+  done
+}
+
+clone_dotfiles() {
+  if [ "$clone_mode" = "SSH" ]; then
+    clone_url="git@github.com:Lyncredible/dotfiles.git"
+  else
+    clone_url="https://github.com/Lyncredible/dotfiles.git"
+  fi
+
+  if ! "$GIT_BIN" clone "$clone_url" "$DOTFILES_DIR"; then
     echo "${RED}Failed to clone dotfiles repo.${NORMAL}"
-    exit 1
-fi
+    return 1
+  fi
+}
 
-~/.dotfiles/setup.sh
+run_setup_script() {
+  if ! "$SETUP_SCRIPT"; then
+    echo "${RED}Failed to run setup script.${NORMAL}"
+    return 1
+  fi
+}
+
+main() {
+  init_colors
+  set_defaults
+  check_zsh_installed
+  check_git_installed
+  parse_clone_mode "$@"
+  clone_dotfiles
+  run_setup_script
+}
+
+main "$@"

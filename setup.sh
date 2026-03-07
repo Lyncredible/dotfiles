@@ -1,94 +1,105 @@
 #!/bin/sh
 # shellcheck disable=SC2034,SC2059
 
-# Use colors, but only if connected to a terminal, and that terminal
-# supports them.
-if which tput >/dev/null 2>&1; then
-  ncolors=$(tput colors)
-fi
-
-if [ -t 1 ] && [ -n "$ncolors" ] && [ "$ncolors" -ge 8 ]; then
-  RED="$(tput setaf 1)"
-  GREEN="$(tput setaf 2)"
-  YELLOW="$(tput setaf 3)"
-  BLUE="$(tput setaf 4)"
-  BOLD="$(tput bold)"
-  NORMAL="$(tput sgr0)"
-else
-  RED=""
-  GREEN=""
-  YELLOW=""
-  BLUE=""
-  BOLD=""
-  NORMAL=""
-fi
-
-# Only enable exit-on-error after the non-critical colorization stuff,
-# which may fail on systems lacking tput or terminfo
 set -e
 
-# Create zshrc which simplies sources the one in repo.
-# Do not use a symlink because it allows customization.
-echo "source ~/.dotfiles/.zshrc" > ~/.zshrc
-echo "source ~/.zshrc_local" >> ~/.zshrc
-if [ ! -e ~/.zshrc_local ]; then
-  touch ~/.zshrc_local
-fi
+init_colors() {
+  TPUT_BIN="${TPUT_BIN:-tput}"
+  if command -v "$TPUT_BIN" >/dev/null 2>&1; then
+    ncolors=$("$TPUT_BIN" colors 2>/dev/null || true)
+  fi
 
-# Powerlevel10k
-if [ ! -e ~/.p10k.zsh ]; then
-  ln -s ~/.dotfiles/.p10k.zsh ~/.p10k.zsh
-fi
+  if [ -t 1 ] && [ -n "${ncolors:-}" ] && [ "${ncolors:-0}" -ge 8 ]; then
+    RED=$("$TPUT_BIN" setaf 1)
+    GREEN=$("$TPUT_BIN" setaf 2)
+    YELLOW=$("$TPUT_BIN" setaf 3)
+    BLUE=$("$TPUT_BIN" setaf 4)
+    BOLD=$("$TPUT_BIN" bold)
+    NORMAL=$("$TPUT_BIN" sgr0)
+  else
+    RED=""
+    GREEN=""
+    YELLOW=""
+    BLUE=""
+    BOLD=""
+    NORMAL=""
+  fi
+}
 
-# git config
-if ! git config --global --get-all include.path | grep -q "$HOME/.dotfiles/.gitconfig"; then
-  git config --global include.path "$HOME/.dotfiles/.gitconfig"
-fi
+set_defaults() {
+  DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.dotfiles}"
+  CONFIG_DIR="${CONFIG_DIR:-$HOME/.config}"
+  ANTIGEN_DIR="${ANTIGEN_DIR:-$HOME/.antigen}"
+  GIT_BIN="${GIT_BIN:-git}"
+  GREP_BIN="${GREP_BIN:-grep}"
+  ZSH_BIN="${ZSH_BIN:-zsh}"
+  CHSH_BIN="${CHSH_BIN:-chsh}"
+}
 
-# .vimrc
-if [ ! -e ~/.vimrc ]; then
-  ln -s ~/.dotfiles/.vimrc ~/.vimrc
-fi
+write_zsh_wrapper() {
+  echo "source ~/.dotfiles/.zshrc" > "$HOME/.zshrc"
+  echo "source ~/.zshrc_local" >> "$HOME/.zshrc"
+  if [ ! -e "$HOME/.zshrc_local" ]; then
+    touch "$HOME/.zshrc_local"
+  fi
+}
 
-# .tmux.conf
-if [ ! -e ~/.tmux.conf ]; then
-  ln -s ~/.dotfiles/.tmux.conf ~/.tmux.conf
-fi
+ensure_symlink_if_absent() {
+  target="$1"
+  link_path="$2"
+  if [ ! -e "$link_path" ]; then
+    ln -s "$target" "$link_path"
+  fi
+}
 
-# Hammerspoon config
-if [ ! -d ~/.hammerspoon ]; then
-  ln -s ~/.dotfiles/.hammerspoon ~/.hammerspoon
-fi
+ensure_dir() {
+  dir_path="$1"
+  if [ ! -d "$dir_path" ]; then
+    mkdir "$dir_path"
+  fi
+}
 
-# Config directory
-if [ ! -d ~/.config ]; then
-  mkdir ~/.config
-fi
+ensure_git_include() {
+  include_path="$DOTFILES_DIR/.gitconfig"
+  if ! "$GIT_BIN" config --global --get-all include.path \
+    | "$GREP_BIN" -q "$include_path"; then
+    "$GIT_BIN" config --global include.path "$include_path"
+  fi
+}
 
-# Karabiner config
-if [ ! -d ~/.config/karabiner ]; then
-  ln -s ~/.dotfiles/karabiner ~/.config/karabiner
-fi
+ensure_antigen() {
+  if [ ! -d "$ANTIGEN_DIR" ]; then
+    echo "${BLUE}Installing antigen...${NORMAL}"
+    "$GIT_BIN" clone https://github.com/zsh-users/antigen.git "$ANTIGEN_DIR"
+  fi
+}
 
-# ghostty config
-if [ ! -d ~/.config/ghostty ]; then
-  ln -s ~/.dotfiles/ghostty ~/.config/ghostty
-fi
+resolve_zsh_path() {
+  command -v "$ZSH_BIN"
+}
 
-# Claude Code config
-if [ ! -d ~/.claude ]; then
-  ln -s ~/.dotfiles/.claude ~/.claude
-fi
+ensure_login_shell() {
+  zsh_path=$(resolve_zsh_path)
+  if [ "$zsh_path" != "$SHELL" ]; then
+    "$CHSH_BIN" -s "$zsh_path"
+  fi
+}
 
-# Install antigen
-ANTIGEN_DIR=$HOME/.antigen
-if [ ! -d "$ANTIGEN_DIR" ]; then
-  echo "${BLUE}Installing antigen...${NORMAL}"
+main() {
+  init_colors
+  set_defaults
+  write_zsh_wrapper
+  ensure_symlink_if_absent "$DOTFILES_DIR/.p10k.zsh" "$HOME/.p10k.zsh"
+  ensure_git_include
+  ensure_symlink_if_absent "$DOTFILES_DIR/.vimrc" "$HOME/.vimrc"
+  ensure_symlink_if_absent "$DOTFILES_DIR/.tmux.conf" "$HOME/.tmux.conf"
+  ensure_symlink_if_absent "$DOTFILES_DIR/.hammerspoon" "$HOME/.hammerspoon"
+  ensure_dir "$CONFIG_DIR"
+  ensure_symlink_if_absent "$DOTFILES_DIR/karabiner" "$CONFIG_DIR/karabiner"
+  ensure_symlink_if_absent "$DOTFILES_DIR/ghostty" "$CONFIG_DIR/ghostty"
+  ensure_symlink_if_absent "$DOTFILES_DIR/.claude" "$HOME/.claude"
+  ensure_antigen
+  ensure_login_shell
+}
 
-  git clone https://github.com/zsh-users/antigen.git "$ANTIGEN_DIR"
-fi
-unset ANTIGEN_DIR
-
-if [ ! "$(which zsh)" = "$SHELL" ]; then
-  chsh -s "$(which zsh)"
-fi
+main "$@"
