@@ -179,7 +179,8 @@ source ~/.dotfiles/main.zshrc
 1. Every 24 hours (tracked via `~/.dotfiles_last_update`)
 2. Runs `git fetch && git rebase origin/master`
 3. On success, triggers `antigen update`
-4. Recompiles zsh config to `.zshrc.zwc` for performance
+4. Antigen update runs on successful periodic checks even when dotfiles `HEAD` does not change
+5. Recompiles zsh config to `.zshrc.zwc` for performance
 
 **Implementation:**
 - `check_up_to_date()` in `common.sh` checks timestamp

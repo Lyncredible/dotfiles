@@ -9,6 +9,7 @@ fi
 source ~/.dotfiles/common.sh
 
 update_repo() {
+  UPDATE_BEFORE_REF=$(git rev-parse --verify HEAD 2>/dev/null)
   git fetch >/dev/null
   if [ $? -ne 0 ]; then
     printf "Warning: Failed to fetch dotfiles repo.\n"
@@ -20,6 +21,8 @@ update_repo() {
     printf "Warning: Failed to rebase dotfiles repo.\n"
     return 1
   fi
+
+  UPDATE_AFTER_REF=$(git rev-parse --verify HEAD 2>/dev/null)
   
   return 0
 }
@@ -34,10 +37,15 @@ if ! check_up_to_date $UPDATE_TIMESTAMP_FILE; then
   if [ $? -eq 0 ]; then
     write_update_timestamp $UPDATE_TIMESTAMP_FILE
     DOTFILES_UPDATED=1
+    if [ "$UPDATE_BEFORE_REF" != "$UPDATE_AFTER_REF" ]; then
+      source ~/.dotfiles/common.sh
+    fi
   fi
   popd >/dev/null
 fi
 unset UPDATE_TIMESTAMP_FILE
+unset UPDATE_BEFORE_REF
+unset UPDATE_AFTER_REF
 
 # Source after update - this has to be another file
 source ~/.dotfiles/main.zshrc

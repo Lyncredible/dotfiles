@@ -96,7 +96,7 @@ source ~/.dotfiles/.aliases
 # Then, source plugins and add commands to $PATH
 antigen apply
 
-# Update antigen whenever the dotfiles repo is updated
+# Update antigen whenever dotfiles auto-update succeeds (periodic)
 if [ $DOTFILES_UPDATED -eq 1 ]; then
   printf "Updating antigen...\n"
   antigen selfupdate

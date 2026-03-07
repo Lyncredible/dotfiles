@@ -1,5 +1,5 @@
 #!/bin/sh
-# shellcheck shell=bash disable=SC2016,SC2329
+# shellcheck shell=bash disable=SC2016,SC2317,SC2329
 
 recent_epoch() {
   local before="$1"
