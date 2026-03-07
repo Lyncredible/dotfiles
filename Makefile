@@ -4,4 +4,4 @@ test:
 	shellspec
 
 lint:
-	shellcheck common.sh install.sh setup.sh spec/spec_helper.sh spec/common_spec.sh spec/zshrc_update_spec.sh
+	shellcheck common.sh install.sh setup.sh spec/spec_helper.sh spec/common_spec.sh spec/zshrc_update_spec.sh spec/main_zshrc_spec.sh

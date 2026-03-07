@@ -119,5 +119,28 @@ Describe '.zshrc auto-update flow'
     The contents of file "$TEST_HOME/.dotfiles_updated_seen" should equal '0'
     The contents of file "$TEST_HOME/.common_source_count" should equal '1'
     The contents of file "$TEST_HOME/.dotfiles-update" should equal "$old_epoch"
+    The contents of file "$TEST_HOME/.git_calls" should not include 'rebase origin/master'
+  End
+
+  It 'does not refresh timestamp or mark updated when rebase fails'
+    old_epoch=$(( $(date +'%s') - 90000 ))
+    echo "$old_epoch" > "$TEST_HOME/.dotfiles-update"
+    When run env MOCK_GIT_REBASE_FAIL=1 HOME="$TEST_HOME" PATH="$TEST_HOME/bin:$PATH" zsh -c 'source "$HOME/.dotfiles/.zshrc"'
+    The status should be success
+    The output should include 'Updating dotfiles...'
+    The output should include 'Warning: Failed to rebase dotfiles repo.'
+    The contents of file "$TEST_HOME/.dotfiles_updated_seen" should equal '0'
+    The contents of file "$TEST_HOME/.common_source_count" should equal '1'
+    The contents of file "$TEST_HOME/.dotfiles-update" should equal "$old_epoch"
+  End
+
+  It 'updates dotfiles when timestamp file is missing'
+    rm -f "$TEST_HOME/.dotfiles-update"
+    When run env MOCK_GIT_BEFORE_REF=same-ref MOCK_GIT_AFTER_REF=same-ref HOME="$TEST_HOME" PATH="$TEST_HOME/bin:$PATH" zsh -c 'source "$HOME/.dotfiles/.zshrc"'
+    The status should be success
+    The output should include 'Updating dotfiles...'
+    The contents of file "$TEST_HOME/.dotfiles_updated_seen" should equal '1'
+    The file "$TEST_HOME/.dotfiles-update" should be exist
+    The contents of file "$TEST_HOME/.common_source_count" should equal '1'
   End
 End
