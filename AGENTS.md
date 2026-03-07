@@ -261,9 +261,9 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Lyncredible/dotfiles/mas
 ## Development Environment Support
 
 ### Node.js
-- **NVM** (Node Version Manager)
-- Loads in `main.zshrc` if installed
-- `~/.nvm/nvm.sh` sourced automatically
+- **nodenv** (Node environment manager)
+- Initializes in `main.zshrc` if `~/.nodenv` exists
+- Adds `~/.nodenv/bin` to PATH
 
 ### Ruby
 - **rbenv** (Ruby environment manager)

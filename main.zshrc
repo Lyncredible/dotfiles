@@ -1,8 +1,3 @@
-# Hack for coding agents
-if [[ -n "$npm_config_yes" ]]; then
-  POWERLEVEL9K_INSTANT_PROMPT=off
-fi
-
 # Using antigen to manage zsh plugins
 source ~/.antigen/antigen.zsh
 
@@ -41,12 +36,10 @@ fi
 export PATH="$HOME/bin:$HOME/.dotfiles/bin:$HOME/.local/bin:/usr/local/bin:/usr/local/sbin:/opt/homebrew/bin:$PATH"
 
 # Node
-NVM_HOME=$HOME/.nvm
-if [ -d "$NVM_HOME" ]; then
-  . "$NVM_HOME/nvm.sh"
-  [ -s "$NVM_HOME/bash_completion" ] && . "$NVM_HOME/bash_completion"
+if [ -d "$HOME/.nodenv" ]; then
+  export PATH="$HOME/.nodenv/bin:$PATH"
+  eval "$(nodenv init -)"
 fi
-unset NVM_HOME
 
 # Golang
 export GOPATH=~/go
