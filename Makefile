@@ -5,7 +5,9 @@ SHELLCHECK_FILES = \
 	install.sh \
 	setup.sh \
 	spec/common_spec.sh \
+	spec/install_spec.sh \
 	spec/main_zshrc_spec.sh \
+	spec/setup_spec.sh \
 	spec/spec_helper.sh \
 	spec/zshrc_update_spec.sh
 
