@@ -4,8 +4,21 @@
 setup() {
   TEST_DIR=$(mktemp -d)
   TEST_HOME="$TEST_DIR/home"
+  TEST_PATH="$TEST_HOME/bin:/usr/bin:/bin"
   ZSH_BIN=$(command -v zsh)
-  mkdir -p "$TEST_HOME/.dotfiles" "$TEST_HOME/.dotfiles/.claude" "$TEST_HOME/.antigen" "$TEST_HOME/bin"
+  unset \
+    SSH_CONNECTION \
+    MOCK_WSL \
+    MOCK_SSH_AUTH_SOCK \
+    TMUX \
+    TEST_RUN_DOTFILES_UPDATED \
+    TEST_RUN_NO_UV \
+    TEST_RUN_PATH
+  mkdir -p \
+    "$TEST_HOME/.dotfiles/.claude" \
+    "$TEST_HOME/.antigen" \
+    "$TEST_HOME/bin" \
+    "$TEST_HOME/bin-no-fzf"
 
   cp "$SHELLSPEC_PROJECT_ROOT/main.zshrc" "$TEST_HOME/.dotfiles/main.zshrc"
   cp "$SHELLSPEC_PROJECT_ROOT/common.sh" "$TEST_HOME/.dotfiles/common.sh"
@@ -19,11 +32,18 @@ EOF
 EOF
 
   cat > "$TEST_HOME/.dotfiles/.claude/settings.json.dist" <<'EOF'
-{ "attribution": { "commit": "", "pr": "" }, "model": "claude-opus-4-6" }
+{
+  "attribution": { "commit": "", "pr": "" },
+  "model": "claude-opus-4-6"
+}
 EOF
 
   cat > "$TEST_HOME/.dotfiles/.claude/settings.json" <<'EOF'
-{ "attribution": { "commit": "", "pr": "" }, "model": "claude-opus-4-6", "enabledPlugins": ["foo"] }
+{
+  "attribution": { "commit": "", "pr": "" },
+  "model": "claude-opus-4-6",
+  "enabledPlugins": ["foo"]
+}
 EOF
 
   cat > "$TEST_HOME/.antigen/antigen.zsh" <<'EOF'
@@ -59,6 +79,18 @@ fi
 exec /usr/bin/grep "$@"
 EOF
   chmod +x "$TEST_HOME/bin/grep"
+
+  cat > "$TEST_HOME/bin/fzf" <<'EOF'
+#!/bin/sh
+exit 0
+EOF
+  chmod +x "$TEST_HOME/bin/fzf"
+
+  cat > "$TEST_HOME/bin-no-fzf/grep" <<'EOF'
+#!/bin/sh
+exec /usr/bin/grep "$@"
+EOF
+  chmod +x "$TEST_HOME/bin-no-fzf/grep"
 }
 
 cleanup() {
@@ -66,7 +98,62 @@ cleanup() {
 }
 
 run_main() {
-  HOME="$TEST_HOME" PATH="$TEST_HOME/bin:/usr/bin:/bin" DOTFILES_UPDATED=0 NO_UV=true "$ZSH_BIN" -c 'source "$HOME/.dotfiles/common.sh"; source "$HOME/.dotfiles/main.zshrc"'
+  local run_path
+  local run_status
+  run_path="${TEST_RUN_PATH:-$TEST_PATH}"
+  HOME="$TEST_HOME" \
+  PATH="$run_path" \
+  DOTFILES_UPDATED="${TEST_RUN_DOTFILES_UPDATED:-0}" \
+  NO_UV="${TEST_RUN_NO_UV:-true}" \
+  SSH_CONNECTION="${SSH_CONNECTION:-}" \
+  MOCK_WSL="${MOCK_WSL:-}" \
+  MOCK_SSH_AUTH_SOCK="${MOCK_SSH_AUTH_SOCK:-}" \
+  TMUX="${TMUX:-}" \
+  "$ZSH_BIN" -c '
+    hash -r
+    source "$HOME/.dotfiles/common.sh"
+    source "$HOME/.dotfiles/main.zshrc"
+  '
+  run_status=$?
+  unset \
+    SSH_CONNECTION \
+    MOCK_WSL \
+    MOCK_SSH_AUTH_SOCK \
+    TMUX \
+    TEST_RUN_DOTFILES_UPDATED \
+    TEST_RUN_NO_UV \
+    TEST_RUN_PATH
+  return "$run_status"
+}
+
+run_main_eval() {
+  local run_path
+  local run_status
+  run_path="${TEST_RUN_PATH:-$TEST_PATH}"
+  HOME="$TEST_HOME" \
+  PATH="$run_path" \
+  DOTFILES_UPDATED="${TEST_RUN_DOTFILES_UPDATED:-0}" \
+  NO_UV="${TEST_RUN_NO_UV:-true}" \
+  SSH_CONNECTION="${SSH_CONNECTION:-}" \
+  MOCK_WSL="${MOCK_WSL:-}" \
+  MOCK_SSH_AUTH_SOCK="${MOCK_SSH_AUTH_SOCK:-}" \
+  TMUX="${TMUX:-}" \
+  "$ZSH_BIN" -c "
+    hash -r
+    source \"\$HOME/.dotfiles/common.sh\"
+    source \"\$HOME/.dotfiles/main.zshrc\"
+    $1
+  "
+  run_status=$?
+  unset \
+    SSH_CONNECTION \
+    MOCK_WSL \
+    MOCK_SSH_AUTH_SOCK \
+    TMUX \
+    TEST_RUN_DOTFILES_UPDATED \
+    TEST_RUN_NO_UV \
+    TEST_RUN_PATH
+  return "$run_status"
 }
 
 Describe 'main.zshrc startup behavior'
@@ -74,19 +161,21 @@ Describe 'main.zshrc startup behavior'
   After 'cleanup'
 
   It 'sets EDITOR to vim over SSH'
-    When run env HOME="$TEST_HOME" PATH="$TEST_HOME/bin:/usr/bin:/bin" DOTFILES_UPDATED=0 NO_UV=true SSH_CONNECTION=1 "$ZSH_BIN" -c 'source "$HOME/.dotfiles/common.sh"; source "$HOME/.dotfiles/main.zshrc"; print -r -- "$EDITOR"'
+    SSH_CONNECTION=1
+    When run run_main_eval 'print -r -- "$EDITOR"'
     The status should be success
     The output should equal 'vim'
   End
 
   It 'sets EDITOR to wslsubl when WSL is detected'
-    When run env HOME="$TEST_HOME" PATH="$TEST_HOME/bin:/usr/bin:/bin" DOTFILES_UPDATED=0 NO_UV=true MOCK_WSL=1 "$ZSH_BIN" -c 'source "$HOME/.dotfiles/common.sh"; source "$HOME/.dotfiles/main.zshrc"; print -r -- "$EDITOR"'
+    MOCK_WSL=1
+    When run run_main_eval 'print -r -- "$EDITOR"'
     The status should be success
     The output should equal 'wslsubl -n -w'
   End
 
   It 'sets EDITOR to subl by default'
-    When run env HOME="$TEST_HOME" PATH="$TEST_HOME/bin:/usr/bin:/bin" DOTFILES_UPDATED=0 NO_UV=true "$ZSH_BIN" -c 'source "$HOME/.dotfiles/common.sh"; source "$HOME/.dotfiles/main.zshrc"; print -r -- "$EDITOR"'
+    When run run_main_eval 'print -r -- "$EDITOR"'
     The status should be success
     The output should equal 'subl -n -w'
   End
@@ -96,11 +185,15 @@ Describe 'main.zshrc startup behavior'
     When run run_main
     The status should be success
     The file "$TEST_HOME/.dotfiles/.claude/settings.json" should be exist
-    Assert json_value_should_eq "$TEST_HOME/.dotfiles/.claude/settings.json" '.model' "claude-opus-4-6"
+    Assert json_value_should_eq \
+      "$TEST_HOME/.dotfiles/.claude/settings.json" \
+      '.model' \
+      "claude-opus-4-6"
   End
 
   It 'runs antigen update commands when DOTFILES_UPDATED=1'
-    When run env HOME="$TEST_HOME" PATH="$TEST_HOME/bin:/usr/bin:/bin" DOTFILES_UPDATED=1 NO_UV=true "$ZSH_BIN" -c 'source "$HOME/.dotfiles/common.sh"; source "$HOME/.dotfiles/main.zshrc"'
+    TEST_RUN_DOTFILES_UPDATED=1
+    When run run_main
     The status should be success
     The output should include 'Updating antigen...'
     The contents of file "$TEST_HOME/.antigen_calls" should include 'selfupdate'
@@ -115,47 +208,73 @@ Describe 'main.zshrc startup behavior'
   End
 
   It 'registers _update_ssh_agent in precmd_functions when TMUX is set'
-    When run env HOME="$TEST_HOME" PATH="$TEST_HOME/bin:/usr/bin:/bin" DOTFILES_UPDATED=0 NO_UV=true TMUX=1 "$ZSH_BIN" -c 'source "$HOME/.dotfiles/common.sh"; source "$HOME/.dotfiles/main.zshrc"; print -r -- ${precmd_functions[@]}'
+    TMUX=1
+    When run run_main_eval 'print -r -- "${precmd_functions[*]}"'
     The status should be success
     The output should include '_update_ssh_agent'
   End
 
   It 'does not register _update_ssh_agent in precmd_functions without TMUX'
-    When run env HOME="$TEST_HOME" PATH="$TEST_HOME/bin:/usr/bin:/bin" DOTFILES_UPDATED=0 NO_UV=true "$ZSH_BIN" -c 'source "$HOME/.dotfiles/common.sh"; source "$HOME/.dotfiles/main.zshrc"; print -r -- "${precmd_functions[*]}"'
+    When run run_main_eval 'print -r -- "${precmd_functions[*]}"'
     The status should be success
     The output should not include '_update_ssh_agent'
   End
 
   It 'updates SSH_AUTH_SOCK from tmux environment'
-    When run env HOME="$TEST_HOME" PATH="$TEST_HOME/bin:/usr/bin:/bin" DOTFILES_UPDATED=0 NO_UV=true MOCK_SSH_AUTH_SOCK=/tmp/from_tmux.sock "$ZSH_BIN" -c 'source "$HOME/.dotfiles/common.sh"; source "$HOME/.dotfiles/main.zshrc"; _update_ssh_agent; print -r -- "$SSH_AUTH_SOCK"'
+    MOCK_SSH_AUTH_SOCK=/tmp/from_tmux.sock
+    When run run_main_eval '_update_ssh_agent; print -r -- "$SSH_AUTH_SOCK"'
     The status should be success
     The output should equal '/tmp/from_tmux.sock'
   End
 
   It 'rewrites GitHub host and configures local git identity in lynclone'
-    When run env HOME="$TEST_HOME" PATH="$TEST_HOME/bin:/usr/bin:/bin" DOTFILES_UPDATED=0 NO_UV=true "$ZSH_BIN" -c 'source "$HOME/.dotfiles/common.sh"; source "$HOME/.dotfiles/main.zshrc"; cd "$HOME"; lynclone git@github.com:org/repo.git; pwd'
+    When run run_main_eval '
+      cd "$HOME"
+      lynclone git@github.com:org/repo.git
+      pwd
+    '
     The status should be success
     The output should equal "$TEST_HOME/repo"
-    The contents of file "$TEST_HOME/.git_calls" should include 'clone git@github.lync:org/repo.git'
-    The contents of file "$TEST_HOME/.git_calls" should include 'config user.name Yuan Liu'
-    The contents of file "$TEST_HOME/.git_calls" should include 'config user.email lyncredible@outlook.com'
-    The contents of file "$TEST_HOME/.git_calls" should include 'config commit.gpgsign false'
+    The contents of file "$TEST_HOME/.git_calls" \
+      should include 'clone git@github.lync:org/repo.git'
+    The contents of file "$TEST_HOME/.git_calls" \
+      should include 'config user.name Yuan Liu'
+    The contents of file "$TEST_HOME/.git_calls" \
+      should include 'config user.email lyncredible@outlook.com'
+    The contents of file "$TEST_HOME/.git_calls" \
+      should include 'config commit.gpgsign false'
   End
 
   It 'prints uv warning when uv is missing and NO_UV is not true'
-    When run env HOME="$TEST_HOME" PATH="$TEST_HOME/bin" DOTFILES_UPDATED=0 "$ZSH_BIN" -c 'source "$HOME/.dotfiles/common.sh"; source "$HOME/.dotfiles/main.zshrc"'
+    TEST_RUN_NO_UV=false
+    TEST_RUN_PATH="$TEST_HOME/bin-no-fzf"
+    When run run_main
     The status should be success
     The output should include 'WARNING: uv is not installed'
   End
 
   It 'prints fzf warning when fzf is missing'
-    When run env HOME="$TEST_HOME" PATH="$TEST_HOME/bin" DOTFILES_UPDATED=0 NO_UV=true "$ZSH_BIN" -c 'source "$HOME/.dotfiles/common.sh"; source "$HOME/.dotfiles/main.zshrc"'
+    rm -f "$TEST_HOME/bin/fzf"
+    When run env \
+      HOME="$TEST_HOME" \
+      PATH="$TEST_HOME/bin-no-fzf" \
+      DOTFILES_UPDATED=0 \
+      NO_UV=true \
+      "$ZSH_BIN" -c '
+        hash -r
+        source "$HOME/.dotfiles/common.sh"
+        source "$HOME/.dotfiles/main.zshrc"
+      '
     The status should be success
     The output should include 'WARNING: fzf is not installed'
   End
 
   It 'defines interactive helper functions and autosuggest clear widget'
-    When run env HOME="$TEST_HOME" PATH="$TEST_HOME/bin:/usr/bin:/bin" DOTFILES_UPDATED=0 NO_UV=true "$ZSH_BIN" -c 'source "$HOME/.dotfiles/common.sh"; source "$HOME/.dotfiles/main.zshrc"; print -r -- "${+functions[pasteinit]}" "${+functions[pastefinish]}" "${+functions[reset-terminal]}"; print -r -- "${ZSH_AUTOSUGGEST_CLEAR_WIDGETS[*]}"'
+    When run run_main_eval '
+      print -r -- "${+functions[pasteinit]}" \
+        "${+functions[pastefinish]}" "${+functions[reset-terminal]}"
+      print -r -- "${ZSH_AUTOSUGGEST_CLEAR_WIDGETS[*]}"
+    '
     The status should be success
     The output should include '1 1 1'
     The output should include 'bracketed-paste'

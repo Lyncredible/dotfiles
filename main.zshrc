@@ -33,7 +33,15 @@ else
   export EDITOR='subl -n -w'
 fi
 
-export PATH="$HOME/bin:$HOME/.dotfiles/bin:$HOME/.local/bin:/usr/local/bin:/usr/local/sbin:/opt/homebrew/bin:$PATH"
+path=(
+  "$HOME/bin"
+  "$HOME/.dotfiles/bin"
+  "$HOME/.local/bin"
+  "/usr/local/bin"
+  "/usr/local/sbin"
+  "/opt/homebrew/bin"
+  $path
+)
 
 # Node
 if [ -d "$HOME/.nodenv" ]; then
@@ -61,7 +69,9 @@ export HOMEBREW_NO_ANALYTICS=1
 export HOMEBREW_NO_ENV_HINTS=1
 
 # Sync Claude Code settings from dist template
-merge_claude_settings "$HOME/.dotfiles/.claude/settings.json.dist" "$HOME/.dotfiles/.claude/settings.json"
+merge_claude_settings \
+  "$HOME/.dotfiles/.claude/settings.json.dist" \
+  "$HOME/.dotfiles/.claude/settings.json"
 
 # Personalized clone when multiple github keys are present
 function lynclone() {
@@ -110,7 +120,8 @@ fi
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # fzf via apt on Ubuntu
-[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ] && source /usr/share/doc/fzf/examples/key-bindings.zsh
+[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ] && \
+  source /usr/share/doc/fzf/examples/key-bindings.zsh
 
 if ! command -v fzf > /dev/null; then
   echo 'WARNING: fzf is not installed'

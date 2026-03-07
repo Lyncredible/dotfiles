@@ -80,7 +80,12 @@ Describe '.zshrc auto-update flow'
   It 'marks update and re-sources common.sh when HEAD changes'
     old_epoch=$(( $(date +'%s') - 90000 ))
     echo "$old_epoch" > "$TEST_HOME/.dotfiles-update"
-    When run env MOCK_GIT_BEFORE_REF=old-ref MOCK_GIT_AFTER_REF=new-ref HOME="$TEST_HOME" PATH="$TEST_HOME/bin:$PATH" zsh -c 'source "$HOME/.dotfiles/.zshrc"'
+    When run env \
+      MOCK_GIT_BEFORE_REF=old-ref \
+      MOCK_GIT_AFTER_REF=new-ref \
+      HOME="$TEST_HOME" \
+      PATH="$TEST_HOME/bin:$PATH" \
+      zsh -c 'source "$HOME/.dotfiles/.zshrc"'
     The status should be success
     The output should include 'Updating dotfiles...'
     The contents of file "$TEST_HOME/.dotfiles_updated_seen" should equal '1'
@@ -91,7 +96,12 @@ Describe '.zshrc auto-update flow'
   It 'refreshes timestamp and marks DOTFILES_UPDATED=1 when HEAD is unchanged'
     old_epoch=$(( $(date +'%s') - 90000 ))
     echo "$old_epoch" > "$TEST_HOME/.dotfiles-update"
-    When run env MOCK_GIT_BEFORE_REF=same-ref MOCK_GIT_AFTER_REF=same-ref HOME="$TEST_HOME" PATH="$TEST_HOME/bin:$PATH" zsh -c 'source "$HOME/.dotfiles/.zshrc"'
+    When run env \
+      MOCK_GIT_BEFORE_REF=same-ref \
+      MOCK_GIT_AFTER_REF=same-ref \
+      HOME="$TEST_HOME" \
+      PATH="$TEST_HOME/bin:$PATH" \
+      zsh -c 'source "$HOME/.dotfiles/.zshrc"'
     The status should be success
     The output should include 'Updating dotfiles...'
     The contents of file "$TEST_HOME/.dotfiles_updated_seen" should equal '1'
@@ -112,7 +122,11 @@ Describe '.zshrc auto-update flow'
   It 'does not refresh timestamp or mark updated when fetch fails'
     old_epoch=$(( $(date +'%s') - 90000 ))
     echo "$old_epoch" > "$TEST_HOME/.dotfiles-update"
-    When run env MOCK_GIT_FETCH_FAIL=1 HOME="$TEST_HOME" PATH="$TEST_HOME/bin:$PATH" zsh -c 'source "$HOME/.dotfiles/.zshrc"'
+    When run env \
+      MOCK_GIT_FETCH_FAIL=1 \
+      HOME="$TEST_HOME" \
+      PATH="$TEST_HOME/bin:$PATH" \
+      zsh -c 'source "$HOME/.dotfiles/.zshrc"'
     The status should be success
     The output should include 'Updating dotfiles...'
     The output should include 'Warning: Failed to fetch dotfiles repo.'
@@ -125,7 +139,11 @@ Describe '.zshrc auto-update flow'
   It 'does not refresh timestamp or mark updated when rebase fails'
     old_epoch=$(( $(date +'%s') - 90000 ))
     echo "$old_epoch" > "$TEST_HOME/.dotfiles-update"
-    When run env MOCK_GIT_REBASE_FAIL=1 HOME="$TEST_HOME" PATH="$TEST_HOME/bin:$PATH" zsh -c 'source "$HOME/.dotfiles/.zshrc"'
+    When run env \
+      MOCK_GIT_REBASE_FAIL=1 \
+      HOME="$TEST_HOME" \
+      PATH="$TEST_HOME/bin:$PATH" \
+      zsh -c 'source "$HOME/.dotfiles/.zshrc"'
     The status should be success
     The output should include 'Updating dotfiles...'
     The output should include 'Warning: Failed to rebase dotfiles repo.'
@@ -136,7 +154,12 @@ Describe '.zshrc auto-update flow'
 
   It 'updates dotfiles when timestamp file is missing'
     rm -f "$TEST_HOME/.dotfiles-update"
-    When run env MOCK_GIT_BEFORE_REF=same-ref MOCK_GIT_AFTER_REF=same-ref HOME="$TEST_HOME" PATH="$TEST_HOME/bin:$PATH" zsh -c 'source "$HOME/.dotfiles/.zshrc"'
+    When run env \
+      MOCK_GIT_BEFORE_REF=same-ref \
+      MOCK_GIT_AFTER_REF=same-ref \
+      HOME="$TEST_HOME" \
+      PATH="$TEST_HOME/bin:$PATH" \
+      zsh -c 'source "$HOME/.dotfiles/.zshrc"'
     The status should be success
     The output should include 'Updating dotfiles...'
     The contents of file "$TEST_HOME/.dotfiles_updated_seen" should equal '1'
