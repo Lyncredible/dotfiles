@@ -11,6 +11,7 @@ setup() {
   TEST_PATH="$TEST_BIN:/bin:/usr/bin"
   TEST_SHELL="/bin/bash"
   unset MOCK_INCLUDE_PRESENT
+  unset TEST_SKIP_CHSH
 
   write_fake_grep
 
@@ -65,6 +66,7 @@ run_setup() {
   GREP_BIN="$TEST_BIN/grep" \
   ZSH_BIN="${TEST_ZSH_BIN:-$TEST_BIN/zsh}" \
   CHSH_BIN="${TEST_CHSH_BIN:-$TEST_BIN/chsh}" \
+  SKIP_CHSH="${TEST_SKIP_CHSH:-}" \
     /bin/sh "$SHELLSPEC_PROJECT_ROOT/setup.sh"
 }
 
@@ -118,6 +120,15 @@ Describe 'setup.sh'
     The status should be success
     The contents of file "$TEST_HOME/.setup_calls" \
       should not include "chsh:-s $TEST_BIN/zsh"
+  End
+
+  It 'skips chsh when SKIP_CHSH is set'
+    mkdir -p "$TEST_ANTIGEN_DIR"
+    TEST_SKIP_CHSH=1
+    When run run_setup
+    The status should be success
+    The contents of file "$TEST_HOME/.setup_calls" \
+      should not include 'chsh:-s'
   End
 
   It 'does not replace an existing .vimrc file'

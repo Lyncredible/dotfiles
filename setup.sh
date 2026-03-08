@@ -34,6 +34,7 @@ set_defaults() {
   GREP_BIN="${GREP_BIN:-grep}"
   ZSH_BIN="${ZSH_BIN:-zsh}"
   CHSH_BIN="${CHSH_BIN:-chsh}"
+  SKIP_CHSH="${SKIP_CHSH:-0}"
 }
 
 write_zsh_wrapper() {
@@ -79,6 +80,10 @@ resolve_zsh_path() {
 }
 
 ensure_login_shell() {
+  if [ "$SKIP_CHSH" = "1" ]; then
+    return
+  fi
+
   zsh_path=$(resolve_zsh_path)
   if [ "$zsh_path" != "$SHELL" ]; then
     "$CHSH_BIN" -s "$zsh_path"

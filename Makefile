@@ -12,19 +12,15 @@ SHELLCHECK_FILES = \
 	spec/zshrc_update_spec.sh \
 	spec/integration_zsh_startup.sh
 
-SCRIPT_FILES := $(shell \
-	{ \
-		find . -type f \( \
-			-name '*.sh' -o \
-			-name '*.zsh' -o \
-			-name '.zshrc' -o \
-			-name 'main.zshrc' \
-		\) ! -name '.p10k.zsh' -print; \
-		find bin -type f -print 2>/dev/null; \
-	} \
-	| sed 's#^\./##' \
-	| sort -u \
-)
+SCRIPT_FILES != { \
+	find . -type f \( \
+		-name '*.sh' -o \
+		-name '*.zsh' -o \
+		-name '.zshrc' -o \
+		-name 'main.zshrc' \
+	\) ! -name '.p10k.zsh' -print; \
+	find bin -type f -print 2>/dev/null; \
+} | sed 's#^\./##' | sort -u
 
 LINE_LENGTH_FILES = Makefile $(SCRIPT_FILES)
 MAX_LINE_LENGTH ?= 100
