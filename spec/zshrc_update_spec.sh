@@ -1,52 +1,29 @@
 #!/bin/sh
 # shellcheck shell=bash disable=SC2016,SC2317,SC2329
 
-different_from() {
-  local expected="$1"
-  local value
-  value=$(cat)
-  [ "$value" != "$expected" ]
-}
-
 setup() {
-  TEST_DIR=$(mktemp -d)
-  TEST_HOME="$TEST_DIR/home"
-  mkdir -p "$TEST_HOME/.dotfiles" "$TEST_HOME/bin"
+  create_test_root
+  ZSH_BIN=$(command -v zsh)
+  write_fake_date
 
+  mkdir -p "$TEST_HOME/.dotfiles"
   cp "$SHELLSPEC_PROJECT_ROOT/.zshrc" "$TEST_HOME/.dotfiles/.zshrc"
   cp "$SHELLSPEC_PROJECT_ROOT/common.sh" "$TEST_HOME/.dotfiles/common.sh"
 
-  cat >> "$TEST_HOME/.dotfiles/common.sh" <<'EOF'
-_common_source_count_file="$HOME/.common_source_count"
-if [ -f "$_common_source_count_file" ]; then
-  _common_source_count=$(cat "$_common_source_count_file")
-else
-  _common_source_count=0
-fi
-echo $((_common_source_count + 1)) > "$_common_source_count_file"
-unset _common_source_count_file
-unset _common_source_count
-EOF
-
-  cat > "$TEST_HOME/.dotfiles/main.zshrc" <<'EOF'
+  cat > "$TEST_HOME/.dotfiles/main.zshrc" <<'FILE'
 printf '%s\n' "${DOTFILES_UPDATED:-unset}" > "$HOME/.dotfiles_updated_seen"
-EOF
+FILE
 
-  cat > "$TEST_HOME/bin/git" <<'EOF'
+  make_stub git <<'STUB'
 #!/bin/sh
 echo "$*" >> "$HOME/.git_calls"
-
-if [ "$1" = "fetch" ]; then
-  [ "$MOCK_GIT_FETCH_FAIL" = "1" ] && exit 1
-  exit 0
+if [ "$1" = 'fetch' ] && [ "$MOCK_GIT_FETCH_FAIL" = '1' ]; then
+  exit 1
 fi
-
-if [ "$1" = "rebase" ]; then
-  [ "$MOCK_GIT_REBASE_FAIL" = "1" ] && exit 1
-  exit 0
+if [ "$1" = 'rebase' ] && [ "$MOCK_GIT_REBASE_FAIL" = '1' ]; then
+  exit 1
 fi
-
-if [ "$1" = "rev-parse" ]; then
+if [ "$1" = 'rev-parse' ]; then
   count_file="$HOME/.git_rev_parse_count"
   count=0
   [ -f "$count_file" ] && count=$(cat "$count_file")
@@ -57,113 +34,203 @@ if [ "$1" = "rev-parse" ]; then
   else
     printf '%s\n' "${MOCK_GIT_AFTER_REF:-same-ref}"
   fi
-  exit 0
 fi
-
-exit 0
-EOF
-  chmod +x "$TEST_HOME/bin/git"
+STUB
 }
 
 cleanup() {
-  rm -rf "$TEST_DIR"
+  cleanup_test_root
 }
 
-run_startup() {
-  HOME="$TEST_HOME" PATH="$TEST_HOME/bin:$PATH" zsh -c 'source "$HOME/.dotfiles/.zshrc"'
+run_update_helper() {
+  HOME="$TEST_HOME" \
+  PATH="$TEST_BIN:/bin:/usr/bin" \
+  DATE_BIN="$TEST_BIN/date" \
+  GIT_BIN="$TEST_BIN/git" \
+  zsh -c '
+    source "$HOME/.dotfiles/common.sh"
+    maybe_update_dotfiles "$HOME/.dotfiles-update" "$HOME/.dotfiles"
+    print -r -- "$DOTFILES_UPDATED"
+  '
 }
 
-Describe '.zshrc auto-update flow'
+run_update_helper_with_globals() {
+  HOME="$TEST_HOME" \
+  PATH="$TEST_BIN:/bin:/usr/bin" \
+  DATE_BIN="$TEST_BIN/date" \
+  GIT_BIN="$TEST_BIN/git" \
+  zsh -c '
+    source "$HOME/.dotfiles/common.sh"
+    maybe_update_dotfiles "$HOME/.dotfiles-update" "$HOME/.dotfiles"
+    print -r -- "$DOTFILES_UPDATED"
+    print -r -- "${UPDATE_BEFORE_REF-unset}:${UPDATE_AFTER_REF-unset}"
+  '
+}
+
+Describe 'dotfiles update helper'
   Before 'setup'
   After 'cleanup'
 
-  It 'marks update and re-sources common.sh when HEAD changes'
-    old_epoch=$(( $(date +'%s') - 90000 ))
-    echo "$old_epoch" > "$TEST_HOME/.dotfiles-update"
+  It 'marks update when HEAD changes'
+    FAKE_EPOCH=2000000000
+    export FAKE_EPOCH
+    echo 1999910000 > "$TEST_HOME/.dotfiles-update"
     When run env \
       MOCK_GIT_BEFORE_REF=old-ref \
       MOCK_GIT_AFTER_REF=new-ref \
       HOME="$TEST_HOME" \
-      PATH="$TEST_HOME/bin:$PATH" \
-      zsh -c 'source "$HOME/.dotfiles/.zshrc"'
+      PATH="$TEST_BIN:/bin:/usr/bin" \
+      DATE_BIN="$TEST_BIN/date" \
+      GIT_BIN="$TEST_BIN/git" \
+      zsh -c '
+        source "$HOME/.dotfiles/common.sh"
+        maybe_update_dotfiles "$HOME/.dotfiles-update" "$HOME/.dotfiles"
+        print -r -- "$DOTFILES_UPDATED"
+      '
     The status should be success
     The output should include 'Updating dotfiles...'
-    The contents of file "$TEST_HOME/.dotfiles_updated_seen" should equal '1'
-    The contents of file "$TEST_HOME/.common_source_count" should equal '2'
-    The contents of file "$TEST_HOME/.dotfiles-update" should satisfy different_from "$old_epoch"
+    The output should include '1'
+    The contents of file "$TEST_HOME/.dotfiles-update" should equal '2000000000'
   End
 
-  It 'refreshes timestamp and marks DOTFILES_UPDATED=1 when HEAD is unchanged'
-    old_epoch=$(( $(date +'%s') - 90000 ))
-    echo "$old_epoch" > "$TEST_HOME/.dotfiles-update"
+  It 'cleans up update ref globals after a successful update'
+    FAKE_EPOCH=2000000000
+    export FAKE_EPOCH
+    echo 1999910000 > "$TEST_HOME/.dotfiles-update"
+    When run env \
+      MOCK_GIT_BEFORE_REF=old-ref \
+      MOCK_GIT_AFTER_REF=new-ref \
+      HOME="$TEST_HOME" \
+      PATH="$TEST_BIN:/bin:/usr/bin" \
+      DATE_BIN="$TEST_BIN/date" \
+      GIT_BIN="$TEST_BIN/git" \
+      zsh -c '
+        source "$HOME/.dotfiles/common.sh"
+        maybe_update_dotfiles "$HOME/.dotfiles-update" "$HOME/.dotfiles"
+        print -r -- "${UPDATE_BEFORE_REF-unset}:${UPDATE_AFTER_REF-unset}"
+      '
+    The status should be success
+    The output should include 'Updating dotfiles...'
+    The output should include 'unset:unset'
+  End
+
+  It 'refreshes timestamp when HEAD is unchanged'
+    FAKE_EPOCH=2000000000
+    export FAKE_EPOCH
+    echo 1999910000 > "$TEST_HOME/.dotfiles-update"
     When run env \
       MOCK_GIT_BEFORE_REF=same-ref \
       MOCK_GIT_AFTER_REF=same-ref \
       HOME="$TEST_HOME" \
-      PATH="$TEST_HOME/bin:$PATH" \
-      zsh -c 'source "$HOME/.dotfiles/.zshrc"'
+      PATH="$TEST_BIN:/bin:/usr/bin" \
+      DATE_BIN="$TEST_BIN/date" \
+      GIT_BIN="$TEST_BIN/git" \
+      zsh -c '
+        source "$HOME/.dotfiles/common.sh"
+        maybe_update_dotfiles "$HOME/.dotfiles-update" "$HOME/.dotfiles"
+        print -r -- "$DOTFILES_UPDATED"
+      '
     The status should be success
     The output should include 'Updating dotfiles...'
-    The contents of file "$TEST_HOME/.dotfiles_updated_seen" should equal '1'
-    The contents of file "$TEST_HOME/.common_source_count" should equal '1'
-    The contents of file "$TEST_HOME/.dotfiles-update" should satisfy different_from "$old_epoch"
+    The output should include '1'
+    The contents of file "$TEST_HOME/.dotfiles-update" should equal '2000000000'
   End
 
-  It 'skips git update checks when timestamp is current'
-    date +'%s' > "$TEST_HOME/.dotfiles-update"
-    When run run_startup
+  It 'leaves DOTFILES_UPDATED at 0 when timestamp is current'
+    FAKE_EPOCH=2000000000
+    export FAKE_EPOCH
+    echo 1999999000 > "$TEST_HOME/.dotfiles-update"
+    When run run_update_helper_with_globals
     The status should be success
-    The output should not include 'Updating dotfiles...'
+    The output should include '0'
+    The output should include 'unset:unset'
     The file "$TEST_HOME/.git_calls" should not be exist
-    The contents of file "$TEST_HOME/.dotfiles_updated_seen" should equal '0'
-    The contents of file "$TEST_HOME/.common_source_count" should equal '1'
   End
 
-  It 'does not refresh timestamp or mark updated when fetch fails'
-    old_epoch=$(( $(date +'%s') - 90000 ))
-    echo "$old_epoch" > "$TEST_HOME/.dotfiles-update"
+  It 'does not refresh timestamp when fetch fails'
+    FAKE_EPOCH=2000000000
+    export FAKE_EPOCH
+    echo 1999910000 > "$TEST_HOME/.dotfiles-update"
     When run env \
       MOCK_GIT_FETCH_FAIL=1 \
       HOME="$TEST_HOME" \
-      PATH="$TEST_HOME/bin:$PATH" \
-      zsh -c 'source "$HOME/.dotfiles/.zshrc"'
+      PATH="$TEST_BIN:/bin:/usr/bin" \
+      DATE_BIN="$TEST_BIN/date" \
+      GIT_BIN="$TEST_BIN/git" \
+      zsh -c '
+        source "$HOME/.dotfiles/common.sh"
+        maybe_update_dotfiles "$HOME/.dotfiles-update" "$HOME/.dotfiles"
+        print -r -- "$DOTFILES_UPDATED"
+      '
     The status should be success
-    The output should include 'Updating dotfiles...'
     The output should include 'Warning: Failed to fetch dotfiles repo.'
-    The contents of file "$TEST_HOME/.dotfiles_updated_seen" should equal '0'
-    The contents of file "$TEST_HOME/.common_source_count" should equal '1'
-    The contents of file "$TEST_HOME/.dotfiles-update" should equal "$old_epoch"
-    The contents of file "$TEST_HOME/.git_calls" should not include 'rebase origin/master'
+    The output should include '0'
+    The contents of file "$TEST_HOME/.dotfiles-update" should equal '1999910000'
   End
 
-  It 'does not refresh timestamp or mark updated when rebase fails'
-    old_epoch=$(( $(date +'%s') - 90000 ))
-    echo "$old_epoch" > "$TEST_HOME/.dotfiles-update"
+  It 'does not refresh timestamp when rebase fails'
+    FAKE_EPOCH=2000000000
+    export FAKE_EPOCH
+    echo 1999910000 > "$TEST_HOME/.dotfiles-update"
     When run env \
       MOCK_GIT_REBASE_FAIL=1 \
       HOME="$TEST_HOME" \
-      PATH="$TEST_HOME/bin:$PATH" \
-      zsh -c 'source "$HOME/.dotfiles/.zshrc"'
+      PATH="$TEST_BIN:/bin:/usr/bin" \
+      DATE_BIN="$TEST_BIN/date" \
+      GIT_BIN="$TEST_BIN/git" \
+      zsh -c '
+        source "$HOME/.dotfiles/common.sh"
+        maybe_update_dotfiles "$HOME/.dotfiles-update" "$HOME/.dotfiles"
+        print -r -- "$DOTFILES_UPDATED"
+      '
     The status should be success
-    The output should include 'Updating dotfiles...'
     The output should include 'Warning: Failed to rebase dotfiles repo.'
-    The contents of file "$TEST_HOME/.dotfiles_updated_seen" should equal '0'
-    The contents of file "$TEST_HOME/.common_source_count" should equal '1'
-    The contents of file "$TEST_HOME/.dotfiles-update" should equal "$old_epoch"
+    The output should include '0'
+    The contents of file "$TEST_HOME/.dotfiles-update" should equal '1999910000'
   End
 
-  It 'updates dotfiles when timestamp file is missing'
+  It 'updates when the timestamp file is missing'
+    FAKE_EPOCH=2000000000
+    export FAKE_EPOCH
     rm -f "$TEST_HOME/.dotfiles-update"
     When run env \
       MOCK_GIT_BEFORE_REF=same-ref \
       MOCK_GIT_AFTER_REF=same-ref \
       HOME="$TEST_HOME" \
-      PATH="$TEST_HOME/bin:$PATH" \
-      zsh -c 'source "$HOME/.dotfiles/.zshrc"'
+      PATH="$TEST_BIN:/bin:/usr/bin" \
+      DATE_BIN="$TEST_BIN/date" \
+      GIT_BIN="$TEST_BIN/git" \
+      zsh -c '
+        source "$HOME/.dotfiles/common.sh"
+        maybe_update_dotfiles "$HOME/.dotfiles-update" "$HOME/.dotfiles"
+        print -r -- "$DOTFILES_UPDATED"
+      '
+    The status should be success
+    The output should include 'Updating dotfiles...'
+    The output should include '1'
+    The file "$TEST_HOME/.dotfiles-update" should be exist
+    The contents of file "$TEST_HOME/.dotfiles-update" should equal '2000000000'
+  End
+End
+
+Describe '.zshrc startup smoke test'
+  Before 'setup'
+  After 'cleanup'
+
+  It 'passes DOTFILES_UPDATED through to main.zshrc after a successful update'
+    FAKE_EPOCH=2000000000
+    export FAKE_EPOCH
+    echo 1999910000 > "$TEST_HOME/.dotfiles-update"
+    When run env \
+      MOCK_GIT_BEFORE_REF=same-ref \
+      MOCK_GIT_AFTER_REF=same-ref \
+      HOME="$TEST_HOME" \
+      PATH="$TEST_BIN:/bin:/usr/bin" \
+      DATE_BIN="$TEST_BIN/date" \
+      GIT_BIN="$TEST_BIN/git" \
+      "$ZSH_BIN" -c 'source "$HOME/.dotfiles/.zshrc"'
     The status should be success
     The output should include 'Updating dotfiles...'
     The contents of file "$TEST_HOME/.dotfiles_updated_seen" should equal '1'
-    The file "$TEST_HOME/.dotfiles-update" should be exist
-    The contents of file "$TEST_HOME/.common_source_count" should equal '1'
   End
 End

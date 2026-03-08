@@ -2,54 +2,44 @@
 # shellcheck shell=bash disable=SC2016,SC2317,SC2329
 
 setup() {
-  TEST_DIR=$(mktemp -d)
-  TEST_HOME="$TEST_DIR/home"
-  TEST_BIN="$TEST_HOME/bin"
-  mkdir -p "$TEST_HOME/.dotfiles" "$TEST_BIN"
+  create_test_root
+  mkdir -p "$TEST_HOME/.dotfiles"
 
   TEST_DOTFILES_DIR="$TEST_HOME/.dotfiles"
   TEST_SHELLS_FILE="$TEST_HOME/shells"
-  TEST_GIT_BIN="git"
-  TEST_GREP_BIN="grep"
   TEST_SETUP_SCRIPT="$TEST_DOTFILES_DIR/setup.sh"
-  TEST_PATH="$TEST_BIN:/usr/bin:/bin"
+  TEST_PATH="$TEST_BIN:/bin:/usr/bin"
   TEST_SHELL="/bin/bash"
-  unset MOCK_GIT_CLONE_FAIL
 
-  cat > "$TEST_SHELLS_FILE" <<'EOF'
+  write_fake_grep
+
+  cat > "$TEST_SHELLS_FILE" <<'LIST'
 /bin/bash
 /bin/zsh
-EOF
+LIST
 
-  cat > "$TEST_HOME/shells-no-zsh" <<'EOF'
+  cat > "$TEST_HOME/shells-no-zsh" <<'LIST'
 /bin/bash
-EOF
+LIST
 
-  cat > "$TEST_DOTFILES_DIR/setup.sh" <<'EOF'
+  cat > "$TEST_SETUP_SCRIPT" <<'SCRIPT'
 #!/bin/sh
 echo setup-ran >> "$HOME/.install_calls"
-EOF
-  chmod +x "$TEST_DOTFILES_DIR/setup.sh"
+SCRIPT
+  chmod +x "$TEST_SETUP_SCRIPT"
 
-  cat > "$TEST_BIN/grep" <<'EOF'
-#!/bin/sh
-exec /usr/bin/grep "$@"
-EOF
-  chmod +x "$TEST_BIN/grep"
-
-  cat > "$TEST_BIN/git" <<'EOF'
+  make_stub git <<'STUB'
 #!/bin/sh
 echo "$*" >> "$HOME/.install_calls"
 if [ "$1" = "clone" ] && [ "$MOCK_GIT_CLONE_FAIL" = "1" ]; then
   exit 1
 fi
 exit 0
-EOF
-  chmod +x "$TEST_BIN/git"
+STUB
 }
 
 cleanup() {
-  rm -rf "$TEST_DIR"
+  cleanup_test_root
 }
 
 run_install() {
@@ -59,8 +49,8 @@ run_install() {
   DOTFILES_DIR="$TEST_DOTFILES_DIR" \
   SHELLS_FILE="$TEST_SHELLS_FILE" \
   SETUP_SCRIPT="$TEST_SETUP_SCRIPT" \
-  GIT_BIN="$TEST_GIT_BIN" \
-  GREP_BIN="$TEST_GREP_BIN" \
+  GIT_BIN="$TEST_BIN/git" \
+  GREP_BIN="$TEST_BIN/grep" \
     /bin/sh "$SHELLSPEC_PROJECT_ROOT/install.sh" "$@"
 }
 
@@ -91,8 +81,16 @@ Describe 'install.sh'
   End
 
   It 'fails when configured git binary is missing'
-    TEST_GIT_BIN="missing-git"
-    When run run_install
+    When run env \
+      HOME="$TEST_HOME" \
+      PATH="$TEST_PATH" \
+      SHELL="$TEST_SHELL" \
+      DOTFILES_DIR="$TEST_DOTFILES_DIR" \
+      SHELLS_FILE="$TEST_SHELLS_FILE" \
+      SETUP_SCRIPT="$TEST_SETUP_SCRIPT" \
+      GIT_BIN=missing-git \
+      GREP_BIN="$TEST_BIN/grep" \
+      /bin/sh "$SHELLSPEC_PROJECT_ROOT/install.sh"
     The status should be failure
     The output should include 'Error: git is not installed'
   End
@@ -111,10 +109,10 @@ Describe 'install.sh'
     TEST_DOTFILES_DIR="$TEST_HOME/custom-dotfiles"
     TEST_SETUP_SCRIPT="$TEST_HOME/custom-dotfiles/setup.sh"
     mkdir -p "$TEST_DOTFILES_DIR"
-    cat > "$TEST_SETUP_SCRIPT" <<'EOF'
+    cat > "$TEST_SETUP_SCRIPT" <<'SCRIPT'
 #!/bin/sh
 echo custom-setup-ran >> "$HOME/.install_calls"
-EOF
+SCRIPT
     chmod +x "$TEST_SETUP_SCRIPT"
     When run run_install
     The status should be success
@@ -124,10 +122,10 @@ EOF
   End
 
   It 'fails when SETUP_SCRIPT returns non-zero'
-    cat > "$TEST_HOME/fail-setup.sh" <<'EOF'
+    cat > "$TEST_HOME/fail-setup.sh" <<'SCRIPT'
 #!/bin/sh
 exit 1
-EOF
+SCRIPT
     chmod +x "$TEST_HOME/fail-setup.sh"
     TEST_SETUP_SCRIPT="$TEST_HOME/fail-setup.sh"
     When run run_install

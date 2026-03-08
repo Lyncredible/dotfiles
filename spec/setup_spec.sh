@@ -1,30 +1,20 @@
 #!/bin/sh
 # shellcheck shell=bash disable=SC2016,SC2317,SC2329
 
-symlink_to() {
-  local path="$1"
-  local target="$2"
-  [ -L "$path" ] && [ "$(/usr/bin/readlink "$path")" = "$target" ]
-}
-
 setup() {
-  TEST_DIR=$(mktemp -d)
-  TEST_HOME="$TEST_DIR/home"
-  TEST_BIN="$TEST_HOME/bin"
-  TEST_PATH="$TEST_BIN:/usr/bin:/bin"
-  mkdir -p "$TEST_HOME/.dotfiles" "$TEST_BIN"
+  create_test_root
+  mkdir -p "$TEST_HOME/.dotfiles"
 
   TEST_DOTFILES_DIR="$TEST_HOME/.dotfiles"
   TEST_CONFIG_DIR="$TEST_HOME/.config"
   TEST_ANTIGEN_DIR="$TEST_HOME/.antigen"
-  TEST_GIT_BIN="git"
-  TEST_GREP_BIN="grep"
-  TEST_ZSH_BIN="zsh"
-  TEST_CHSH_BIN="chsh"
+  TEST_PATH="$TEST_BIN:/bin:/usr/bin"
   TEST_SHELL="/bin/bash"
   unset MOCK_INCLUDE_PRESENT
 
-  cat > "$TEST_BIN/git" <<'EOF'
+  write_fake_grep
+
+  make_stub git <<'STUB'
 #!/bin/sh
 echo "$*" >> "$HOME/.setup_calls"
 if [ "$1" = "config" ] && [ "$2" = "--global" ] && \
@@ -35,44 +25,33 @@ if [ "$1" = "config" ] && [ "$2" = "--global" ] && \
   exit 0
 fi
 exit 0
-EOF
-  chmod +x "$TEST_BIN/git"
+STUB
 
-  cat > "$TEST_BIN/grep" <<'EOF'
-#!/bin/sh
-exec /usr/bin/grep "$@"
-EOF
-  chmod +x "$TEST_BIN/grep"
-
-  cat > "$TEST_BIN/chsh" <<'EOF'
+  make_stub chsh <<'STUB'
 #!/bin/sh
 echo "chsh:$*" >> "$HOME/.setup_calls"
 exit 0
-EOF
-  chmod +x "$TEST_BIN/chsh"
+STUB
 
-  cat > "$TEST_BIN/custom-chsh" <<'EOF'
+  make_stub custom-chsh <<'STUB'
 #!/bin/sh
 echo "custom-chsh:$*" >> "$HOME/.setup_calls"
 exit 0
-EOF
-  chmod +x "$TEST_BIN/custom-chsh"
+STUB
 
-  cat > "$TEST_BIN/zsh" <<'EOF'
+  make_stub zsh <<'STUB'
 #!/bin/sh
 exit 0
-EOF
-  chmod +x "$TEST_BIN/zsh"
+STUB
 
-  cat > "$TEST_BIN/my-zsh" <<'EOF'
+  make_stub my-zsh <<'STUB'
 #!/bin/sh
 exit 0
-EOF
-  chmod +x "$TEST_BIN/my-zsh"
+STUB
 }
 
 cleanup() {
-  rm -rf "$TEST_DIR"
+  cleanup_test_root
 }
 
 run_setup() {
@@ -82,10 +61,10 @@ run_setup() {
   DOTFILES_DIR="$TEST_DOTFILES_DIR" \
   CONFIG_DIR="$TEST_CONFIG_DIR" \
   ANTIGEN_DIR="$TEST_ANTIGEN_DIR" \
-  GIT_BIN="$TEST_GIT_BIN" \
-  GREP_BIN="$TEST_GREP_BIN" \
-  ZSH_BIN="$TEST_ZSH_BIN" \
-  CHSH_BIN="$TEST_CHSH_BIN" \
+  GIT_BIN="$TEST_BIN/git" \
+  GREP_BIN="$TEST_BIN/grep" \
+  ZSH_BIN="${TEST_ZSH_BIN:-$TEST_BIN/zsh}" \
+  CHSH_BIN="${TEST_CHSH_BIN:-$TEST_BIN/chsh}" \
     /bin/sh "$SHELLSPEC_PROJECT_ROOT/setup.sh"
 }
 
@@ -180,8 +159,8 @@ Describe 'setup.sh'
 
   It 'uses CHSH_BIN and ZSH_BIN overrides'
     mkdir -p "$TEST_ANTIGEN_DIR"
-    TEST_CHSH_BIN="custom-chsh"
-    TEST_ZSH_BIN="my-zsh"
+    TEST_CHSH_BIN="$TEST_BIN/custom-chsh"
+    TEST_ZSH_BIN="$TEST_BIN/my-zsh"
     When run run_setup
     The status should be success
     The contents of file "$TEST_HOME/.setup_calls" \
@@ -190,7 +169,7 @@ Describe 'setup.sh'
 
   It 'fails when ZSH_BIN cannot be resolved'
     mkdir -p "$TEST_ANTIGEN_DIR"
-    TEST_ZSH_BIN="missing-zsh"
+    TEST_ZSH_BIN='missing-zsh'
     When run run_setup
     The status should be failure
     The contents of file "$TEST_HOME/.setup_calls" should not include 'chsh:-s'

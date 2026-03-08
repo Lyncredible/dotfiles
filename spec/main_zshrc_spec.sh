@@ -2,161 +2,128 @@
 # shellcheck shell=bash disable=SC2016,SC2154,SC2317,SC2329
 
 setup() {
-  TEST_DIR=$(mktemp -d)
-  TEST_HOME="$TEST_DIR/home"
-  TEST_PATH="$TEST_HOME/bin:/usr/bin:/bin"
+  create_test_root
   ZSH_BIN=$(command -v zsh)
-  unset \
-    SSH_CONNECTION \
-    MOCK_WSL \
-    MOCK_SSH_AUTH_SOCK \
-    TMUX \
-    TEST_RUN_DOTFILES_UPDATED \
-    TEST_RUN_NO_UV \
-    TEST_RUN_PATH
-  mkdir -p \
-    "$TEST_HOME/.dotfiles/.claude" \
-    "$TEST_HOME/.antigen" \
-    "$TEST_HOME/bin" \
-    "$TEST_HOME/bin-no-fzf"
+  TEST_PATH="$TEST_BIN:/bin:/usr/bin"
+  PROC_VERSION_FILE="$TEST_HOME/proc-version"
+  export PROC_VERSION_FILE
+  unset SSH_CONNECTION TMUX TEST_RUN_DOTFILES_UPDATED TEST_RUN_NO_UV
+
+  mkdir -p "$TEST_HOME/.dotfiles/.claude" "$TEST_HOME/.antigen" "$TEST_HOME/no-fzf"
 
   cp "$SHELLSPEC_PROJECT_ROOT/main.zshrc" "$TEST_HOME/.dotfiles/main.zshrc"
   cp "$SHELLSPEC_PROJECT_ROOT/common.sh" "$TEST_HOME/.dotfiles/common.sh"
 
-  cat > "$TEST_HOME/.dotfiles/.aliases" <<'EOF'
+  cat > "$TEST_HOME/.dotfiles/.aliases" <<'FILE'
 # test aliases
-EOF
+alias dotfiles_test_alias="alias works"
+FILE
 
-  cat > "$TEST_HOME/.dotfiles/.p10k.zsh" <<'EOF'
+  cat > "$TEST_HOME/.dotfiles/.p10k.zsh" <<'FILE'
 # test p10k
-EOF
+printf 'p10k\n' >> "$HOME/.startup_order"
+FILE
 
-  cat > "$TEST_HOME/.dotfiles/.claude/settings.json.dist" <<'EOF'
+  cat > "$TEST_HOME/.dotfiles/.claude/settings.json.dist" <<'JSON'
 {
   "attribution": { "commit": "", "pr": "" },
   "model": "claude-opus-4-6"
 }
-EOF
+JSON
 
-  cat > "$TEST_HOME/.dotfiles/.claude/settings.json" <<'EOF'
+  cat > "$TEST_HOME/.dotfiles/.claude/settings.json" <<'JSON'
 {
   "attribution": { "commit": "", "pr": "" },
   "model": "claude-opus-4-6",
   "enabledPlugins": ["foo"]
 }
-EOF
+JSON
 
-  cat > "$TEST_HOME/.antigen/antigen.zsh" <<'EOF'
+  cat > "$TEST_HOME/.antigen/antigen.zsh" <<'FILE'
 antigen() {
   printf '%s\n' "$*" >> "$HOME/.antigen_calls"
+  printf 'antigen:%s\n' "$*" >> "$HOME/.startup_order"
 }
-EOF
+FILE
 
-  cat > "$TEST_HOME/bin/git" <<'EOF'
+  make_stub git <<'STUB'
 #!/bin/sh
 printf '%s\n' "$*" >> "$HOME/.git_calls"
 if [ "$1" = "clone" ]; then
-  repo=$(printf '%s' "$2" | sed 's#.*/\([^/]*\)\.git$#\1#')
+  repo=${2##*/}
+  repo=${repo%.git}
   mkdir -p "$repo"
 fi
 exit 0
-EOF
-  chmod +x "$TEST_HOME/bin/git"
+STUB
 
-  cat > "$TEST_HOME/bin/tmux" <<'EOF'
+  make_stub tmux <<'STUB'
 #!/bin/sh
-if [ "$1" = "show-environment" ]; then
+if [ "$1" = 'show-environment' ]; then
   printf 'SSH_AUTH_SOCK=%s\n' "${MOCK_SSH_AUTH_SOCK:-/tmp/mock.sock}"
 fi
-EOF
-  chmod +x "$TEST_HOME/bin/tmux"
+STUB
 
-  cat > "$TEST_HOME/bin/grep" <<'EOF'
+  make_stub nodenv <<'STUB'
 #!/bin/sh
-if [ "$MOCK_WSL" = "1" ]; then
-  exit 0
+if [ "$1" = 'init' ] && [ "$2" = '-' ]; then
+  printf 'export NODENV_INIT_RAN=1\n'
 fi
-exec /usr/bin/grep "$@"
-EOF
-  chmod +x "$TEST_HOME/bin/grep"
+STUB
 
-  cat > "$TEST_HOME/bin/fzf" <<'EOF'
+  make_stub rbenv <<'STUB'
+#!/bin/sh
+if [ "$1" = 'init' ] && [ "$2" = '-' ]; then
+  printf 'export RBENV_INIT_RAN=1\n'
+fi
+STUB
+
+  write_fake_grep
+
+  make_stub fzf <<'STUB'
 #!/bin/sh
 exit 0
-EOF
-  chmod +x "$TEST_HOME/bin/fzf"
+STUB
 
-  cat > "$TEST_HOME/bin-no-fzf/grep" <<'EOF'
-#!/bin/sh
-exec /usr/bin/grep "$@"
-EOF
-  chmod +x "$TEST_HOME/bin-no-fzf/grep"
+  cat > "$TEST_HOME/.fzf.zsh" <<'FILE'
+printf 'fzf-brew\n' >> "$HOME/.startup_order"
+FILE
+
+  mkdir -p "$TEST_HOME/usr-share/doc/fzf/examples"
+  cat > "$TEST_HOME/usr-share/doc/fzf/examples/key-bindings.zsh" <<'FILE'
+printf 'fzf-apt\n' >> "$HOME/.startup_order"
+FILE
+
+  cat > "$PROC_VERSION_FILE" <<'FILE'
+Linux version
+FILE
 }
 
 cleanup() {
-  rm -rf "$TEST_DIR"
-}
-
-run_main() {
-  local run_path
-  local run_status
-  run_path="${TEST_RUN_PATH:-$TEST_PATH}"
-  HOME="$TEST_HOME" \
-  PATH="$run_path" \
-  DOTFILES_UPDATED="${TEST_RUN_DOTFILES_UPDATED:-0}" \
-  NO_UV="${TEST_RUN_NO_UV:-true}" \
-  SSH_CONNECTION="${SSH_CONNECTION:-}" \
-  MOCK_WSL="${MOCK_WSL:-}" \
-  MOCK_SSH_AUTH_SOCK="${MOCK_SSH_AUTH_SOCK:-}" \
-  TMUX="${TMUX:-}" \
-  "$ZSH_BIN" -c '
-    hash -r
-    source "$HOME/.dotfiles/common.sh"
-    source "$HOME/.dotfiles/main.zshrc"
-  '
-  run_status=$?
-  unset \
-    SSH_CONNECTION \
-    MOCK_WSL \
-    MOCK_SSH_AUTH_SOCK \
-    TMUX \
-    TEST_RUN_DOTFILES_UPDATED \
-    TEST_RUN_NO_UV \
-    TEST_RUN_PATH
-  return "$run_status"
+  cleanup_test_root
 }
 
 run_main_eval() {
-  local run_path
-  local run_status
-  run_path="${TEST_RUN_PATH:-$TEST_PATH}"
   HOME="$TEST_HOME" \
-  PATH="$run_path" \
+  PATH="$TEST_PATH" \
   DOTFILES_UPDATED="${TEST_RUN_DOTFILES_UPDATED:-0}" \
   NO_UV="${TEST_RUN_NO_UV:-true}" \
   SSH_CONNECTION="${SSH_CONNECTION:-}" \
-  MOCK_WSL="${MOCK_WSL:-}" \
-  MOCK_SSH_AUTH_SOCK="${MOCK_SSH_AUTH_SOCK:-}" \
   TMUX="${TMUX:-}" \
+  PROC_VERSION_FILE="$PROC_VERSION_FILE" \
+  GIT_BIN="$TEST_BIN/git" \
+  GREP_BIN="$TEST_BIN/grep" \
+  TMUX_BIN="$TEST_BIN/tmux" \
+  FZF_APT_KEY_BINDINGS="$TEST_HOME/usr-share/doc/fzf/examples/key-bindings.zsh" \
   "$ZSH_BIN" -c "
     hash -r
     source \"\$HOME/.dotfiles/common.sh\"
     source \"\$HOME/.dotfiles/main.zshrc\"
     $1
   "
-  run_status=$?
-  unset \
-    SSH_CONNECTION \
-    MOCK_WSL \
-    MOCK_SSH_AUTH_SOCK \
-    TMUX \
-    TEST_RUN_DOTFILES_UPDATED \
-    TEST_RUN_NO_UV \
-    TEST_RUN_PATH
-  return "$run_status"
 }
 
-Describe 'main.zshrc startup behavior'
+Describe 'main.zshrc helper behavior'
   Before 'setup'
   After 'cleanup'
 
@@ -168,7 +135,9 @@ Describe 'main.zshrc startup behavior'
   End
 
   It 'sets EDITOR to wslsubl when WSL is detected'
-    MOCK_WSL=1
+    cat > "$PROC_VERSION_FILE" <<'FILE'
+Linux version Microsoft
+FILE
     When run run_main_eval 'print -r -- "$EDITOR"'
     The status should be success
     The output should equal 'wslsubl -n -w'
@@ -180,20 +149,88 @@ Describe 'main.zshrc startup behavior'
     The output should equal 'subl -n -w'
   End
 
+  It 'prepends the expected path entries and preserves existing PATH'
+    When run run_main_eval '
+      print -r -- "${path[1]}"
+      print -r -- "${path[2]}"
+      print -r -- "${path[3]}"
+      print -r -- "${path[4]}"
+      print -r -- "${path[5]}"
+      print -r -- "${path[6]}"
+      print -r -- "${(j:\n:)path}"
+    '
+    The status should be success
+    The output should include "$(printf '%s\n' \
+      "$TEST_HOME/bin" \
+      "$TEST_HOME/.dotfiles/bin" \
+      "$TEST_HOME/.local/bin" \
+      '/usr/local/bin' \
+      '/usr/local/sbin' \
+      '/opt/homebrew/bin')"
+    The output should include '/bin'
+    The output should include '/usr/bin'
+  End
+
+  It 'runs nodenv init only when ~/.nodenv exists'
+    mkdir -p "$TEST_HOME/.nodenv"
+    When run run_main_eval 'print -r -- "${NODENV_INIT_RAN:-unset}"'
+    The status should be success
+    The output should equal '1'
+  End
+
+  It 'does not run nodenv init when ~/.nodenv is absent'
+    When run run_main_eval 'print -r -- "${NODENV_INIT_RAN:-unset}"'
+    The status should be success
+    The output should equal 'unset'
+  End
+
+  It 'sets GOPATH and appends GOPATH/bin to PATH'
+    When run run_main_eval '
+      print -r -- "$GOPATH"
+      print -r -- "${path[-1]}"
+    '
+    The status should be success
+    The output should equal "$(printf '%s\n' \
+      "$TEST_HOME/go" \
+      "$TEST_HOME/go/bin")"
+  End
+
+  It 'runs rbenv init only when ~/.rbenv exists'
+    mkdir -p "$TEST_HOME/.rbenv"
+    When run run_main_eval 'print -r -- "${RBENV_INIT_RAN:-unset}"'
+    The status should be success
+    The output should equal '1'
+  End
+
+  It 'does not run rbenv init when ~/.rbenv is absent'
+    When run run_main_eval 'print -r -- "${RBENV_INIT_RAN:-unset}"'
+    The status should be success
+    The output should equal 'unset'
+  End
+
+  It 'sets Homebrew environment variables'
+    When run run_main_eval '
+      print -r -- "$HOMEBREW_NO_ANALYTICS"
+      print -r -- "$HOMEBREW_NO_ENV_HINTS"
+    '
+    The status should be success
+    The output should equal "$(printf '1\n1')"
+  End
+
   It 'creates Claude settings from dist when settings.json is missing'
     rm -f "$TEST_HOME/.dotfiles/.claude/settings.json"
-    When run run_main
+    When run run_main_eval 'test -f "$HOME/.dotfiles/.claude/settings.json" && print ok'
     The status should be success
-    The file "$TEST_HOME/.dotfiles/.claude/settings.json" should be exist
+    The output should include 'ok'
     Assert json_value_should_eq \
       "$TEST_HOME/.dotfiles/.claude/settings.json" \
       '.model' \
-      "claude-opus-4-6"
+      'claude-opus-4-6'
   End
 
   It 'runs antigen update commands when DOTFILES_UPDATED=1'
     TEST_RUN_DOTFILES_UPDATED=1
-    When run run_main
+    When run run_main_eval 'true'
     The status should be success
     The output should include 'Updating antigen...'
     The contents of file "$TEST_HOME/.antigen_calls" should include 'selfupdate'
@@ -201,7 +238,7 @@ Describe 'main.zshrc startup behavior'
   End
 
   It 'does not run antigen update commands when DOTFILES_UPDATED=0'
-    When run run_main
+    When run run_main_eval 'true'
     The status should be success
     The contents of file "$TEST_HOME/.antigen_calls" should not include 'selfupdate'
     The contents of file "$TEST_HOME/.antigen_calls" should not include 'update'
@@ -214,17 +251,17 @@ Describe 'main.zshrc startup behavior'
     The output should include '_update_ssh_agent'
   End
 
+  It 'updates SSH_AUTH_SOCK from tmux environment'
+    TMUX=1
+    When run run_main_eval '_update_ssh_agent; print -r -- "$SSH_AUTH_SOCK"'
+    The status should be success
+    The output should equal '/tmp/mock.sock'
+  End
+
   It 'does not register _update_ssh_agent in precmd_functions without TMUX'
     When run run_main_eval 'print -r -- "${precmd_functions[*]}"'
     The status should be success
     The output should not include '_update_ssh_agent'
-  End
-
-  It 'updates SSH_AUTH_SOCK from tmux environment'
-    MOCK_SSH_AUTH_SOCK=/tmp/from_tmux.sock
-    When run run_main_eval '_update_ssh_agent; print -r -- "$SSH_AUTH_SOCK"'
-    The status should be success
-    The output should equal '/tmp/from_tmux.sock'
   End
 
   It 'rewrites GitHub host and configures local git identity in lynclone'
@@ -235,35 +272,55 @@ Describe 'main.zshrc startup behavior'
     '
     The status should be success
     The output should equal "$TEST_HOME/repo"
-    The contents of file "$TEST_HOME/.git_calls" \
-      should include 'clone git@github.lync:org/repo.git'
-    The contents of file "$TEST_HOME/.git_calls" \
-      should include 'config user.name Yuan Liu'
+    The contents of file "$TEST_HOME/.git_calls" should include 'clone git@github.lync:org/repo.git'
+    The contents of file "$TEST_HOME/.git_calls" should include 'config user.name Yuan Liu'
     The contents of file "$TEST_HOME/.git_calls" \
       should include 'config user.email lyncredible@outlook.com'
-    The contents of file "$TEST_HOME/.git_calls" \
-      should include 'config commit.gpgsign false'
+    The contents of file "$TEST_HOME/.git_calls" should include 'config commit.gpgsign false'
+  End
+
+  It 'sources aliases from ~/.dotfiles/.aliases'
+    When run run_main_eval 'alias dotfiles_test_alias'
+    The status should be success
+    The output should include 'dotfiles_test_alias='\''alias works'\'''
   End
 
   It 'prints uv warning when uv is missing and NO_UV is not true'
     TEST_RUN_NO_UV=false
-    TEST_RUN_PATH="$TEST_HOME/bin-no-fzf"
-    When run run_main
+    When run env \
+      HOME="$TEST_HOME" \
+      PATH="$TEST_HOME/no-fzf" \
+      DOTFILES_UPDATED=0 \
+      NO_UV=false \
+      PROC_VERSION_FILE="$PROC_VERSION_FILE" \
+      GIT_BIN="$TEST_BIN/git" \
+      GREP_BIN="$TEST_BIN/grep" \
+      TMUX_BIN="$TEST_BIN/tmux" \
+      UV_BIN="$TEST_HOME/no-fzf/uv" \
+      FZF_BIN="$TEST_HOME/no-fzf/fzf" \
+      "$ZSH_BIN" -c '
+        source "$HOME/.dotfiles/common.sh"
+        source "$HOME/.dotfiles/main.zshrc"
+      '
     The status should be success
     The output should include 'WARNING: uv is not installed'
   End
 
   It 'prints fzf warning when fzf is missing'
-    rm -f "$TEST_HOME/bin/fzf"
     When run env \
       HOME="$TEST_HOME" \
-      PATH="$TEST_HOME/bin-no-fzf" \
+      PATH="$TEST_HOME/no-fzf" \
       DOTFILES_UPDATED=0 \
       NO_UV=true \
+      PROC_VERSION_FILE="$PROC_VERSION_FILE" \
+      GIT_BIN="$TEST_BIN/git" \
+      GREP_BIN="$TEST_BIN/grep" \
+      TMUX_BIN="$TEST_BIN/tmux" \
+      FZF_BIN="$TEST_HOME/no-fzf/fzf" \
       "$ZSH_BIN" -c '
-        hash -r
         source "$HOME/.dotfiles/common.sh"
         source "$HOME/.dotfiles/main.zshrc"
+        warn_if_fzf_missing
       '
     The status should be success
     The output should include 'WARNING: fzf is not installed'
@@ -271,12 +328,50 @@ Describe 'main.zshrc startup behavior'
 
   It 'defines interactive helper functions and autosuggest clear widget'
     When run run_main_eval '
-      print -r -- "${+functions[pasteinit]}" \
-        "${+functions[pastefinish]}" "${+functions[reset-terminal]}"
+      print -r -- \
+        "${+functions[pasteinit]} ${+functions[pastefinish]} ${+functions[reset-terminal]}"
       print -r -- "${ZSH_AUTOSUGGEST_CLEAR_WIDGETS[*]}"
     '
     The status should be success
     The output should include '1 1 1'
     The output should include 'bracketed-paste'
+  End
+
+  It 'configures paste zstyles'
+    When run run_main_eval '
+      zstyle -L :bracketed-paste-magic | sed -n "1,2p"
+    '
+    The status should be success
+    The output should include 'zstyle :bracketed-paste-magic paste-init pasteinit'
+    The output should include 'zstyle :bracketed-paste-magic paste-finish pastefinish'
+  End
+
+  It 'registers the reset-terminal widget and keybinding'
+    When run run_main_eval '
+      zle -l reset-terminal
+      bindkey "^Z"
+    '
+    The status should be success
+    The output should include 'reset-terminal'
+    The output should include '"^Z" reset-terminal'
+  End
+
+  It 'applies antigen before sourcing p10k config'
+    When run run_main_eval '
+      startup_order=$(cat "$HOME/.startup_order")
+      case "$startup_order" in
+        *"antigen:apply
+p10k"*) print -r -- ok ;;
+        *) print -r -- fail ;;
+      esac
+    '
+    The status should be success
+    The output should equal 'ok'
+  End
+
+  It 'sources fzf files after p10k config'
+    When run run_main_eval 'tail -n 3 "$HOME/.startup_order"'
+    The status should be success
+    The output should equal "$(printf 'p10k\nfzf-brew\nfzf-apt')"
   End
 End

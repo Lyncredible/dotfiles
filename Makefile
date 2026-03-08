@@ -1,4 +1,4 @@
-.PHONY: test lint lint-shell lint-lines
+.PHONY: test test-integration lint lint-shell lint-lines test-deps test-integration-deps
 
 SHELLCHECK_FILES = \
 	common.sh \
@@ -9,7 +9,8 @@ SHELLCHECK_FILES = \
 	spec/main_zshrc_spec.sh \
 	spec/setup_spec.sh \
 	spec/spec_helper.sh \
-	spec/zshrc_update_spec.sh
+	spec/zshrc_update_spec.sh \
+	spec/integration_zsh_startup.sh
 
 SCRIPT_FILES := $(shell \
 	{ \
@@ -27,9 +28,24 @@ SCRIPT_FILES := $(shell \
 
 LINE_LENGTH_FILES = Makefile $(SCRIPT_FILES)
 MAX_LINE_LENGTH ?= 100
+TEST_ENV = LC_ALL=C TZ=UTC
 
-test:
-	shellspec
+test: test-deps
+	@env $(TEST_ENV) shellspec
+
+test-integration: test-integration-deps
+	@env $(TEST_ENV) sh ./spec/integration_zsh_startup.sh
+
+test-deps:
+	@for cmd in shellspec zsh jq readlink; do \
+		command -v $$cmd >/dev/null 2>&1 || { echo "Missing test dependency: $$cmd"; exit 1; }; \
+	done
+
+test-integration-deps:
+	@for cmd in zsh; do \
+		command -v $$cmd >/dev/null 2>&1 || { echo "Missing integration dependency: $$cmd"; exit 1; }; \
+	done
+	@test -d "$$HOME/.antigen" || { echo "Missing integration dependency: $$HOME/.antigen"; exit 1; }
 
 lint: lint-shell lint-lines
 
