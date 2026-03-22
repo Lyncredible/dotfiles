@@ -150,11 +150,17 @@ source_p10k() {
 }
 
 source_fzf() {
-  # fzf via brew
-  [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-
-  # fzf via apt on Ubuntu
-  [ -f "$FZF_APT_KEY_BINDINGS" ] && source "$FZF_APT_KEY_BINDINGS"
+  # Modern fzf integration (fzf >= 0.48.0)
+  # This method is preferred as it's maintained by fzf itself
+  if command_exists fzf && fzf --zsh >/dev/null 2>&1; then
+    eval "$(fzf --zsh)"
+  # Fallback: fzf via Homebrew
+  elif [ -f ~/.fzf.zsh ]; then
+    source ~/.fzf.zsh
+  # Fallback: fzf via apt on Ubuntu
+  elif [ -f "$FZF_APT_KEY_BINDINGS" ]; then
+    source "$FZF_APT_KEY_BINDINGS"
+  fi
 }
 
 warn_if_fzf_missing() {

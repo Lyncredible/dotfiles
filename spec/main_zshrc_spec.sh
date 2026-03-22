@@ -369,9 +369,86 @@ p10k"*) print -r -- ok ;;
     The output should equal 'ok'
   End
 
-  It 'sources fzf files after p10k config'
-    When run run_main_eval 'tail -n 3 "$HOME/.startup_order"'
+  It 'uses fzf --zsh when available and working'
+    # Setup: Create fzf stub that supports --zsh
+    make_stub fzf <<'STUB'
+#!/bin/sh
+if [ "$1" = "--zsh" ]; then
+  printf 'printf '\''fzf-modern\\n'\'' >> "$HOME/.startup_order"\n'
+  exit 0
+fi
+exit 0
+STUB
+
+    # Remove legacy fzf files to ensure modern method is used
+    rm -f "$TEST_HOME/.fzf.zsh"
+    rm -rf "$TEST_HOME/usr-share"
+
+    When run run_main_eval 'tail -n 1 "$HOME/.startup_order"'
     The status should be success
-    The output should equal "$(printf 'p10k\nfzf-brew\nfzf-apt')"
+    The output should equal 'fzf-modern'
+  End
+
+  It 'falls back to ~/.fzf.zsh when fzf --zsh fails'
+    # Setup: Create fzf stub that does NOT support --zsh
+    make_stub fzf <<'STUB'
+#!/bin/sh
+if [ "$1" = "--zsh" ]; then
+  exit 1
+fi
+exit 0
+STUB
+
+    # Remove apt file to ensure homebrew fallback is used
+    rm -rf "$TEST_HOME/usr-share"
+
+    When run run_main_eval 'tail -n 1 "$HOME/.startup_order"'
+    The status should be success
+    The output should equal 'fzf-brew'
+  End
+
+  It 'falls back to apt keybindings when fzf --zsh and ~/.fzf.zsh are unavailable'
+    # Setup: Create fzf stub that does NOT support --zsh
+    make_stub fzf <<'STUB'
+#!/bin/sh
+if [ "$1" = "--zsh" ]; then
+  exit 1
+fi
+exit 0
+STUB
+
+    # Remove homebrew file to ensure apt fallback is used
+    rm -f "$TEST_HOME/.fzf.zsh"
+
+    When run run_main_eval 'tail -n 1 "$HOME/.startup_order"'
+    The status should be success
+    The output should equal 'fzf-apt'
+  End
+
+  It 'does not source multiple fzf configurations'
+    # Setup: Create fzf stub that supports --zsh
+    make_stub fzf <<'STUB'
+#!/bin/sh
+if [ "$1" = "--zsh" ]; then
+  printf 'printf '\''fzf-modern\\n'\'' >> "$HOME/.startup_order"\n'
+  exit 0
+fi
+exit 0
+STUB
+
+    When run run_main_eval 'grep -c "^fzf-" "$HOME/.startup_order"'
+    The status should be success
+    The output should equal '1'
+  End
+
+  It 'silently continues when fzf is not available'
+    # Setup: Remove fzf command and all config files
+    rm -f "$TEST_BIN/fzf"
+    rm -f "$TEST_HOME/.fzf.zsh"
+    rm -rf "$TEST_HOME/usr-share"
+
+    When run run_main_eval 'print ok'
+    The status should be success
+    The output should include 'ok'
   End
 End
