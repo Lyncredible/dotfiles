@@ -111,3 +111,77 @@ maybe_update_dotfiles() {
   unset UPDATE_BEFORE_REF
   unset UPDATE_AFTER_REF
 }
+
+# Antigen cache generation protection
+ANTIGEN_DOTFILES_LOCK="${ANTIGEN_DOTFILES_LOCK:-$HOME/.dotfiles/.antigen-cache.lock}"
+ANTIGEN_LOCK_TIMEOUT="${ANTIGEN_LOCK_TIMEOUT:-30}"  # seconds
+ANTIGEN_LOCK_STALE_AGE="${ANTIGEN_LOCK_STALE_AGE:-300}"  # 5 minutes
+
+# Acquire lock with timeout and stale lock cleanup
+# Returns: 0 on success, 1 on failure
+acquire_antigen_cache_lock() {
+  local lock_file="$ANTIGEN_DOTFILES_LOCK"
+  local timeout="$ANTIGEN_LOCK_TIMEOUT"
+  local stale_age="$ANTIGEN_LOCK_STALE_AGE"
+  local waited=0
+
+  while [[ $waited -lt $timeout ]]; do
+    # Check for stale lock (>5 minutes old)
+    if [[ -d "$lock_file" ]]; then
+      local lock_age
+      lock_age=$(($(epoch_now) - $(stat -f %m "$lock_file" 2>/dev/null || echo 0)))
+      if [[ $lock_age -gt $stale_age ]]; then
+        printf 'Antigen: Removing stale cache lock (age: %ds)\n' "$lock_age" >&2
+        rm -rf "$lock_file" 2>/dev/null
+      fi
+    fi
+
+    # Try to acquire lock atomically using mkdir
+    if mkdir "$lock_file" 2>/dev/null; then
+      # Store PID for debugging
+      echo "$$" > "$lock_file/pid"
+      return 0
+    fi
+
+    # Lock held by another process, wait
+    sleep 0.1
+    waited=$((waited + 1))
+  done
+
+  printf 'Antigen: Failed to acquire cache lock after %ds\n' "$timeout" >&2
+  return 1
+}
+
+# Release lock
+release_antigen_cache_lock() {
+  local lock_file="$ANTIGEN_DOTFILES_LOCK"
+  if [[ -d "$lock_file" ]]; then
+    rm -rf "$lock_file" 2>/dev/null
+  fi
+}
+
+# Wait for background zcompile to complete
+# Antigen runs zcompile in background with &! after cache generation
+# We poll for .zwc file to appear and be newer than source
+wait_for_antigen_compile() {
+  local cache_file="${ANTIGEN_CACHE:-$HOME/.antigen/init.zsh}"
+  local zwc_file="${cache_file}.zwc"
+  local max_wait=50  # 5 seconds (50 × 0.1s)
+  local waited=0
+
+  # If cache doesn't exist, nothing to wait for
+  [[ ! -f "$cache_file" ]] && return 0
+
+  while [[ $waited -lt $max_wait ]]; do
+    # Check if zwc exists and is newer than cache
+    if [[ -f "$zwc_file" && "$zwc_file" -nt "$cache_file" ]]; then
+      return 0
+    fi
+    sleep 0.1
+    waited=$((waited + 1))
+  done
+
+  # Timeout is not an error - zcompile might have failed or still running
+  # Proceed anyway since the cache file itself is complete
+  return 0
+}

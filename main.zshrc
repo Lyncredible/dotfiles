@@ -7,6 +7,16 @@ FZF_BIN="${FZF_BIN:-fzf}"
 FZF_APT_KEY_BINDINGS="${FZF_APT_KEY_BINDINGS:-/usr/share/doc/fzf/examples/key-bindings.zsh}"
 
 configure_antigen() {
+  # Acquire outer lock to protect entire antigen configuration
+  # This extends protection beyond antigen's built-in lock which is released too early
+  if ! acquire_antigen_cache_lock; then
+    printf 'Error: Failed to acquire antigen lock, cannot proceed safely\n' >&2
+    return 1
+  fi
+
+  # Ensure lock is released even if something fails
+  trap 'release_antigen_cache_lock' EXIT INT TERM
+
   # Using antigen to manage zsh plugins
   source ~/.antigen/antigen.zsh
 
@@ -29,8 +39,17 @@ configure_antigen() {
 
   # Bullet train theme
   antigen theme romkatv/powerlevel10k
+
   # Then, source plugins and add commands to $PATH
   antigen apply
+
+  # Wait for background zcompile to complete before releasing lock
+  # This ensures no other process reads partially-compiled cache
+  wait_for_antigen_compile
+
+  # Release lock
+  release_antigen_cache_lock
+  trap - EXIT INT TERM
 
   # Update antigen whenever dotfiles auto-update succeeds (periodic)
   if [[ "${DOTFILES_UPDATED:-0}" -eq 1 ]]; then

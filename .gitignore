@@ -1,1 +1,2 @@
 *.zwc
+.antigen-cache.lock/
