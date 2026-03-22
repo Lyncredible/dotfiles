@@ -68,6 +68,10 @@ ensure_git_include() {
   fi
 }
 
+ensure_git_hooks_path() {
+  "$GIT_BIN" -C "$DOTFILES_DIR" config core.hooksPath hooks
+}
+
 ensure_antigen() {
   if [ ! -d "$ANTIGEN_DIR" ]; then
     echo "${BLUE}Installing antigen...${NORMAL}"
@@ -96,6 +100,7 @@ main() {
   write_zsh_wrapper
   ensure_symlink_if_absent "$DOTFILES_DIR/.p10k.zsh" "$HOME/.p10k.zsh"
   ensure_git_include
+  ensure_git_hooks_path
   ensure_symlink_if_absent "$DOTFILES_DIR/.vimrc" "$HOME/.vimrc"
   ensure_symlink_if_absent "$DOTFILES_DIR/.tmux.conf" "$HOME/.tmux.conf"
   ensure_symlink_if_absent "$DOTFILES_DIR/.hammerspoon" "$HOME/.hammerspoon"

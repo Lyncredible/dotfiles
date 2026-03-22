@@ -93,6 +93,8 @@ Describe 'setup.sh'
       should include 'clone https://github.com/zsh-users/antigen.git'
     The contents of file "$TEST_HOME/.setup_calls" \
       should include "chsh:-s $TEST_BIN/zsh"
+    The contents of file "$TEST_HOME/.setup_calls" \
+      should include "-C $TEST_DOTFILES_DIR config core.hooksPath hooks"
   End
 
   It 'does not add git include.path when already present'
