@@ -468,20 +468,28 @@ antigen update
    - Match the style and conventions in existing files
    - Don't introduce new plugin managers or tools without discussion
 
-2. **Test on the target platform**
+2. **Always add tests for new features and changes**
+   - Write unit tests in `spec/` using shellspec for all new functions and behavior changes
+   - Add integration tests in `spec/integration_*.sh` for cross-component features
+   - Update existing tests when changing behavior
+   - Ensure all tests pass with `make test` before committing
+   - Follow existing test patterns: use stubs, test all fallback paths, verify edge cases
+   - See `spec/main_zshrc_spec.sh` for examples of comprehensive test coverage
+
+3. **Test on the target platform**
    - macOS-specific: Hammerspoon, Karabiner
    - Windows-specific: AutoHotkey
    - Cross-platform: Shell configs
 
-3. **Respect the override system**
+4. **Respect the override system**
    - Don't force changes that should be local
    - Use `~/.zshrc_local` pattern for optional features
 
-4. **Update both platforms**
+5. **Update both platforms**
    - If changing window management, update both Hammerspoon AND AutoHotkey
    - Keep keybindings consistent across platforms
 
-5. **Document significant changes**
+6. **Document significant changes**
    - Update this file (AGENTS.md) for major additions
    - Add comments in complex configuration sections
 
