@@ -12,15 +12,15 @@ SHELLCHECK_FILES = \
 	spec/zshrc_update_spec.sh \
 	spec/integration_zsh_startup.sh
 
-SCRIPT_FILES != { \
+SCRIPT_FILES := $(sort $(patsubst ./%,%,$(shell \
 	find . -type f \( \
-		-name '*.sh' -o \
-		-name '*.zsh' -o \
-		-name '.zshrc' -o \
-		-name 'main.zshrc' \
-	\) ! -name '.p10k.zsh' -print; \
-	find bin -type f -print 2>/dev/null; \
-} | sed 's#^\./##' | sort -u
+		-name "*.sh" -o \
+		-name "*.zsh" -o \
+		-name ".zshrc" -o \
+		-name "main.zshrc" \
+	\) ! -name ".p10k.zsh" -print; \
+	find bin -type f -print 2>/dev/null \
+)))
 
 LINE_LENGTH_FILES = Makefile $(SCRIPT_FILES)
 MAX_LINE_LENGTH ?= 100
@@ -41,7 +41,6 @@ test-integration-deps:
 	@for cmd in zsh; do \
 		command -v $$cmd >/dev/null 2>&1 || { echo "Missing integration dependency: $$cmd"; exit 1; }; \
 	done
-	@test -d "$$HOME/.antigen" || { echo "Missing integration dependency: $$HOME/.antigen"; exit 1; }
 
 lint: lint-shell lint-lines
 

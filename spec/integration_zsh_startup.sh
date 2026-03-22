@@ -3,19 +3,12 @@
 set -eu
 
 REPO_ROOT=$(CDPATH='' cd -- "$(dirname "$0")/.." && pwd)
-SOURCE_HOME=${HOME}
-ANTIGEN_SOURCE_DIR=${ANTIGEN_SOURCE_DIR:-$SOURCE_HOME/.antigen}
 
 if ! command -v zsh >/dev/null 2>&1; then
   echo "Missing dependency: zsh" >&2
   exit 1
 fi
 ZSH_BIN=$(command -v zsh)
-
-if [ ! -d "$ANTIGEN_SOURCE_DIR" ]; then
-  echo "Missing Antigen source directory: $ANTIGEN_SOURCE_DIR" >&2
-  exit 1
-fi
 
 TEST_ROOT=$(mktemp -d)
 cleanup() {
@@ -24,39 +17,67 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 TEST_HOME="$TEST_ROOT/home"
-mkdir -p "$TEST_HOME/.dotfiles" "$TEST_HOME/.antigen"
+mkdir -p "$TEST_HOME/.dotfiles" "$TEST_HOME/.antigen" "$TEST_HOME/bin"
 
 cp "$REPO_ROOT/.zshrc" "$TEST_HOME/.dotfiles/.zshrc"
 cp "$REPO_ROOT/main.zshrc" "$TEST_HOME/.dotfiles/main.zshrc"
 cp "$REPO_ROOT/common.sh" "$TEST_HOME/.dotfiles/common.sh"
 cp "$REPO_ROOT/.aliases" "$TEST_HOME/.dotfiles/.aliases"
 cp "$REPO_ROOT/.p10k.zsh" "$TEST_HOME/.dotfiles/.p10k.zsh"
-cp -R "$ANTIGEN_SOURCE_DIR"/. "$TEST_HOME/.antigen/"
-chmod -R u+w "$TEST_HOME/.antigen"
+
+cat > "$TEST_HOME/.antigen/antigen.zsh" <<'EOF'
+antigen() {
+  if [ "$1" = "theme" ]; then
+    prompt_powerlevel9k_setup() { :; }
+  fi
+}
+EOF
+
+cat > "$TEST_HOME/bin/fzf" <<'EOF'
+#!/bin/sh
+exit 1
+EOF
+chmod +x "$TEST_HOME/bin/fzf"
 
 mkdir -p "$TEST_HOME/.dotfiles/.claude"
 cat > "$TEST_HOME/.dotfiles/.claude/settings.json.dist" <<'JSON'
 {"attribution":{"commit":"","pr":""},"model":"claude-opus-4-6"}
 JSON
 
-OUTPUT=$(
-  HOME="$TEST_HOME" \
-  ZDOTDIR="$TEST_HOME" \
-  TERM="${TERM:-xterm-256color}" \
-  NO_UV=true \
-  SSH_CONNECTION='' \
-  TMUX='' \
-  POWERLEVEL9K_DISABLE_GITSTATUS=true \
-  "$ZSH_BIN" -i -c '
-    source "$HOME/.dotfiles/common.sh"
-    source "$HOME/.dotfiles/main.zshrc"
-    print -r -- "EDITOR=$EDITOR"
-    print -r -- "THEME=${POWERLEVEL9K_MODE:-unset}"
-    print -r -- "LEFT=${POWERLEVEL9K_LEFT_PROMPT_ELEMENTS[*]:-unset}"
-    whence -w prompt_powerlevel9k_setup
-    alias venv
-  ' 2>&1
-)
+cat > "$TEST_HOME/.zshrc" <<'EOF'
+export HOME="$ZDOTDIR"
+export PATH="$HOME/bin:/bin:/usr/bin"
+export FZF_APT_KEY_BINDINGS="$HOME/no-fzf/key-bindings.zsh"
+source "$HOME/.dotfiles/common.sh"
+source "$HOME/.dotfiles/main.zshrc"
+print -r -- "EDITOR=$EDITOR"
+print -r -- "THEME=${POWERLEVEL9K_MODE:-unset}"
+print -r -- "LEFT=${POWERLEVEL9K_LEFT_PROMPT_ELEMENTS[*]:-unset}"
+whence -w prompt_powerlevel9k_setup
+alias venv
+exit 0
+EOF
+
+STDOUT_FILE="$TEST_ROOT/stdout"
+STDERR_FILE="$TEST_ROOT/stderr"
+HOME="$TEST_HOME" \
+ZDOTDIR="$TEST_HOME" \
+TERM="${TERM:-xterm-256color}" \
+PATH="$TEST_HOME/bin:/bin:/usr/bin" \
+NO_UV=true \
+SSH_CONNECTION='' \
+TMUX='' \
+POWERLEVEL9K_DISABLE_GITSTATUS=true \
+"$ZSH_BIN" -i >"$STDOUT_FILE" 2>"$STDERR_FILE"
+
+OUTPUT=$(cat "$STDOUT_FILE")
+ERROR_OUTPUT=$(cat "$STDERR_FILE")
+
+if [ -n "$ERROR_OUTPUT" ]; then
+  printf '%s\n' "$ERROR_OUTPUT" >&2
+  echo "Expected zsh startup to be free of stderr output" >&2
+  exit 1
+fi
 
 case "$OUTPUT" in
   *"EDITOR=subl -n -w"*) ;;
