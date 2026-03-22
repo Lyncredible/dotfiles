@@ -4,8 +4,10 @@
 setup() {
   create_test_root
   write_fake_date  # For stale lock detection
+  write_fake_stat  # For portable mtime in stale lock tests
   DATE_BIN="$TEST_BIN/date"
-  export DATE_BIN
+  STAT_BIN="$TEST_BIN/stat"
+  export DATE_BIN STAT_BIN
 
   # Use test-specific lock location
   ANTIGEN_DOTFILES_LOCK="$TEST_HOME/.test-antigen-lock"
@@ -41,8 +43,10 @@ Describe 'acquire_antigen_cache_lock()'
   End
 
   It 'returns 1 when timeout is reached'
+    # Lock mtime is fresh so it won't be considered stale
     FAKE_EPOCH=2000000000
-    export FAKE_EPOCH
+    FAKE_STAT_MTIME=1999999999
+    export FAKE_EPOCH FAKE_STAT_MTIME
     # Create lock held by another process
     mkdir "$ANTIGEN_DOTFILES_LOCK"
     echo "99999" > "$ANTIGEN_DOTFILES_LOCK/pid"
@@ -51,7 +55,7 @@ Describe 'acquire_antigen_cache_lock()'
     ANTIGEN_LOCK_STALE_AGE=999999999
     export ANTIGEN_LOCK_STALE_AGE
 
-    # Set very short timeout for fast test
+    # Set very short timeout for fast test (1 second with sleep 1 intervals)
     ANTIGEN_LOCK_TIMEOUT=1
     export ANTIGEN_LOCK_TIMEOUT
 
@@ -61,15 +65,17 @@ Describe 'acquire_antigen_cache_lock()'
   End
 
   It 'waits and retries when lock is held temporarily'
+    # Lock mtime is fresh so it won't be considered stale
     FAKE_EPOCH=2000000000
-    export FAKE_EPOCH
+    FAKE_STAT_MTIME=1999999999
+    export FAKE_EPOCH FAKE_STAT_MTIME
 
     # Create lock
     mkdir "$ANTIGEN_DOTFILES_LOCK"
     echo "99999" > "$ANTIGEN_DOTFILES_LOCK/pid"
 
-    # Release lock after 0.3 seconds in background
-    (sleep 0.3 && rm -rf "$ANTIGEN_DOTFILES_LOCK") &
+    # Release lock after 0.5 seconds in background (within 1s sleep window)
+    (sleep 0.5 && rm -rf "$ANTIGEN_DOTFILES_LOCK") &
 
     ANTIGEN_LOCK_TIMEOUT=5
     export ANTIGEN_LOCK_TIMEOUT
@@ -80,17 +86,14 @@ Describe 'acquire_antigen_cache_lock()'
   End
 
   It 'removes stale lock older than ANTIGEN_LOCK_STALE_AGE'
-    # Current time: 2000000000
-    # Stale age: 300 seconds (5 minutes)
-    # Lock created: 2000000000 - 400 = 1999999600 (6 minutes 40 seconds ago)
+    # Current time: 2000000000, lock mtime: 1999999600 (400s ago, > 300s stale age)
     FAKE_EPOCH=2000000000
-    export FAKE_EPOCH
+    FAKE_STAT_MTIME=1999999600
+    export FAKE_EPOCH FAKE_STAT_MTIME
 
     # Create old lock
     mkdir "$ANTIGEN_DOTFILES_LOCK"
     echo "99999" > "$ANTIGEN_DOTFILES_LOCK/pid"
-    # Touch with old timestamp (use stat -f %m format)
-    touch -t 200501010000 "$ANTIGEN_DOTFILES_LOCK"  # Jan 1, 2005
 
     When call acquire_antigen_cache_lock
     The status should be success
@@ -105,13 +108,14 @@ Describe 'acquire_antigen_cache_lock()'
   End
 
   It 'respects ANTIGEN_LOCK_STALE_AGE environment variable'
+    # Current time: 2000000000, lock mtime: 1999999850 (150s ago, > 100s custom stale age)
     FAKE_EPOCH=2000000000
-    export FAKE_EPOCH
+    FAKE_STAT_MTIME=1999999850
+    export FAKE_EPOCH FAKE_STAT_MTIME
 
     # Create lock that is 150 seconds old
     mkdir "$ANTIGEN_DOTFILES_LOCK"
     echo "99999" > "$ANTIGEN_DOTFILES_LOCK/pid"
-    touch -t 200501010000 "$ANTIGEN_DOTFILES_LOCK"
 
     # Override stale age to 100 seconds (lock should be considered stale)
     ANTIGEN_LOCK_STALE_AGE=100
@@ -137,8 +141,10 @@ Describe 'acquire_antigen_cache_lock()'
   End
 
   It 'does not remove fresh lock during acquisition attempt'
+    # Lock mtime is 10s ago, well under stale age of 999999999
     FAKE_EPOCH=2000000000
-    export FAKE_EPOCH
+    FAKE_STAT_MTIME=1999999990
+    export FAKE_EPOCH FAKE_STAT_MTIME
 
     mkdir "$ANTIGEN_DOTFILES_LOCK"
     echo "99999" > "$ANTIGEN_DOTFILES_LOCK/pid"
@@ -248,14 +254,13 @@ Describe 'wait_for_antigen_compile()'
 
   It 'returns 0 on timeout (not treated as error)'
     ANTIGEN_CACHE="$TEST_HOME/init.zsh"
-    export ANTIGEN_CACHE
+    ANTIGEN_COMPILE_TIMEOUT=1
+    export ANTIGEN_CACHE ANTIGEN_COMPILE_TIMEOUT
 
     # Create cache file but no zwc file
     echo "# cache content" > "$ANTIGEN_CACHE"
     # Don't create zwc - will timeout
 
-    # Override max_wait in function (would need modification to function)
-    # For now, just test that it eventually returns
     When call wait_for_antigen_compile
     The status should be success
   End

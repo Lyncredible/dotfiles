@@ -113,6 +113,13 @@ printf '%s\n' "${FAKE_EPOCH:?}"
 STUB
 }
 
+write_fake_stat() {
+  make_stub stat <<'STUB'
+#!/bin/sh
+printf '%s\n' "${FAKE_STAT_MTIME:?}"
+STUB
+}
+
 symlink_to() {
   local link_path="$1"
   local target="$2"

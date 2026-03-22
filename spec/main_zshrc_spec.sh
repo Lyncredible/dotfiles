@@ -296,6 +296,8 @@ FILE
       GIT_BIN="$TEST_BIN/git" \
       GREP_BIN="$TEST_BIN/grep" \
       TMUX_BIN="$TEST_BIN/tmux" \
+      MKDIR_BIN="$(command -v mkdir)" \
+      SLEEP_BIN="$(command -v sleep)" \
       UV_BIN="$TEST_HOME/no-fzf/uv" \
       FZF_BIN="$TEST_HOME/no-fzf/fzf" \
       "$ZSH_BIN" -c '
@@ -316,6 +318,8 @@ FILE
       GIT_BIN="$TEST_BIN/git" \
       GREP_BIN="$TEST_BIN/grep" \
       TMUX_BIN="$TEST_BIN/tmux" \
+      MKDIR_BIN="$(command -v mkdir)" \
+      SLEEP_BIN="$(command -v sleep)" \
       FZF_BIN="$TEST_HOME/no-fzf/fzf" \
       "$ZSH_BIN" -c '
         source "$HOME/.dotfiles/common.sh"

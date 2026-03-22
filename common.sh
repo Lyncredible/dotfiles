@@ -4,6 +4,9 @@
 DATE_BIN="${DATE_BIN:-date}"
 JQ_BIN="${JQ_BIN:-jq}"
 GIT_BIN="${GIT_BIN:-git}"
+STAT_BIN="${STAT_BIN:-stat}"
+SLEEP_BIN="${SLEEP_BIN:-sleep}"
+MKDIR_BIN="${MKDIR_BIN:-mkdir}"
 
 command_exists() {
   command -v "$1" >/dev/null 2>&1
@@ -116,6 +119,7 @@ maybe_update_dotfiles() {
 ANTIGEN_DOTFILES_LOCK="${ANTIGEN_DOTFILES_LOCK:-$HOME/.dotfiles/.antigen-cache.lock}"
 ANTIGEN_LOCK_TIMEOUT="${ANTIGEN_LOCK_TIMEOUT:-30}"  # seconds
 ANTIGEN_LOCK_STALE_AGE="${ANTIGEN_LOCK_STALE_AGE:-300}"  # 5 minutes
+ANTIGEN_COMPILE_TIMEOUT="${ANTIGEN_COMPILE_TIMEOUT:-5}"  # seconds
 
 # Acquire lock with timeout and stale lock cleanup
 # Returns: 0 on success, 1 on failure
@@ -125,11 +129,21 @@ acquire_antigen_cache_lock() {
   local stale_age="$ANTIGEN_LOCK_STALE_AGE"
   local waited=0
 
+  # Try to acquire lock immediately (fast path)
+  if "$MKDIR_BIN" "$lock_file" 2>/dev/null; then
+    echo "$$" > "$lock_file/pid"
+    return 0
+  fi
+
+  # Retry loop with stale lock detection
   while [[ $waited -lt $timeout ]]; do
     # Check for stale lock (>5 minutes old)
     if [[ -d "$lock_file" ]]; then
-      local lock_age
-      lock_age=$(($(epoch_now) - $(stat -f %m "$lock_file" 2>/dev/null || echo 0)))
+      local mtime lock_age
+      mtime=$("$STAT_BIN" -c %Y "$lock_file" 2>/dev/null \
+        || "$STAT_BIN" -f %m "$lock_file" 2>/dev/null \
+        || echo 0)
+      lock_age=$(($(epoch_now) - mtime))
       if [[ $lock_age -gt $stale_age ]]; then
         printf 'Antigen: Removing stale cache lock (age: %ds)\n' "$lock_age" >&2
         rm -rf "$lock_file" 2>/dev/null
@@ -137,14 +151,13 @@ acquire_antigen_cache_lock() {
     fi
 
     # Try to acquire lock atomically using mkdir
-    if mkdir "$lock_file" 2>/dev/null; then
-      # Store PID for debugging
+    if "$MKDIR_BIN" "$lock_file" 2>/dev/null; then
       echo "$$" > "$lock_file/pid"
       return 0
     fi
 
     # Lock held by another process, wait
-    sleep 0.1
+    "$SLEEP_BIN" 1
     waited=$((waited + 1))
   done
 
@@ -166,7 +179,7 @@ release_antigen_cache_lock() {
 wait_for_antigen_compile() {
   local cache_file="${ANTIGEN_CACHE:-$HOME/.antigen/init.zsh}"
   local zwc_file="${cache_file}.zwc"
-  local max_wait=50  # 5 seconds (50 × 0.1s)
+  local max_wait=$(( ANTIGEN_COMPILE_TIMEOUT * 10 ))  # 0.1s intervals
   local waited=0
 
   # If cache doesn't exist, nothing to wait for
@@ -177,7 +190,7 @@ wait_for_antigen_compile() {
     if [[ -f "$zwc_file" && "$zwc_file" -nt "$cache_file" ]]; then
       return 0
     fi
-    sleep 0.1
+    "$SLEEP_BIN" 0.1
     waited=$((waited + 1))
   done
 
