@@ -1,9 +1,11 @@
-theme = Dimmed Monokai
+adjust-cell-width = 0
+cursor-click-to-move = true
+cursor-style = block
 font-family = MesloLGM Nerd Font
 font-size = 12
 font-thicken = true
-adjust-cell-width = 0
-shell-integration-features = ssh-terminfo
-
 keybind = cmd+arrow_left=previous_tab
 keybind = cmd+arrow_right=next_tab
+mouse-hide-while-typing = true
+shell-integration-features = no-cursor, ssh-terminfo
+theme = Dimmed Monokai
