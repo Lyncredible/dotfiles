@@ -94,6 +94,16 @@ ensure_login_shell() {
   fi
 }
 
+ensure_local_bin() {
+  local_bin="$HOME/.local/bin"
+  ensure_dir "$HOME/.local"
+  ensure_dir "$local_bin"
+  for script in "$DOTFILES_DIR/.local/bin"/*; do
+    [ -f "$script" ] || continue
+    ensure_symlink_if_absent "$script" "$local_bin/$(basename "$script")"
+  done
+}
+
 main() {
   init_colors
   set_defaults
@@ -108,6 +118,7 @@ main() {
   ensure_symlink_if_absent "$DOTFILES_DIR/karabiner" "$CONFIG_DIR/karabiner"
   ensure_symlink_if_absent "$DOTFILES_DIR/ghostty" "$CONFIG_DIR/ghostty"
   ensure_symlink_if_absent "$DOTFILES_DIR/.claude" "$HOME/.claude"
+  ensure_local_bin
   ensure_antigen
   ensure_login_shell
 }

@@ -1,0 +1,11 @@
+#!/bin/sh
+# Apply whereami-derived colors to tmux status bar.
+
+export PATH="$HOME/.local/bin:$PATH"
+
+bg=$(whereami-color bg 2>/dev/null)
+fg=$(whereami-color fg 2>/dev/null)
+
+if [ -n "$bg" ] && [ -n "$fg" ]; then
+    tmux set -g status-style "bg=#${bg},fg=#${fg}"
+fi

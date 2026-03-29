@@ -1,0 +1,77 @@
+#!/bin/sh
+# Get machine identifier with optional emoji.
+# Tries whereami-resolve (platform-specific) first, falls back to hostname.
+
+set -e
+
+get_short_hostname() {
+    hostname | cut -d. -f1
+}
+
+string_to_index() {
+    str="$1"
+    mod="$2"
+    hash=0
+    i=1
+    while [ $i -le ${#str} ]; do
+        char=$(printf '%s' "$str" | cut -c$i)
+        val=$(printf '%d' "'$char")
+        hash=$(( (hash * 31 + val) % 2147483647 ))
+        i=$((i + 1))
+    done
+    echo $(( hash % mod ))
+}
+
+get_emoji() {
+    idx=$1
+    emojis="🍇 🍈 🍉 🍊 🍋 🍌 🍍 🍎 🍐 🍑 🍒 🍓 🥝 🍅 🥑 🍆 🥔 🥕 🌽 🌶 🥒 🍄 🥜 🌰 🍞 🥐 🥖 🥞 🧀 🍖 🍗 🥓 🍔 🍟 🍕 🌭 🌮 🌯 🥙 🥚 🥗 🍿 🍱 🍘 🍙 🍛 🍠 🍢 🍣 🍤 🍥 🍡 🍦 🍧 🍨 🍩 🍪 🎂 🍰 🍫 🍬 🍭 🍮 🍯 🍼 🥛 🍵 🍶 🍷 🍸 🍹 🍺 🍻 🥂 🥃"
+    echo "$emojis" | cut -d' ' -f$((idx + 1))
+}
+
+get_identifier() {
+    # Try platform-specific resolver first
+    if command -v whereami-resolve >/dev/null 2>&1; then
+        result=$(whereami-resolve 2>/dev/null) && [ -n "$result" ] && echo "$result" && return
+    fi
+    get_short_hostname
+}
+
+get_custom_emoji() {
+    if command -v whereami-resolve >/dev/null 2>&1; then
+        whereami-resolve --emoji 2>/dev/null || true
+    fi
+}
+
+main() {
+    name_only=false
+    for arg in "$@"; do
+        case "$arg" in
+            -n) name_only=true ;;
+        esac
+    done
+
+    identifier=$(get_identifier)
+
+    if [ "$name_only" = true ]; then
+        echo "$identifier"
+        return
+    fi
+
+    emoji=$(get_custom_emoji)
+    if [ -z "$emoji" ]; then
+        idx=$(string_to_index "$identifier" 75)
+        emoji=$(get_emoji "$idx")
+    fi
+
+    # Codespaces support
+    if [ "$CODESPACES" = "true" ] && [ -n "$GITHUB_REPOSITORY" ]; then
+        repo=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f2)
+        codespace_name="${CODESPACE_NAME:-$identifier}"
+        codespace_name=$(echo "$codespace_name" | sed 's/-[^-]*$//')
+        echo "$repo | $codespace_name $emoji"
+    else
+        echo "$identifier $emoji"
+    fi
+}
+
+main "$@"

@@ -217,6 +217,19 @@ configure_reset_terminal() {
   bindkey '^Z' reset-terminal
 }
 
+setup_whereami() {
+  export WHEREAMI=$("$HOME/.local/bin/whereami" 2>/dev/null || hostname -s)
+}
+
+set_terminal_title() {
+  precmd_functions+=(_set_terminal_title)
+}
+
+_set_terminal_title() {
+  print -Pn "\e]0;${WHEREAMI}\a"
+}
+
+setup_whereami
 configure_editor
 setup_path
 setup_node
@@ -226,6 +239,7 @@ warn_if_uv_missing
 configure_homebrew
 sync_claude_settings
 register_tmux_ssh_hook
+set_terminal_title
 configure_ulimit
 source_aliases
 configure_antigen

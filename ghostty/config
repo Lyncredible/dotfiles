@@ -4,8 +4,38 @@ cursor-style = block
 font-family = MesloLGM Nerd Font
 font-size = 12
 font-thicken = true
+adjust-cell-width = 0
+shell-integration-features = no-cursor, ssh-terminfo
+macos-titlebar-style = hidden
+scrollback-limit = 0
+
+# Bells
+bell-feature-audio = false
+bell-feature-system = false
+bell-feature-attention = false
+bell-feature-title = false
+bell-feature-border = false
+
+# Tab navigation
 keybind = cmd+arrow_left=previous_tab
 keybind = cmd+arrow_right=next_tab
-mouse-hide-while-typing = true
-shell-integration-features = no-cursor, ssh-terminfo
-theme = Dimmed Monokai
+
+# Quick terminal
+keybind = ctrl+grave_accent=toggle_quick_terminal
+
+# Send Ctrl-W instead of closing tab
+keybind = cmd+w=text:\x17
+
+# Tmux window switching (prefix = Ctrl+B = \x02)
+keybind = cmd+n=text:\x02n
+keybind = cmd+p=text:\x02p
+keybind = cmd+1=text:\x021
+keybind = cmd+2=text:\x022
+keybind = cmd+3=text:\x023
+keybind = cmd+4=text:\x024
+keybind = cmd+5=text:\x025
+keybind = cmd+6=text:\x026
+keybind = cmd+7=text:\x027
+keybind = cmd+8=text:\x028
+keybind = cmd+9=text:\x029
+keybind = cmd+0=text:\x020
