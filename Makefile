@@ -4,11 +4,16 @@ SHELLCHECK_FILES = \
 	common.sh \
 	install.sh \
 	setup.sh \
+	.local/bin/whereami \
+	.local/bin/whereami-color \
+	.local/bin/tmux-set-colors \
 	spec/common_spec.sh \
 	spec/install_spec.sh \
 	spec/main_zshrc_spec.sh \
 	spec/setup_spec.sh \
 	spec/spec_helper.sh \
+	spec/whereami_spec.sh \
+	spec/whereami_color_spec.sh \
 	spec/zshrc_update_spec.sh \
 	spec/integration_zsh_startup.sh
 

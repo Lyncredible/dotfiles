@@ -460,4 +460,16 @@ STUB
     The status should be success
     The output should include 'ok'
   End
+
+  It 'exports WHEREAMI variable'
+    When run run_main_eval 'print -r -- "$WHEREAMI"'
+    The status should be success
+    The output should not equal ''
+  End
+
+  It 'registers _set_terminal_title in precmd_functions'
+    When run run_main_eval 'print -r -- "${precmd_functions[*]}"'
+    The status should be success
+    The output should include '_set_terminal_title'
+  End
 End

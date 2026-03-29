@@ -25,20 +25,26 @@ print('%02x%02x%02x' % (int(r * 255), int(g * 255), int(b * 255)))
 EOF
 }
 
-WHEREAMI_BIN="${HOME}/.local/bin/whereami"
-if [ -x "$WHEREAMI_BIN" ]; then
-    identifier=$("$WHEREAMI_BIN" -n 2>/dev/null || echo "unknown")
-else
-    identifier="unknown"
+color_main() {
+    WHEREAMI_BIN="${WHEREAMI_BIN:-$HOME/.local/bin/whereami}"
+    if [ -x "$WHEREAMI_BIN" ]; then
+        identifier=$("$WHEREAMI_BIN" -n 2>/dev/null || echo "unknown")
+    else
+        identifier="unknown"
+    fi
+
+    hue=$(string_to_hue "$identifier")
+    bg_color=$(hsl_to_hex "$hue" 60 25)
+    fg_color=$(hsl_to_hex "$hue" 10 90)
+
+    case "${1:-bg}" in
+        bg)   echo "$bg_color" ;;
+        fg)   echo "$fg_color" ;;
+        both) echo "bg=$bg_color fg=$fg_color" ;;
+        *)    echo "$bg_color" ;;
+    esac
+}
+
+if [ "${WHEREAMI_COLOR_SOURCE_ONLY:-0}" != "1" ]; then
+    color_main "$@"
 fi
-
-hue=$(string_to_hue "$identifier")
-bg_color=$(hsl_to_hex "$hue" 60 25)
-fg_color=$(hsl_to_hex "$hue" 10 90)
-
-case "${1:-bg}" in
-    bg)   echo "$bg_color" ;;
-    fg)   echo "$fg_color" ;;
-    both) echo "bg=$bg_color fg=$fg_color" ;;
-    *)    echo "$bg_color" ;;
-esac
