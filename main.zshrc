@@ -227,11 +227,22 @@ setup_whereami() {
 }
 
 set_terminal_title() {
-  precmd_functions+=(_set_terminal_title)
+  precmd_functions+=(_set_terminal_title_precmd)
+  preexec_functions+=(_set_terminal_title_preexec)
 }
 
-_set_terminal_title() {
+_set_terminal_title_precmd() {
   print -Pn "\e]0;%n@${WHEREAMI}:%~\a"
+}
+
+_set_terminal_title_preexec() {
+  # Inside tmux, set-titles-string handles appending the command
+  [ -n "$TMUX" ] && return
+  local cmd="${1%% *}"
+  case "$cmd" in
+    zsh|bash|sh|fish|less|more|cat) return ;;
+    *) print -Pn "\e]0;%n@${WHEREAMI}:%~:${cmd}\a" ;;
+  esac
 }
 
 configure_editor

@@ -491,10 +491,18 @@ STUB
     The output should include 'test-box.qa'
   End
 
-  It 'registers _set_terminal_title in precmd_functions'
-    When run run_main_eval 'print -r -- "${precmd_functions[*]}"'
+  It 'registers terminal title hooks in precmd and preexec'
+    When run run_main_eval 'print -r -- "${precmd_functions[*]} ${preexec_functions[*]}"'
     The status should be success
-    The output should include '_set_terminal_title'
+    The output should include '_set_terminal_title_precmd'
+    The output should include '_set_terminal_title_preexec'
+  End
+
+  It 'skips preexec title update inside tmux'
+    TMUX=1
+    When run run_main_eval '_set_terminal_title_preexec vim'
+    The status should be success
+    The output should equal ''
   End
 
   It 'disables oh-my-zsh auto title'
