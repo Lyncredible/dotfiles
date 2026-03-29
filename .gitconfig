@@ -3,9 +3,6 @@
 	email = lyncredible@outlook.com
 [rerere]
 	enabled = true
-[pager]
-	branch = false
-	config = false
 [pull]
 	rebase = true
 [push]
@@ -13,6 +10,7 @@
 [fetch]
 	prune = true
 [core]
+    pager =
 	preloadindex = true
 	deltabasecachelimit = 4g
 [help]
