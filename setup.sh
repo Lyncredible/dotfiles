@@ -66,12 +66,8 @@ ensure_dir() {
   fi
 }
 
-ensure_git_include() {
-  include_path="$DOTFILES_DIR/.gitconfig"
-  if ! "$GIT_BIN" config --global --get-all include.path \
-    | "$GREP_BIN" -q "$include_path"; then
-    "$GIT_BIN" config --global include.path "$include_path"
-  fi
+ensure_git_config() {
+  "$GIT_BIN" config --global include.path "$DOTFILES_DIR/.gitconfig"
 }
 
 ensure_git_hooks_path() {
@@ -115,7 +111,7 @@ main() {
   set_defaults
   write_zsh_wrapper
   ensure_symlink "$DOTFILES_DIR/.p10k.zsh" "$HOME/.p10k.zsh"
-  ensure_git_include
+  ensure_git_config
   ensure_git_hooks_path
   ensure_symlink "$DOTFILES_DIR/.vimrc" "$HOME/.vimrc"
   ensure_symlink "$DOTFILES_DIR/.tmux.conf" "$HOME/.tmux.conf"

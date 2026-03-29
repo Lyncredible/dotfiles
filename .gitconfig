@@ -1,3 +1,6 @@
+[user]
+	name = Yuan Liu
+	email = lyncredible@outlook.com
 [rerere]
 	enabled = true
 [pager]
@@ -7,6 +10,10 @@
 	rebase = true
 [push]
 	default = current
-[user]
-	email = lyncredible@outlook.com
-	name = Yuan Liu
+[fetch]
+	prune = true
+[core]
+	preloadindex = true
+	deltabasecachelimit = 4g
+[help]
+	autocorrect = 50

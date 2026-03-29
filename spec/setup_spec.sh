@@ -10,7 +10,6 @@ setup() {
   TEST_ANTIGEN_DIR="$TEST_HOME/.antigen"
   TEST_PATH="$TEST_BIN:/bin:/usr/bin"
   TEST_SHELL="/bin/bash"
-  unset MOCK_INCLUDE_PRESENT
   unset TEST_SKIP_CHSH
 
   write_fake_grep
@@ -18,13 +17,6 @@ setup() {
   make_stub git <<'STUB'
 #!/bin/sh
 echo "$*" >> "$HOME/.setup_calls"
-if [ "$1" = "config" ] && [ "$2" = "--global" ] && \
-  [ "$3" = "--get-all" ] && [ "$4" = "include.path" ]; then
-  if [ "$MOCK_INCLUDE_PRESENT" = "1" ]; then
-    echo "$HOME/.dotfiles/.gitconfig"
-  fi
-  exit 0
-fi
 exit 0
 STUB
 
@@ -97,14 +89,12 @@ Describe 'setup.sh'
       should include "-C $TEST_DOTFILES_DIR config core.hooksPath hooks"
   End
 
-  It 'does not add git include.path when already present'
+  It 'sets git include.path idempotently'
     mkdir -p "$TEST_ANTIGEN_DIR"
-    MOCK_INCLUDE_PRESENT=1
-    export MOCK_INCLUDE_PRESENT
     When run run_setup
     The status should be success
     The contents of file "$TEST_HOME/.setup_calls" \
-      should not include 'config --global include.path'
+      should include "config --global include.path $TEST_DOTFILES_DIR/.gitconfig"
   End
 
   It 'skips antigen clone when antigen directory exists'
