@@ -14,9 +14,13 @@ tasks/
 todos/
 
 # Runtime files
+.credentials.json
 history.jsonl
 stats-cache.json
 *.log
+
+# Cache
+cache/
 
 # Local overrides
 settings.json
