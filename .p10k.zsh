@@ -972,12 +972,15 @@
   # Context color when running with privileges.
   typeset -g POWERLEVEL9K_CONTEXT_ROOT_FOREGROUND=1
   typeset -g POWERLEVEL9K_CONTEXT_ROOT_BACKGROUND=3
-  # Context color in SSH without privileges.
-  typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_FOREGROUND=7
-  typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_BACKGROUND=14
+  # Context color based on machine identity (--256 avoids zsh truecolor re-emission bug).
+  local _wc="$HOME/.local/bin/whereami-color"
+  local _wc_fg=$([ -x "$_wc" ] && "$_wc" --256 fg || echo 7)
+  local _wc_bg=$([ -x "$_wc" ] && "$_wc" --256 bg || echo 5)
+  typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_FOREGROUND=$_wc_fg
+  typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_BACKGROUND=$_wc_bg
   # Default context color (no privileges, no SSH).
-  typeset -g POWERLEVEL9K_CONTEXT_FOREGROUND=7
-  typeset -g POWERLEVEL9K_CONTEXT_BACKGROUND=5
+  typeset -g POWERLEVEL9K_CONTEXT_FOREGROUND=$_wc_fg
+  typeset -g POWERLEVEL9K_CONTEXT_BACKGROUND=$_wc_bg
 
   # Context format when running with privileges: user@hostname.
   typeset -g POWERLEVEL9K_CONTEXT_ROOT_TEMPLATE="%n@${HOSTNAME_OVERRIDE:-%m}"
