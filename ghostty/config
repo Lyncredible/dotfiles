@@ -32,3 +32,6 @@ keybind = cmd+7=text:\x027
 keybind = cmd+8=text:\x028
 keybind = cmd+9=text:\x029
 keybind = cmd+0=text:\x020
+
+# Ctrl+J newline (not sent natively without tmux)
+keybind = ctrl+j=text:\n

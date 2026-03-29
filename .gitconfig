@@ -15,5 +15,6 @@
 	deltabasecachelimit = 4g
 [pager]
 	log = less
+	diff = less
 [help]
 	autocorrect = 50
