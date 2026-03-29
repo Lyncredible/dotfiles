@@ -13,5 +13,7 @@
     pager =
 	preloadindex = true
 	deltabasecachelimit = 4g
+[pager]
+	log = less
 [help]
 	autocorrect = 50
