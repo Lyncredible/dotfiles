@@ -9,6 +9,9 @@ setup() {
   mkdir -p "$TEST_HOME/.dotfiles"
   cp "$SHELLSPEC_PROJECT_ROOT/.zshrc" "$TEST_HOME/.dotfiles/.zshrc"
   cp "$SHELLSPEC_PROJECT_ROOT/common.sh" "$TEST_HOME/.dotfiles/common.sh"
+  # Dummy setup.sh for auto-invoke on update
+  echo '#!/bin/sh' > "$TEST_HOME/.dotfiles/setup.sh"
+  chmod +x "$TEST_HOME/.dotfiles/setup.sh"
 
   cat > "$TEST_HOME/.dotfiles/main.zshrc" <<'FILE'
 printf '%s\n' "${DOTFILES_UPDATED:-unset}" > "$HOME/.dotfiles_updated_seen"
@@ -232,5 +235,86 @@ Describe '.zshrc startup smoke test'
     The status should be success
     The output should include 'Updating dotfiles...'
     The contents of file "$TEST_HOME/.dotfiles_updated_seen" should equal '1'
+  End
+End
+
+Describe 'setup.sh auto-invoke on update'
+  Before 'setup'
+  After 'cleanup'
+
+  It 'runs setup.sh when HEAD changes'
+    FAKE_EPOCH=2000000000
+    export FAKE_EPOCH
+    echo 1999910000 > "$TEST_HOME/.dotfiles-update"
+    cat > "$TEST_HOME/.dotfiles/setup.sh" <<'SCRIPT'
+#!/bin/sh
+echo "setup-ran" > "$HOME/.setup_ran"
+SCRIPT
+    chmod +x "$TEST_HOME/.dotfiles/setup.sh"
+    When run env \
+      MOCK_GIT_BEFORE_REF=old-ref \
+      MOCK_GIT_AFTER_REF=new-ref \
+      HOME="$TEST_HOME" \
+      PATH="$TEST_BIN:/bin:/usr/bin" \
+      DATE_BIN="$TEST_BIN/date" \
+      GIT_BIN="$TEST_BIN/git" \
+      zsh -c '
+        source "$HOME/.dotfiles/common.sh"
+        maybe_update_dotfiles "$HOME/.dotfiles-update" "$HOME/.dotfiles"
+      '
+    The status should be success
+    The output should include 'Updating dotfiles...'
+    The contents of file "$TEST_HOME/.setup_ran" should equal 'setup-ran'
+  End
+
+  It 'does not run setup.sh when HEAD is unchanged'
+    FAKE_EPOCH=2000000000
+    export FAKE_EPOCH
+    echo 1999910000 > "$TEST_HOME/.dotfiles-update"
+    cat > "$TEST_HOME/.dotfiles/setup.sh" <<'SCRIPT'
+#!/bin/sh
+echo "setup-ran" > "$HOME/.setup_ran"
+SCRIPT
+    chmod +x "$TEST_HOME/.dotfiles/setup.sh"
+    When run env \
+      MOCK_GIT_BEFORE_REF=same-ref \
+      MOCK_GIT_AFTER_REF=same-ref \
+      HOME="$TEST_HOME" \
+      PATH="$TEST_BIN:/bin:/usr/bin" \
+      DATE_BIN="$TEST_BIN/date" \
+      GIT_BIN="$TEST_BIN/git" \
+      zsh -c '
+        source "$HOME/.dotfiles/common.sh"
+        maybe_update_dotfiles "$HOME/.dotfiles-update" "$HOME/.dotfiles"
+      '
+    The status should be success
+    The output should include 'Updating dotfiles...'
+    The file "$TEST_HOME/.setup_ran" should not be exist
+  End
+
+  It 'passes SKIP_CHSH=1 when running setup.sh'
+    FAKE_EPOCH=2000000000
+    export FAKE_EPOCH
+    echo 1999910000 > "$TEST_HOME/.dotfiles-update"
+    cat > "$TEST_HOME/.dotfiles/setup.sh" <<'SCRIPT'
+#!/bin/sh
+echo "skip_chsh=$SKIP_CHSH" > "$HOME/.setup_env"
+SCRIPT
+    chmod +x "$TEST_HOME/.dotfiles/setup.sh"
+    When run env \
+      MOCK_GIT_BEFORE_REF=old-ref \
+      MOCK_GIT_AFTER_REF=new-ref \
+      HOME="$TEST_HOME" \
+      PATH="$TEST_BIN:/bin:/usr/bin" \
+      DATE_BIN="$TEST_BIN/date" \
+      GIT_BIN="$TEST_BIN/git" \
+      zsh -c '
+        source "$HOME/.dotfiles/common.sh"
+        maybe_update_dotfiles "$HOME/.dotfiles-update" "$HOME/.dotfiles"
+      '
+    The status should be success
+    The output should include 'Updating dotfiles...'
+    The contents of file "$TEST_HOME/.setup_env" \
+      should equal 'skip_chsh=1'
   End
 End

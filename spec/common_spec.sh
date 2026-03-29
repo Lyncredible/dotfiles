@@ -211,10 +211,6 @@ Describe 'acquire_antigen_cache_lock()'
     The contents of file "$ANTIGEN_DOTFILES_LOCK/pid" should equal "$$"
   End
 
-  It 'respects ANTIGEN_LOCK_TIMEOUT environment variable'
-    Skip 'Timing test removed - difficult to reliably test duration'
-  End
-
   It 'respects ANTIGEN_LOCK_STALE_AGE environment variable'
     # Current time: 2000000000, lock mtime: 1999999850 (150s ago, > 100s custom stale age)
     FAKE_EPOCH=2000000000

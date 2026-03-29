@@ -108,6 +108,7 @@ maybe_update_dotfiles() {
     DOTFILES_UPDATED=1
     if [[ "$UPDATE_BEFORE_REF" != "$UPDATE_AFTER_REF" ]]; then
       source "$dotfiles_dir/common.sh"
+      SKIP_CHSH=1 "$dotfiles_dir/setup.sh"
     fi
   fi
   popd >/dev/null || return 1

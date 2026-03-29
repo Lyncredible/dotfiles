@@ -133,12 +133,35 @@ Describe 'setup.sh'
       should not include 'chsh:-s'
   End
 
-  It 'does not replace an existing .vimrc file'
+  It 'backs up and replaces a real file with the correct symlink'
     mkdir -p "$TEST_ANTIGEN_DIR"
     echo local-vimrc > "$TEST_HOME/.vimrc"
     When run run_setup
     The status should be success
-    The contents of file "$TEST_HOME/.vimrc" should equal 'local-vimrc'
+    Assert symlink_to "$TEST_HOME/.vimrc" "$TEST_DOTFILES_DIR/.vimrc"
+    The contents of file "$TEST_HOME/.vimrc.bak" should equal 'local-vimrc'
+  End
+
+  It 'fixes a wrong symlink'
+    mkdir -p "$TEST_ANTIGEN_DIR"
+    ln -s /tmp/wrong "$TEST_HOME/.vimrc"
+    When run run_setup
+    The status should be success
+    Assert symlink_to "$TEST_HOME/.vimrc" "$TEST_DOTFILES_DIR/.vimrc"
+    The file "$TEST_HOME/.vimrc.bak" should be symlink
+  End
+
+  It 'is idempotent — correct symlinks are left unchanged'
+    mkdir -p "$TEST_ANTIGEN_DIR"
+    # Pre-create correct symlinks
+    ln -s "$TEST_DOTFILES_DIR/.vimrc" "$TEST_HOME/.vimrc"
+    ln -s "$TEST_DOTFILES_DIR/.tmux.conf" "$TEST_HOME/.tmux.conf"
+    ln -s "$TEST_DOTFILES_DIR/.p10k.zsh" "$TEST_HOME/.p10k.zsh"
+    When run run_setup
+    The status should be success
+    The file "$TEST_HOME/.vimrc.bak" should not be exist
+    The file "$TEST_HOME/.tmux.conf.bak" should not be exist
+    The file "$TEST_HOME/.p10k.zsh.bak" should not be exist
   End
 
   It 'uses DOTFILES_DIR override for links and include path'
@@ -186,5 +209,30 @@ Describe 'setup.sh'
     When run run_setup
     The status should be failure
     The contents of file "$TEST_HOME/.setup_calls" should not include 'chsh:-s'
+  End
+
+  It 'symlinks .local/bin scripts'
+    mkdir -p "$TEST_ANTIGEN_DIR"
+    mkdir -p "$TEST_DOTFILES_DIR/.local/bin"
+    echo '#!/bin/sh' > "$TEST_DOTFILES_DIR/.local/bin/whereami"
+    echo '#!/bin/sh' > "$TEST_DOTFILES_DIR/.local/bin/whereami-color"
+    When run run_setup
+    The status should be success
+    Assert symlink_to "$TEST_HOME/.local/bin/whereami" \
+      "$TEST_DOTFILES_DIR/.local/bin/whereami"
+    Assert symlink_to "$TEST_HOME/.local/bin/whereami-color" \
+      "$TEST_DOTFILES_DIR/.local/bin/whereami-color"
+  End
+
+  It 'fixes stale .local/bin symlinks on re-run'
+    mkdir -p "$TEST_ANTIGEN_DIR"
+    mkdir -p "$TEST_DOTFILES_DIR/.local/bin"
+    mkdir -p "$TEST_HOME/.local/bin"
+    echo '#!/bin/sh' > "$TEST_DOTFILES_DIR/.local/bin/whereami"
+    ln -s /tmp/wrong "$TEST_HOME/.local/bin/whereami"
+    When run run_setup
+    The status should be success
+    Assert symlink_to "$TEST_HOME/.local/bin/whereami" \
+      "$TEST_DOTFILES_DIR/.local/bin/whereami"
   End
 End

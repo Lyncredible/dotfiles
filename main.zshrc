@@ -218,7 +218,8 @@ configure_reset_terminal() {
 }
 
 setup_whereami() {
-  export WHEREAMI=$("$HOME/.local/bin/whereami" 2>/dev/null || hostname -s)
+  export WHEREAMI=$("$HOME/.local/bin/whereami" 2>/dev/null \
+    || hostname -s 2>/dev/null || echo "unknown")
 }
 
 set_terminal_title() {

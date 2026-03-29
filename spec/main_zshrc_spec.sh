@@ -80,6 +80,11 @@ STUB
 
   write_fake_grep
 
+  make_stub hostname <<'STUB'
+#!/bin/sh
+echo "test-host"
+STUB
+
   make_stub fzf <<'STUB'
 #!/bin/sh
 exit 0
