@@ -1,0 +1,71 @@
+#!/bin/sh
+# CPU and memory stats for tmux status line.
+# Usage: tmux-sysstat
+
+set -e
+
+get_mem_percent() {
+    case "$(uname)" in
+        Linux)
+            awk '/MemTotal/{t=$2} /MemAvailable/{a=$2}
+                 END{printf "%.0f", (t-a)/t*100}' /proc/meminfo
+            ;;
+        Darwin)
+            page_size=$(vm_stat | awk '/page size/{print $8}')
+            vm_stat | awk -v ps="$page_size" '
+                /Pages free/      {free=$3+0}
+                /Pages active/    {active=$3+0}
+                /Pages inactive/  {inactive=$3+0}
+                /Pages wired/     {wired=$4+0}
+                /Pages speculative/ {spec=$3+0}
+                /occupied by compressor/ {comp=$5+0}
+                END {
+                    used = (active + wired + comp) * ps
+                    total = (free + active + inactive + wired + spec + comp) * ps
+                    printf "%.0f", used / total * 100
+                }'
+            ;;
+    esac
+}
+
+get_cpu_percent() {
+    case "$(uname)" in
+        Linux)
+            read -r _label user nice system idle _rest < /proc/stat
+            total1=$((user + nice + system + idle))
+            idle1=$idle
+
+            sleep 0.3
+
+            read -r _label user nice system idle _rest < /proc/stat
+            total2=$((user + nice + system + idle))
+            idle2=$idle
+
+            echo $(( 100 * (total2 - total1 - (idle2 - idle1))
+                      / (total2 - total1) ))
+            ;;
+        Darwin)
+            top -l 2 -n 0 -s 0 | awk '
+                /CPU usage:/ { line++ }
+                line == 2 && /CPU usage:/ {
+                    gsub(/%/, "")
+                    for (i=1; i<=NF; i++) {
+                        if ($(i+1) == "user") user=$i
+                        if ($(i+1) == "sys")  sys=$i
+                    }
+                    printf "%.0f", user + sys
+                    exit
+                }'
+            ;;
+    esac
+}
+
+sysstat_main() {
+    cpu=$(get_cpu_percent)
+    mem=$(get_mem_percent)
+    printf "CPU: %s%% | MEM: %s%%" "$cpu" "$mem"
+}
+
+if [ "${TMUX_SYSSTAT_SOURCE_ONLY:-0}" != "1" ]; then
+    sysstat_main
+fi
