@@ -138,16 +138,29 @@ acquire_antigen_cache_lock() {
 
   # Retry loop with stale lock detection
   while [[ $waited -lt $timeout ]]; do
-    # Check for stale lock (>5 minutes old)
+    # Check for stale lock
     if [[ -d "$lock_file" ]]; then
-      local mtime lock_age
-      mtime=$("$STAT_BIN" -c %Y "$lock_file" 2>/dev/null \
-        || "$STAT_BIN" -f %m "$lock_file" 2>/dev/null \
-        || echo 0)
-      lock_age=$(($(epoch_now) - mtime))
-      if [[ $lock_age -gt $stale_age ]]; then
-        printf 'Antigen: Removing stale cache lock (age: %ds)\n' "$lock_age" >&2
-        rm -rf "$lock_file" 2>/dev/null
+      # PID-based detection: if holder process is dead, lock is definitively stale
+      if [[ -f "$lock_file/pid" ]]; then
+        local lock_pid
+        lock_pid=$(cat "$lock_file/pid" 2>/dev/null)
+        if [[ -n "$lock_pid" ]] && ! kill -0 "$lock_pid" 2>/dev/null; then
+          printf 'Antigen: Removing stale cache lock (holder PID %s is dead)\n' "$lock_pid" >&2
+          rm -rf "$lock_file" 2>/dev/null
+        fi
+      fi
+
+      # Time-based fallback: remove lock older than stale_age (PID file missing/unreadable)
+      if [[ -d "$lock_file" ]]; then
+        local mtime lock_age
+        mtime=$("$STAT_BIN" -c %Y "$lock_file" 2>/dev/null \
+          || "$STAT_BIN" -f %m "$lock_file" 2>/dev/null \
+          || echo 0)
+        lock_age=$(($(epoch_now) - mtime))
+        if [[ $lock_age -gt $stale_age ]]; then
+          printf 'Antigen: Removing stale cache lock (age: %ds)\n' "$lock_age" >&2
+          rm -rf "$lock_file" 2>/dev/null
+        fi
       fi
     fi
 

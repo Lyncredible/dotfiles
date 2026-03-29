@@ -155,9 +155,9 @@ Describe 'acquire_antigen_cache_lock()'
     FAKE_EPOCH=2000000000
     FAKE_STAT_MTIME=1999999999
     export FAKE_EPOCH FAKE_STAT_MTIME
-    # Create lock held by another process
+    # Create lock held by a live process ($$) so PID check won't remove it
     mkdir "$ANTIGEN_DOTFILES_LOCK"
-    echo "99999" > "$ANTIGEN_DOTFILES_LOCK/pid"
+    echo "$$" > "$ANTIGEN_DOTFILES_LOCK/pid"
 
     # Set very high stale age so lock won't be considered stale
     ANTIGEN_LOCK_STALE_AGE=999999999
@@ -178,9 +178,9 @@ Describe 'acquire_antigen_cache_lock()'
     FAKE_STAT_MTIME=1999999999
     export FAKE_EPOCH FAKE_STAT_MTIME
 
-    # Create lock
+    # Create lock held by a live process ($$) so PID check won't remove it
     mkdir "$ANTIGEN_DOTFILES_LOCK"
-    echo "99999" > "$ANTIGEN_DOTFILES_LOCK/pid"
+    echo "$$" > "$ANTIGEN_DOTFILES_LOCK/pid"
 
     # Release lock after 0.5 seconds in background (within 1s sleep window)
     (sleep 0.5 && rm -rf "$ANTIGEN_DOTFILES_LOCK") &
@@ -199,13 +199,13 @@ Describe 'acquire_antigen_cache_lock()'
     FAKE_STAT_MTIME=1999999600
     export FAKE_EPOCH FAKE_STAT_MTIME
 
-    # Create old lock
+    # Create old lock held by a live process ($$) so time-based path is exercised
     mkdir "$ANTIGEN_DOTFILES_LOCK"
-    echo "99999" > "$ANTIGEN_DOTFILES_LOCK/pid"
+    echo "$$" > "$ANTIGEN_DOTFILES_LOCK/pid"
 
     When call acquire_antigen_cache_lock
     The status should be success
-    The stderr should include 'Removing stale cache lock'
+    The stderr should include 'Removing stale cache lock (age:'
     The directory "$ANTIGEN_DOTFILES_LOCK" should be exist
     # New PID should be current process
     The contents of file "$ANTIGEN_DOTFILES_LOCK/pid" should equal "$$"
@@ -217,9 +217,9 @@ Describe 'acquire_antigen_cache_lock()'
     FAKE_STAT_MTIME=1999999850
     export FAKE_EPOCH FAKE_STAT_MTIME
 
-    # Create lock that is 150 seconds old
+    # Create lock held by a live process ($$) so time-based path is exercised
     mkdir "$ANTIGEN_DOTFILES_LOCK"
-    echo "99999" > "$ANTIGEN_DOTFILES_LOCK/pid"
+    echo "$$" > "$ANTIGEN_DOTFILES_LOCK/pid"
 
     # Override stale age to 100 seconds (lock should be considered stale)
     ANTIGEN_LOCK_STALE_AGE=100
@@ -227,7 +227,7 @@ Describe 'acquire_antigen_cache_lock()'
 
     When call acquire_antigen_cache_lock
     The status should be success
-    The stderr should include 'Removing stale cache lock'
+    The stderr should include 'Removing stale cache lock (age:'
   End
 
   It 'respects ANTIGEN_DOTFILES_LOCK environment variable'
@@ -244,14 +244,58 @@ Describe 'acquire_antigen_cache_lock()'
     The directory "$custom_lock" should be exist
   End
 
-  It 'does not remove fresh lock during acquisition attempt'
+  It 'removes lock when holder PID is dead'
+    FAKE_EPOCH=2000000000
+    FAKE_STAT_MTIME=1999999999
+    export FAKE_EPOCH FAKE_STAT_MTIME
+
+    # Create lock with a PID that does not exist
+    mkdir "$ANTIGEN_DOTFILES_LOCK"
+    echo "99999" > "$ANTIGEN_DOTFILES_LOCK/pid"
+
+    When call acquire_antigen_cache_lock
+    The status should be success
+    The stderr should include 'holder PID 99999 is dead'
+    The contents of file "$ANTIGEN_DOTFILES_LOCK/pid" should equal "$$"
+  End
+
+  It 'falls back to time-based check when PID file is missing'
+    # Current time: 2000000000, lock mtime: 1999999600 (400s ago, > 300s stale age)
+    FAKE_EPOCH=2000000000
+    FAKE_STAT_MTIME=1999999600
+    export FAKE_EPOCH FAKE_STAT_MTIME
+
+    # Create lock directory without PID file
+    mkdir "$ANTIGEN_DOTFILES_LOCK"
+
+    When call acquire_antigen_cache_lock
+    The status should be success
+    The stderr should include 'Removing stale cache lock (age:'
+  End
+
+  It 'falls back to time-based check when PID file is empty'
+    FAKE_EPOCH=2000000000
+    FAKE_STAT_MTIME=1999999600
+    export FAKE_EPOCH FAKE_STAT_MTIME
+
+    # Create lock with empty PID file
+    mkdir "$ANTIGEN_DOTFILES_LOCK"
+    : > "$ANTIGEN_DOTFILES_LOCK/pid"
+
+    When call acquire_antigen_cache_lock
+    The status should be success
+    The stderr should include 'Removing stale cache lock (age:'
+  End
+
+  It 'does not remove fresh lock held by live process'
     # Lock mtime is 10s ago, well under stale age of 999999999
     FAKE_EPOCH=2000000000
     FAKE_STAT_MTIME=1999999990
     export FAKE_EPOCH FAKE_STAT_MTIME
 
+    # Use live process ($$) so neither PID nor time check removes it
     mkdir "$ANTIGEN_DOTFILES_LOCK"
-    echo "99999" > "$ANTIGEN_DOTFILES_LOCK/pid"
+    echo "$$" > "$ANTIGEN_DOTFILES_LOCK/pid"
 
     # Set very high stale age so lock won't be removed
     ANTIGEN_LOCK_STALE_AGE=999999999
@@ -264,7 +308,7 @@ Describe 'acquire_antigen_cache_lock()'
     The status should equal 1
     The stderr should not include 'Removing stale'
     # Original PID should still be present
-    The contents of file "$ANTIGEN_DOTFILES_LOCK/pid" should equal "99999"
+    The contents of file "$ANTIGEN_DOTFILES_LOCK/pid" should equal "$$"
   End
 End
 
