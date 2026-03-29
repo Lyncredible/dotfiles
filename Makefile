@@ -1,4 +1,4 @@
-.PHONY: test test-integration lint lint-shell lint-lines test-deps test-integration-deps
+.PHONY: test test-integration lint lint-shell lint-lines test-deps test-integration-deps check
 
 SHELLCHECK_FILES = \
 	common.sh \
@@ -58,3 +58,5 @@ lint-lines:
 	@awk 'length($$0) > $(MAX_LINE_LENGTH) { \
 		printf "%s:%d:%d\n", FILENAME, FNR, length($$0); bad=1 \
 	} END { exit bad }' $(LINE_LENGTH_FILES)
+
+check: lint test test-integration
