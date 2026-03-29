@@ -6,15 +6,11 @@ font-size = 12
 font-thicken = true
 adjust-cell-width = 0
 shell-integration-features = no-cursor, ssh-terminfo
-macos-titlebar-style = hidden
-scrollback-limit = 0
+macos-titlebar-style = tabs
+theme = Dimmed Monokai
 
 # Bells
-bell-feature-audio = false
-bell-feature-system = false
-bell-feature-attention = false
-bell-feature-title = false
-bell-feature-border = false
+bell-features = no-audio
 
 # Tab navigation
 keybind = cmd+arrow_left=previous_tab
@@ -22,9 +18,6 @@ keybind = cmd+arrow_right=next_tab
 
 # Quick terminal
 keybind = ctrl+grave_accent=toggle_quick_terminal
-
-# Send Ctrl-W instead of closing tab
-keybind = cmd+w=text:\x17
 
 # Tmux window switching (prefix = Ctrl+B = \x02)
 keybind = cmd+n=text:\x02n

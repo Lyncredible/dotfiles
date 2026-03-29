@@ -467,9 +467,39 @@ STUB
     The output should not equal ''
   End
 
+  It 'uses whereami-resolve when available on PATH'
+    mkdir -p "$TEST_HOME/.local/bin"
+    cat > "$TEST_HOME/.local/bin/whereami" <<'SCRIPT'
+#!/bin/sh
+set -e
+get_short_hostname() { hostname | cut -d. -f1; }
+get_identifier() {
+    if command -v whereami-resolve >/dev/null 2>&1; then
+        result=$(whereami-resolve 2>/dev/null) && [ -n "$result" ] && echo "$result" && return
+    fi
+    get_short_hostname
+}
+get_identifier
+SCRIPT
+    chmod +x "$TEST_HOME/.local/bin/whereami"
+    make_stub whereami-resolve <<'STUB'
+#!/bin/sh
+echo "test-box.qa"
+STUB
+    When run run_main_eval 'print -r -- "$WHEREAMI"'
+    The status should be success
+    The output should include 'test-box.qa'
+  End
+
   It 'registers _set_terminal_title in precmd_functions'
     When run run_main_eval 'print -r -- "${precmd_functions[*]}"'
     The status should be success
     The output should include '_set_terminal_title'
+  End
+
+  It 'disables oh-my-zsh auto title'
+    When run run_main_eval 'print -r -- "$DISABLE_AUTO_TITLE"'
+    The status should be success
+    The output should equal 'true'
   End
 End

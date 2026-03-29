@@ -20,6 +20,10 @@ configure_antigen() {
   # Using antigen to manage zsh plugins
   source ~/.antigen/antigen.zsh
 
+  # Disable oh-my-zsh's termsupport library from overriding our
+  # custom terminal title set by _set_terminal_title.
+  DISABLE_AUTO_TITLE="true"
+
   # Use oh-my-zsh
   antigen use oh-my-zsh
 
@@ -227,12 +231,12 @@ set_terminal_title() {
 }
 
 _set_terminal_title() {
-  print -Pn "\e]0;${WHEREAMI}\a"
+  print -Pn "\e]0;%n@${WHEREAMI}:%~\a"
 }
 
-setup_whereami
 configure_editor
 setup_path
+setup_whereami
 setup_node
 setup_go
 setup_ruby

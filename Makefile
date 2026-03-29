@@ -18,13 +18,15 @@ SHELLCHECK_FILES = \
 	spec/integration_zsh_startup.sh
 
 SCRIPT_FILES := $(sort $(patsubst ./%,%,$(shell \
-	find . -type f \( \
+	{ find . -type f \( \
 		-name "*.sh" -o \
 		-name "*.zsh" -o \
 		-name ".zshrc" -o \
 		-name "main.zshrc" \
 	\) ! -name ".p10k.zsh" -print; \
-	find bin -type f -print 2>/dev/null \
+	find bin -type f -print 2>/dev/null; } \
+	| git check-ignore --stdin --non-matching -v 2>/dev/null \
+	| awk -F '\t' '$$1 ~ /^::/ { print $$2 }' \
 )))
 
 LINE_LENGTH_FILES = Makefile $(SCRIPT_FILES)
