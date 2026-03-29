@@ -49,7 +49,7 @@ This repository contains personal dotfiles for managing development environment 
 │   ├── spec_helper.sh         # Sources common.sh, custom matchers
 │   └── common_spec.sh         # Tests for common.sh functions
 ├── .shellspec                 # shellspec config (format, shell)
-├── Makefile                   # Test runner (make test)
+├── Makefile                   # Lint + test runner (make check)
 ├── install.sh                 # Initial clone and setup
 ├── setup.sh                   # Symlink creation and plugin install
 └── README.md                  # Installation instructions
@@ -254,7 +254,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Lyncredible/dotfiles/mas
 | `.aliases` | Shell shortcuts | Python venv, git shortcuts |
 | `setup.sh` | Installation script | Creates symlinks, installs plugins |
 | `common.sh` | Utility functions | Update checks, settings merge |
-| `Makefile` | Test runner | `make test` |
+| `Makefile` | Lint + test runner | `make check`, `FILES=` for targeting |
 | `spec/common_spec.sh` | Tests for common.sh | 9 shellspec examples |
 | `.claude/settings.json` | Claude Code settings | Attribution, notifications, telemetry |
 | `.claude/CLAUDE.md` | AI instruction template | Starter for project-specific guidance |
@@ -318,7 +318,15 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Lyncredible/dotfiles/mas
 ### Running Tests
 
 ```bash
-make test
+make check              # lint + test + integration tests
+make test               # unit tests only
+make lint               # shellcheck + line length
+```
+
+Pass `FILES=` to target specific files:
+```bash
+make test FILES=spec/tmux_sysstat_spec.sh
+make lint FILES=.local/bin/tmux-sysstat
 ```
 
 Runs [shellspec](https://shellspec.info/) BDD specs under `spec/`. Requires `brew install shellspec`.

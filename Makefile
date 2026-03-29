@@ -36,10 +36,14 @@ MAX_LINE_LENGTH ?= 100
 TEST_ENV = LC_ALL=C TZ=UTC
 
 test: test-deps
-	@env $(TEST_ENV) shellspec
+	@env $(TEST_ENV) shellspec $(FILES)
 
 test-integration: test-integration-deps
-	@env $(TEST_ENV) sh ./spec/integration_zsh_startup.sh
+	@if [ -n "$(FILES)" ]; then \
+		for f in $(FILES); do env $(TEST_ENV) sh "$$f"; done; \
+	else \
+		env $(TEST_ENV) sh ./spec/integration_zsh_startup.sh; \
+	fi
 
 test-deps:
 	@for cmd in shellspec zsh jq readlink; do \
@@ -54,11 +58,11 @@ test-integration-deps:
 lint: lint-shell lint-lines
 
 lint-shell:
-	shellcheck $(SHELLCHECK_FILES)
+	shellcheck $(or $(FILES),$(SHELLCHECK_FILES))
 
 lint-lines:
 	@awk 'length($$0) > $(MAX_LINE_LENGTH) { \
 		printf "%s:%d:%d\n", FILENAME, FNR, length($$0); bad=1 \
-	} END { exit bad }' $(LINE_LENGTH_FILES)
+	} END { exit bad }' $(or $(FILES),$(LINE_LENGTH_FILES))
 
 check: lint test test-integration

@@ -25,5 +25,12 @@ sh -c "$(curl -sL --proto-redir -all,https https://raw.githubusercontent.com/Lyn
 ## Testing
 Requires [shellspec](https://shellspec.info/) (`brew install shellspec`).
 ```
-make test
+make check              # lint + test + integration tests
+make test               # unit tests only
+make lint               # shellcheck + line length
+```
+Pass `FILES=` to target specific files:
+```
+make test FILES=spec/tmux_sysstat_spec.sh
+make lint FILES=.local/bin/tmux-sysstat
 ```
