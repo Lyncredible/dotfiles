@@ -7,7 +7,7 @@ setup() {
   TEST_PATH="$TEST_BIN:/bin:/usr/bin"
   PROC_VERSION_FILE="$TEST_HOME/proc-version"
   export PROC_VERSION_FILE
-  unset SSH_CONNECTION TMUX TEST_RUN_DOTFILES_UPDATED TEST_RUN_NO_UV
+  unset SSH_CONNECTION TMUX TEST_RUN_DOTFILES_UPDATED TEST_RUN_NO_UV TERM COLORTERM
 
   mkdir -p "$TEST_HOME/.dotfiles/.claude" "$TEST_HOME/.antigen" "$TEST_HOME/no-fzf"
 
@@ -115,6 +115,8 @@ run_main_eval() {
   NO_UV="${TEST_RUN_NO_UV:-true}" \
   SSH_CONNECTION="${SSH_CONNECTION:-}" \
   TMUX="${TMUX:-}" \
+  TERM="${TERM:-}" \
+  COLORTERM="${COLORTERM:-}" \
   PROC_VERSION_FILE="$PROC_VERSION_FILE" \
   GIT_BIN="$TEST_BIN/git" \
   GREP_BIN="$TEST_BIN/grep" \
@@ -220,6 +222,38 @@ FILE
     '
     The status should be success
     The output should equal "$(printf '1\n1')"
+  End
+
+  It 'exports COLORTERM=truecolor for Ghostty SSH sessions when unset'
+    SSH_CONNECTION=1
+    TERM=xterm-ghostty
+    When run run_main_eval 'print -r -- "${COLORTERM:-unset}"'
+    The status should be success
+    The output should equal 'truecolor'
+  End
+
+  It 'preserves existing COLORTERM for Ghostty SSH sessions'
+    SSH_CONNECTION=1
+    TERM=xterm-ghostty
+    COLORTERM=24bit
+    When run run_main_eval 'print -r -- "${COLORTERM:-unset}"'
+    The status should be success
+    The output should equal '24bit'
+  End
+
+  It 'does not export COLORTERM outside SSH'
+    TERM=xterm-ghostty
+    When run run_main_eval 'print -r -- "${COLORTERM:-unset}"'
+    The status should be success
+    The output should equal 'unset'
+  End
+
+  It 'does not export COLORTERM for non-Ghostty SSH sessions'
+    SSH_CONNECTION=1
+    TERM=xterm-256color
+    When run run_main_eval 'print -r -- "${COLORTERM:-unset}"'
+    The status should be success
+    The output should equal 'unset'
   End
 
   It 'creates Claude settings from dist when settings.json is missing'

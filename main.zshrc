@@ -124,6 +124,14 @@ configure_homebrew() {
   export HOMEBREW_NO_ENV_HINTS=1
 }
 
+configure_terminal_capabilities() {
+  # SSH preserves TERM but often drops richer terminal hints like COLORTERM.
+  # Restore truecolor detection for Ghostty-launched TUIs in remote shells.
+  if [[ -n "$SSH_CONNECTION" && "$TERM" == "xterm-ghostty" && -z "$COLORTERM" ]]; then
+    export COLORTERM=truecolor
+  fi
+}
+
 sync_claude_settings() {
   merge_claude_settings \
     "$HOME/.dotfiles/.claude/settings.json.dist" \
@@ -253,6 +261,7 @@ setup_go
 setup_ruby
 warn_if_uv_missing
 configure_homebrew
+configure_terminal_capabilities
 sync_claude_settings
 register_tmux_ssh_hook
 set_terminal_title
