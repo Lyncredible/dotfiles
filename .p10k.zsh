@@ -974,12 +974,12 @@
   typeset -g POWERLEVEL9K_CONTEXT_ROOT_BACKGROUND=3
   # Context color based on machine identity (--256 avoids zsh truecolor re-emission bug).
   local _wc="$HOME/.local/bin/whereami-color"
-  # SSH context (fallback: white on cyan).
+  # SSH context (fallback: white on magenta).
   typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_FOREGROUND=$([ -x "$_wc" ] && "$_wc" --256 fg || echo 7)
-  typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_BACKGROUND=$([ -x "$_wc" ] && "$_wc" --256 bg || echo 14)
-  # Default context color (fallback: white on magenta).
+  typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_BACKGROUND=$([ -x "$_wc" ] && "$_wc" --256 bg || echo 5)
+  # Default context color (fallback: white on cyan).
   typeset -g POWERLEVEL9K_CONTEXT_FOREGROUND=$([ -x "$_wc" ] && "$_wc" --256 fg || echo 7)
-  typeset -g POWERLEVEL9K_CONTEXT_BACKGROUND=$([ -x "$_wc" ] && "$_wc" --256 bg || echo 5)
+  typeset -g POWERLEVEL9K_CONTEXT_BACKGROUND=$([ -x "$_wc" ] && "$_wc" --256 bg || echo 14)
 
   # Context format when running with privileges: user@hostname.
   typeset -g POWERLEVEL9K_CONTEXT_ROOT_TEMPLATE="%n@${HOSTNAME_OVERRIDE:-%m}"
