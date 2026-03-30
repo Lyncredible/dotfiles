@@ -98,11 +98,12 @@ Describe 'color_main()'
     load_whereami_color
     unset WHEREAMI_COLOR_HUE
     WHEREAMI_BIN=/nonexistent
-    export WHEREAMI_BIN SSH_TTY
     SSH_TTY=/dev/pts/0
+    SSH_CONNECTION=
+    export WHEREAMI_BIN SSH_TTY SSH_CONNECTION
     ssh_bg=$(color_main bg)
     # Local (no SSH) should differ from SSH
-    unset SSH_TTY
+    unset SSH_TTY SSH_CONNECTION
     When call color_main bg
     The output should not equal "$ssh_bg"
   End
