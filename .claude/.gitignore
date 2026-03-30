@@ -17,6 +17,7 @@ todos/
 .credentials.json
 history.jsonl
 stats-cache.json
+mcp-needs-auth-cache.json
 *.log
 
 # Cache
