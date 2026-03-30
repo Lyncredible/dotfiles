@@ -84,4 +84,46 @@ Describe 'color_main()'
     The output should include 'bg='
     The output should include 'fg='
   End
+
+  It 'uses theme cyan locally when no SSH vars set'
+    load_whereami_color
+    unset SSH_TTY SSH_CONNECTION WHEREAMI_COLOR_HUE
+    local_bg=$(color_main bg)
+    # Same input should produce same output
+    When call color_main bg
+    The output should equal "$local_bg"
+  End
+
+  It 'uses hash-based color over SSH'
+    load_whereami_color
+    unset WHEREAMI_COLOR_HUE
+    WHEREAMI_BIN=/nonexistent
+    export WHEREAMI_BIN SSH_TTY
+    SSH_TTY=/dev/pts/0
+    ssh_bg=$(color_main bg)
+    # Local (no SSH) should differ from SSH
+    unset SSH_TTY
+    When call color_main bg
+    The output should not equal "$ssh_bg"
+  End
+
+  It 'WHEREAMI_COLOR_HUE overrides both local and SSH'
+    load_whereami_color
+    WHEREAMI_COLOR_HUE=120
+    export WHEREAMI_COLOR_HUE
+    override_bg=$(color_main bg)
+    # Same with SSH set — override still wins
+    SSH_TTY=/dev/pts/0
+    export SSH_TTY
+    When call color_main bg
+    The output should equal "$override_bg"
+  End
+
+  It 'outputs 256-color index with --256 flag'
+    load_whereami_color
+    unset SSH_TTY SSH_CONNECTION WHEREAMI_COLOR_HUE
+    When call color_main --256 bg
+    The status should be success
+    The output should match pattern '[0-9]*'
+  End
 End

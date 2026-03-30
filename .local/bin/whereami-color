@@ -1,5 +1,6 @@
 #!/bin/sh
-# Generate bg/fg colors from machine identity by hashing to an HSL hue.
+# Generate bg/fg colors: theme cyan locally, hash-based over SSH.
+# Override hue with WHEREAMI_COLOR_HUE=<0-359>.
 
 set -e
 
@@ -51,16 +52,26 @@ color_main() {
         shift
     fi
 
-    WHEREAMI_BIN="${WHEREAMI_BIN:-$HOME/.local/bin/whereami}"
-    if [ -x "$WHEREAMI_BIN" ]; then
-        identifier=$("$WHEREAMI_BIN" -n 2>/dev/null || echo "unknown")
+    if [ -n "$WHEREAMI_COLOR_HUE" ]; then
+        hue="$WHEREAMI_COLOR_HUE"
+        bg_color=$($convert "$hue" 21 46)
+        fg_color=$($convert "$hue" 2 73)
+    elif [ -n "$SSH_TTY" ] || [ -n "$SSH_CONNECTION" ]; then
+        WHEREAMI_BIN="${WHEREAMI_BIN:-$HOME/.local/bin/whereami}"
+        if [ -x "$WHEREAMI_BIN" ]; then
+            identifier=$("$WHEREAMI_BIN" -n 2>/dev/null || echo "unknown")
+        else
+            identifier="unknown"
+        fi
+        hue=$(string_to_hue "$identifier")
+        bg_color=$($convert "$hue" 60 25)
+        fg_color=$($convert "$hue" 10 90)
     else
-        identifier="unknown"
+        case "$convert" in
+            hsl_to_256) bg_color=14;     fg_color=7      ;;
+            *)          bg_color=2e706d; fg_color=b9bcba ;;
+        esac
     fi
-
-    hue=$(string_to_hue "$identifier")
-    bg_color=$($convert "$hue" 60 25)
-    fg_color=$($convert "$hue" 10 90)
 
     case "${1:-bg}" in
         bg)   echo "$bg_color" ;;
