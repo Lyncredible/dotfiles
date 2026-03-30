@@ -38,11 +38,19 @@ set_defaults() {
 }
 
 write_zsh_wrapper() {
-  echo "source ~/.dotfiles/.zshrc" > "$HOME/.zshrc"
-  echo "source ~/.zshrc_local" >> "$HOME/.zshrc"
-  if [ ! -e "$HOME/.zshrc_local" ]; then
-    touch "$HOME/.zshrc_local"
+  # Migrate .zshrc_local → .zshrc_post
+  if [ -e "$HOME/.zshrc_local" ] && [ ! -e "$HOME/.zshrc_post" ]; then
+    mv "$HOME/.zshrc_local" "$HOME/.zshrc_post"
   fi
+
+  cat > "$HOME/.zshrc" <<'EOF'
+[[ -f ~/.zshrc_pre ]] && source ~/.zshrc_pre
+source ~/.dotfiles/.zshrc
+[[ -f ~/.zshrc_post ]] && source ~/.zshrc_post
+EOF
+
+  [ -e "$HOME/.zshrc_pre" ] || touch "$HOME/.zshrc_pre"
+  [ -e "$HOME/.zshrc_post" ] || touch "$HOME/.zshrc_post"
 }
 
 ensure_symlink() {

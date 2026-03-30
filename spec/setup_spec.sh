@@ -70,9 +70,11 @@ Describe 'setup.sh'
     When run run_setup
     The status should be success
     The output should include 'Installing antigen...'
+    The contents of file "$TEST_HOME/.zshrc" should include 'source ~/.zshrc_pre'
     The contents of file "$TEST_HOME/.zshrc" should include 'source ~/.dotfiles/.zshrc'
-    The contents of file "$TEST_HOME/.zshrc" should include 'source ~/.zshrc_local'
-    The file "$TEST_HOME/.zshrc_local" should be exist
+    The contents of file "$TEST_HOME/.zshrc" should include 'source ~/.zshrc_post'
+    The file "$TEST_HOME/.zshrc_pre" should be exist
+    The file "$TEST_HOME/.zshrc_post" should be exist
     Assert symlink_to "$TEST_HOME/.p10k.zsh" "$TEST_DOTFILES_DIR/.p10k.zsh"
     Assert symlink_to "$TEST_HOME/.vimrc" "$TEST_DOTFILES_DIR/.vimrc"
     Assert symlink_to "$TEST_HOME/.tmux.conf" "$TEST_DOTFILES_DIR/.tmux.conf"
@@ -199,6 +201,25 @@ Describe 'setup.sh'
     When run run_setup
     The status should be failure
     The contents of file "$TEST_HOME/.setup_calls" should not include 'chsh:-s'
+  End
+
+  It 'migrates .zshrc_local to .zshrc_post'
+    mkdir -p "$TEST_ANTIGEN_DIR"
+    echo 'export FOO=bar' > "$TEST_HOME/.zshrc_local"
+    When run run_setup
+    The status should be success
+    The file "$TEST_HOME/.zshrc_local" should not be exist
+    The contents of file "$TEST_HOME/.zshrc_post" should equal 'export FOO=bar'
+  End
+
+  It 'skips migration when .zshrc_post already exists'
+    mkdir -p "$TEST_ANTIGEN_DIR"
+    echo 'old-local' > "$TEST_HOME/.zshrc_local"
+    echo 'existing-post' > "$TEST_HOME/.zshrc_post"
+    When run run_setup
+    The status should be success
+    The contents of file "$TEST_HOME/.zshrc_local" should equal 'old-local'
+    The contents of file "$TEST_HOME/.zshrc_post" should equal 'existing-post'
   End
 
   It 'symlinks .local/bin scripts'
