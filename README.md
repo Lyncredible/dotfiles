@@ -10,7 +10,7 @@ Multi-platform development environment configuration for macOS, Linux, WSL, and 
 - **Development Tools**: Git, Vim, Tmux configs with NVM, rbenv, Go, Python support
 - **AI Integration**: Claude Code configuration with custom instructions and settings
 - **Auto-Update**: Automatic dotfiles and plugin updates every 24 hours
-- **Non-Destructive**: Preserves local customizations via `~/.zshrc_local`
+- **Non-Destructive**: Preserves local customizations via `~/.zshrc_pre` and `~/.zshrc_post`
 
 ## Installation
 Clone in HTTPS mode

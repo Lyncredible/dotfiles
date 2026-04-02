@@ -34,7 +34,7 @@ This repository contains personal dotfiles for managing development environment 
 │   ├── rules/                 # Custom rules directory
 │   └── agents/                # Custom agents directory
 ├── Shell configuration files
-│   ├── .zshrc                 # Entry point (sources main.zshrc + local)
+│   ├── .zshrc                 # Entry point (sources .zshrc_pre + main.zshrc + .zshrc_post)
 │   ├── main.zshrc             # Primary zsh config with plugins
 │   ├── .profile               # Login shell setup
 │   ├── .aliases               # Shell aliases (venv, git shortcuts)
@@ -47,7 +47,16 @@ This repository contains personal dotfiles for managing development environment 
 ├── init.ahk                   # AutoHotkey v2.0 script for Windows
 ├── spec/                      # shellspec BDD tests
 │   ├── spec_helper.sh         # Sources common.sh, custom matchers
-│   └── common_spec.sh         # Tests for common.sh functions
+│   ├── common_spec.sh         # Tests for common.sh functions
+│   ├── install_spec.sh        # Tests for install.sh
+│   ├── setup_spec.sh          # Tests for setup.sh
+│   ├── main_zshrc_spec.sh     # Tests for main.zshrc
+│   ├── zshrc_update_spec.sh   # Tests for .zshrc update logic
+│   ├── whereami_spec.sh       # Tests for whereami script
+│   ├── whereami_color_spec.sh # Tests for whereami-color script
+│   ├── tmux_sysstat_spec.sh   # Tests for tmux-sysstat script
+│   ├── tmux_set_colors_spec.sh # Tests for tmux-set-colors script
+│   └── integration_zsh_startup.sh # Full shell startup integration test
 ├── .shellspec                 # shellspec config (format, shell)
 ├── Makefile                   # Lint + test runner (make check)
 ├── install.sh                 # Initial clone and setup
@@ -163,14 +172,15 @@ This repository contains personal dotfiles for managing development environment 
 
 **Approach:**
 - `.zshrc` is a **sourcing wrapper**, not a symlink
-- Sources both `~/.dotfiles/main.zshrc` AND `~/.zshrc_local`
+- Sources `~/.zshrc_pre` (optional), `~/.dotfiles/main.zshrc`, and `~/.zshrc_post` (optional)
 - Allows local customizations without modifying repository
 - All other configs use symlinks for easy updates
 
 **Example `.zshrc` structure:**
 ```zsh
-source ~/.dotfiles/main.zshrc
-[[ -f ~/.zshrc_local ]] && source ~/.zshrc_local
+[[ -f ~/.zshrc_pre ]] && source ~/.zshrc_pre
+source ~/.dotfiles/.zshrc   # imports common.sh + main.zshrc
+[[ -f ~/.zshrc_post ]] && source ~/.zshrc_post
 ```
 
 ### Auto-Update Mechanism
@@ -190,13 +200,14 @@ source ~/.dotfiles/main.zshrc
 ### Local Override Pattern
 
 **Files:**
-- `~/.zshrc_local` - Local shell customizations
+- `~/.zshrc_pre` - Local pre-setup (sourced before main.zshrc, e.g. env vars)
+- `~/.zshrc_post` - Local post-setup (sourced after main.zshrc, e.g. aliases)
 - Platform-specific checks in `main.zshrc`
 - Git config includes for machine-specific settings
 
 **Example Use Cases:**
-- Work-specific aliases
-- Company VPN configurations
+- Work-specific aliases (in `~/.zshrc_post`)
+- Environment variables needed early (in `~/.zshrc_pre`)
 - Machine-specific PATH adjustments
 
 ## Setup & Installation
@@ -255,7 +266,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Lyncredible/dotfiles/mas
 | `setup.sh` | Installation script | Creates symlinks, installs plugins |
 | `common.sh` | Utility functions | Update checks, settings merge |
 | `Makefile` | Lint + test runner | `make check`, `FILES=` for targeting |
-| `spec/common_spec.sh` | Tests for common.sh | 9 shellspec examples |
+| `spec/common_spec.sh` | Tests for common.sh | shellspec examples |
 | `.claude/settings.json` | Claude Code settings | Attribution, notifications, telemetry |
 | `.claude/CLAUDE.md` | AI instruction template | Starter for project-specific guidance |
 
@@ -344,7 +355,7 @@ Runs [shellspec](https://shellspec.info/) BDD specs under `spec/`. Requires `bre
 ### Adding Shell Aliases or Functions
 
 **For Personal Use:**
-1. Edit `~/.zshrc_local` (not tracked by git)
+1. Edit `~/.zshrc_post` (not tracked by git)
 2. Add aliases/functions there
 3. Reload: `source ~/.zshrc`
 
@@ -405,7 +416,7 @@ antigen update
 
 1. **`.zshrc` is NOT a symlink**
    - It's a sourcing wrapper created by `setup.sh`
-   - Allows local overrides via `~/.zshrc_local`
+   - Allows local overrides via `~/.zshrc_pre` and `~/.zshrc_post`
    - Do not replace it with a symlink
 
 2. **Antigen Auto-Updates**
@@ -491,7 +502,7 @@ antigen update
 
 4. **Respect the override system**
    - Don't force changes that should be local
-   - Use `~/.zshrc_local` pattern for optional features
+   - Use `~/.zshrc_pre`/`~/.zshrc_post` pattern for optional features
 
 5. **Update both platforms**
    - If changing window management, update both Hammerspoon AND AutoHotkey
