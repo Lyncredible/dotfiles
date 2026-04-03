@@ -114,6 +114,16 @@ ensure_local_bin() {
   done
 }
 
+ensure_agent_skills() {
+  target_dir="$HOME/.agents/skills"
+  ensure_dir "$HOME/.agents"
+  ensure_dir "$target_dir"
+  for skill in "$DOTFILES_DIR/.agents/skills"/*/; do
+    [ -d "$skill" ] || continue
+    ensure_symlink "$skill" "$target_dir/$(basename "$skill")"
+  done
+}
+
 main() {
   init_colors
   set_defaults
@@ -129,6 +139,7 @@ main() {
   ensure_symlink "$DOTFILES_DIR/ghostty" "$CONFIG_DIR/ghostty"
   ensure_symlink "$DOTFILES_DIR/.claude" "$HOME/.claude"
   ensure_local_bin
+  ensure_agent_skills
   ensure_antigen
   ensure_login_shell
 }
