@@ -71,6 +71,12 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 - `hooks/pre-push` runs full `make check` (lint + test + integration).
 - `setup.sh` auto-configures `core.hooksPath hooks`.
 
+## Agent Skills
+
+- Skills live in `.agents/skills/` and are installed to `~/.agents/skills`.
+- `add-lync-skill`: Add or update a skill in this repo from any working
+  directory, then commit and push the intended changes.
+
 ## Tests and linting
 
 - Unit tests use [shellspec](https://shellspec.info/) under `spec/`.

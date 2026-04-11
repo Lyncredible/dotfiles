@@ -9,6 +9,7 @@ Multi-platform development environment configuration for macOS, Linux, WSL, and 
 - **Keyboard Remapping**: Karabiner-Elements for RDP/remote desktop workflows
 - **Development Tools**: Git, Vim, Tmux configs with NVM, rbenv, Go, Python support
 - **AI Integration**: Claude Code configuration with custom instructions and settings
+- **Agent Skills**: Repo-managed skills installed to `~/.agents/skills`
 - **Auto-Update**: Automatic dotfiles and plugin updates every 24 hours
 - **Non-Destructive**: Preserves local customizations via `~/.zshrc_pre` and `~/.zshrc_post`
 
@@ -34,3 +35,7 @@ Pass `FILES=` to target specific files:
 make test FILES=spec/tmux_sysstat_spec.sh
 make lint FILES=.local/bin/tmux-sysstat
 ```
+
+## Agent Skills
+- `add-lync-skill`: Add or update a skill in this repo, even when the agent is
+  running from another working directory, then commit and push it.
