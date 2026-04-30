@@ -122,6 +122,7 @@ ensure_agent_skills() {
     [ -d "$skill" ] || continue
     ensure_symlink "$skill" "$target_dir/$(basename "$skill")"
   done
+  ensure_symlink "$target_dir" "$HOME/.claude/skills"
 }
 
 main() {

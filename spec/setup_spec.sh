@@ -4,6 +4,7 @@
 setup() {
   create_test_root
   mkdir -p "$TEST_HOME/.dotfiles"
+  mkdir -p "$TEST_HOME/.dotfiles/.claude"
 
   TEST_DOTFILES_DIR="$TEST_HOME/.dotfiles"
   TEST_CONFIG_DIR="$TEST_HOME/.config"
@@ -80,6 +81,7 @@ Describe 'setup.sh'
     Assert symlink_to "$TEST_HOME/.tmux.conf" "$TEST_DOTFILES_DIR/.tmux.conf"
     Assert symlink_to "$TEST_HOME/.hammerspoon" "$TEST_DOTFILES_DIR/.hammerspoon"
     Assert symlink_to "$TEST_HOME/.claude" "$TEST_DOTFILES_DIR/.claude"
+    Assert symlink_to "$TEST_HOME/.claude/skills" "$TEST_HOME/.agents/skills"
     The directory "$TEST_CONFIG_DIR" should be exist
     Assert symlink_to "$TEST_CONFIG_DIR/karabiner" "$TEST_DOTFILES_DIR/karabiner"
     Assert symlink_to "$TEST_CONFIG_DIR/ghostty" "$TEST_DOTFILES_DIR/ghostty"
@@ -158,7 +160,7 @@ Describe 'setup.sh'
 
   It 'uses DOTFILES_DIR override for links and include path'
     TEST_DOTFILES_DIR="$TEST_HOME/dotfiles-custom"
-    mkdir -p "$TEST_DOTFILES_DIR"
+    mkdir -p "$TEST_DOTFILES_DIR" "$TEST_DOTFILES_DIR/.claude"
     When run run_setup
     The status should be success
     The output should include 'Installing antigen...'
@@ -245,5 +247,13 @@ Describe 'setup.sh'
     The status should be success
     Assert symlink_to "$TEST_HOME/.local/bin/whereami" \
       "$TEST_DOTFILES_DIR/.local/bin/whereami"
+  End
+  It 'replaces a stale ~/.claude/skills symlink'
+    mkdir -p "$TEST_ANTIGEN_DIR" "$TEST_DOTFILES_DIR/.agents/skills/add-lync-skill"
+    ln -s "$TEST_DOTFILES_DIR/.claude" "$TEST_HOME/.claude"
+    ln -s /tmp/wrong "$TEST_DOTFILES_DIR/.claude/skills"
+    When run run_setup
+    The status should be success
+    Assert symlink_to "$TEST_HOME/.claude/skills" "$TEST_HOME/.agents/skills"
   End
 End
