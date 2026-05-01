@@ -138,6 +138,12 @@ sync_claude_settings() {
     "$HOME/.dotfiles/.claude/settings.json"
 }
 
+sync_codex_settings() {
+  merge_codex_settings \
+    "$HOME/.dotfiles/.codex/config.toml.dist" \
+    "$HOME/.codex/config.toml"
+}
+
 # Personalized clone when multiple github keys are present
 function lynclone() {
   local git_url="$1"
@@ -263,6 +269,7 @@ warn_if_uv_missing
 configure_homebrew
 configure_terminal_capabilities
 sync_claude_settings
+sync_codex_settings
 register_tmux_ssh_hook
 set_terminal_title
 configure_ulimit

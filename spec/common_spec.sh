@@ -129,6 +129,110 @@ JSON
   End
 End
 
+Describe 'merge_codex_settings()'
+  Before 'setup'
+  After 'cleanup'
+
+  It 'copies dist when config.toml is missing'
+    mkdir -p "$TEST_HOME/.dotfiles/.codex"
+    cat > "$TEST_HOME/.dotfiles/.codex/config.toml.dist" <<'TOML'
+plan_mode_reasoning_effort = "high"
+TOML
+    When call merge_codex_settings \
+      "$TEST_HOME/.dotfiles/.codex/config.toml.dist" \
+      "$TEST_HOME/.codex/config.toml"
+    The status should be success
+    The file "$TEST_HOME/.codex/config.toml" should be exist
+    The contents of file "$TEST_HOME/.codex/config.toml" \
+      should equal 'plan_mode_reasoning_effort = "high"'
+  End
+
+  It 'replaces an existing root-level plan mode reasoning setting'
+    mkdir -p "$TEST_HOME/.dotfiles/.codex" "$TEST_HOME/.codex"
+    cat > "$TEST_HOME/.dotfiles/.codex/config.toml.dist" <<'TOML'
+plan_mode_reasoning_effort = "high"
+TOML
+    cat > "$TEST_HOME/.codex/config.toml" <<'TOML'
+model = "gpt-5.4"
+plan_mode_reasoning_effort = "medium"
+
+[projects."/Users/yuan"]
+trust_level = "trusted"
+TOML
+    When call merge_codex_settings \
+      "$TEST_HOME/.dotfiles/.codex/config.toml.dist" \
+      "$TEST_HOME/.codex/config.toml"
+    The status should be success
+    The contents of file "$TEST_HOME/.codex/config.toml" \
+      should include 'plan_mode_reasoning_effort = "high"'
+    The contents of file "$TEST_HOME/.codex/config.toml" \
+      should not include 'plan_mode_reasoning_effort = "medium"'
+    The contents of file "$TEST_HOME/.codex/config.toml" \
+      should include '[projects."/Users/yuan"]'
+  End
+
+  It 'inserts the managed key before the first table when absent'
+    mkdir -p "$TEST_HOME/.dotfiles/.codex" "$TEST_HOME/.codex"
+    cat > "$TEST_HOME/.dotfiles/.codex/config.toml.dist" <<'TOML'
+plan_mode_reasoning_effort = "high"
+TOML
+    cat > "$TEST_HOME/.codex/config.toml" <<'TOML'
+model = "gpt-5.4"
+
+[projects."/Users/yuan"]
+trust_level = "trusted"
+TOML
+    When call merge_codex_settings \
+      "$TEST_HOME/.dotfiles/.codex/config.toml.dist" \
+      "$TEST_HOME/.codex/config.toml"
+    The status should be success
+    The contents of file "$TEST_HOME/.codex/config.toml" should equal "$(cat <<'TOML'
+model = "gpt-5.4"
+
+plan_mode_reasoning_effort = "high"
+[projects."/Users/yuan"]
+trust_level = "trusted"
+TOML
+)"
+  End
+
+  It 'preserves similarly named keys inside TOML tables'
+    mkdir -p "$TEST_HOME/.dotfiles/.codex" "$TEST_HOME/.codex"
+    cat > "$TEST_HOME/.dotfiles/.codex/config.toml.dist" <<'TOML'
+plan_mode_reasoning_effort = "high"
+TOML
+    cat > "$TEST_HOME/.codex/config.toml" <<'TOML'
+model = "gpt-5.4"
+
+[profiles.fast]
+plan_mode_reasoning_effort = "low"
+TOML
+    When call merge_codex_settings \
+      "$TEST_HOME/.dotfiles/.codex/config.toml.dist" \
+      "$TEST_HOME/.codex/config.toml"
+    The status should be success
+    The contents of file "$TEST_HOME/.codex/config.toml" \
+      should include 'plan_mode_reasoning_effort = "high"'
+    The contents of file "$TEST_HOME/.codex/config.toml" \
+      should include '[profiles.fast]'
+    The contents of file "$TEST_HOME/.codex/config.toml" \
+      should include 'plan_mode_reasoning_effort = "low"'
+  End
+
+  It 'leaves config.toml untouched when the dist file is missing'
+    mkdir -p "$TEST_HOME/.codex"
+    cat > "$TEST_HOME/.codex/config.toml" <<'TOML'
+model = "gpt-5.4"
+TOML
+    When call merge_codex_settings \
+      "$TEST_HOME/.dotfiles/.codex/config.toml.dist" \
+      "$TEST_HOME/.codex/config.toml"
+    The status should be success
+    The contents of file "$TEST_HOME/.codex/config.toml" \
+      should equal 'model = "gpt-5.4"'
+  End
+End
+
 Describe 'acquire_antigen_cache_lock()'
   Before 'setup'
   After 'cleanup'

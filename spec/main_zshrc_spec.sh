@@ -9,7 +9,11 @@ setup() {
   export PROC_VERSION_FILE
   unset SSH_CONNECTION TMUX TEST_RUN_DOTFILES_UPDATED TEST_RUN_NO_UV TERM COLORTERM
 
-  mkdir -p "$TEST_HOME/.dotfiles/.claude" "$TEST_HOME/.antigen" "$TEST_HOME/no-fzf"
+  mkdir -p \
+    "$TEST_HOME/.dotfiles/.claude" \
+    "$TEST_HOME/.dotfiles/.codex" \
+    "$TEST_HOME/.antigen" \
+    "$TEST_HOME/no-fzf"
 
   cp "$SHELLSPEC_PROJECT_ROOT/main.zshrc" "$TEST_HOME/.dotfiles/main.zshrc"
   cp "$SHELLSPEC_PROJECT_ROOT/common.sh" "$TEST_HOME/.dotfiles/common.sh"
@@ -38,6 +42,10 @@ JSON
   "enabledPlugins": ["foo"]
 }
 JSON
+
+  cat > "$TEST_HOME/.dotfiles/.codex/config.toml.dist" <<'TOML'
+plan_mode_reasoning_effort = "high"
+TOML
 
   cat > "$TEST_HOME/.antigen/antigen.zsh" <<'FILE'
 antigen() {
@@ -265,6 +273,32 @@ FILE
       "$TEST_HOME/.dotfiles/.claude/settings.json" \
       '.model' \
       'claude-opus-4-6'
+  End
+
+  It 'creates Codex config from dist when config.toml is missing'
+    rm -rf "$TEST_HOME/.codex"
+    When run run_main_eval 'test -f "$HOME/.codex/config.toml" && print ok'
+    The status should be success
+    The output should include 'ok'
+    The contents of file "$TEST_HOME/.codex/config.toml" \
+      should equal 'plan_mode_reasoning_effort = "high"'
+  End
+
+  It 'preserves unmanaged Codex config while enforcing the plan mode default'
+    mkdir -p "$TEST_HOME/.codex"
+    cat > "$TEST_HOME/.codex/config.toml" <<'TOML'
+model = "gpt-5.4"
+plan_mode_reasoning_effort = "medium"
+
+[projects."/Users/yuan"]
+trust_level = "trusted"
+TOML
+    When run run_main_eval 'cat "$HOME/.codex/config.toml"'
+    The status should be success
+    The output should include 'model = "gpt-5.4"'
+    The output should include 'plan_mode_reasoning_effort = "high"'
+    The output should not include 'plan_mode_reasoning_effort = "medium"'
+    The output should include '[projects."/Users/yuan"]'
   End
 
   It 'runs antigen update commands when DOTFILES_UPDATED=1'

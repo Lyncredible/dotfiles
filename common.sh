@@ -7,6 +7,11 @@ GIT_BIN="${GIT_BIN:-git}"
 STAT_BIN="${STAT_BIN:-stat}"
 SLEEP_BIN="${SLEEP_BIN:-sleep}"
 MKDIR_BIN="${MKDIR_BIN:-mkdir}"
+AWK_BIN="${AWK_BIN:-/usr/bin/awk}"
+CP_BIN="${CP_BIN:-/bin/cp}"
+MV_BIN="${MV_BIN:-/bin/mv}"
+RM_BIN="${RM_BIN:-/bin/rm}"
+MKTEMP_BIN="${MKTEMP_BIN:-/usr/bin/mktemp}"
 
 command_exists() {
   command -v "$1" >/dev/null 2>&1
@@ -58,7 +63,7 @@ merge_claude_settings() {
   fi
 
   if [[ ! -f "$claude_settings" ]]; then
-    cp "$claude_dist" "$claude_settings"
+    "$CP_BIN" "$claude_dist" "$claude_settings"
     return 0
   fi
 
@@ -71,6 +76,71 @@ merge_claude_settings() {
   if [[ -n "$merged" ]]; then
     printf '%s\n' "$merged" > "$claude_settings"
   fi
+}
+
+# Merge repo-managed Codex defaults into config.toml without touching user-owned
+# machine state such as trusted projects or MCP servers.
+merge_codex_settings() {
+  local codex_dist="$1"
+  local codex_settings="$2"
+  local codex_dir="${codex_settings:h}"
+  local tmp_file
+
+  if [[ ! -f "$codex_dist" ]]; then
+    return 0
+  fi
+
+  "$MKDIR_BIN" -p "$codex_dir"
+
+  if [[ ! -f "$codex_settings" ]]; then
+    "$CP_BIN" "$codex_dist" "$codex_settings"
+    return 0
+  fi
+
+  tmp_file=$("$MKTEMP_BIN" "${codex_settings}.tmp.XXXXXX") || return 1
+  # shellcheck disable=SC2016
+  if "$AWK_BIN" '
+    BEGIN {
+      managed_key = "plan_mode_reasoning_effort"
+      managed_line = managed_key " = \"high\""
+      in_root = 1
+      wrote_managed = 0
+    }
+
+    in_root && /^[[:space:]]*\[/ {
+      if (!wrote_managed) {
+        print managed_line
+        wrote_managed = 1
+      }
+      in_root = 0
+      print
+      next
+    }
+
+    in_root && $0 ~ "^[[:space:]]*" managed_key "[[:space:]]*=" {
+      if (!wrote_managed) {
+        print managed_line
+        wrote_managed = 1
+      }
+      next
+    }
+
+    {
+      print
+    }
+
+    END {
+      if (!wrote_managed) {
+        print managed_line
+      }
+    }
+  ' "$codex_settings" > "$tmp_file"; then
+    "$MV_BIN" "$tmp_file" "$codex_settings"
+    return 0
+  fi
+
+  "$RM_BIN" -f "$tmp_file"
+  return 1
 }
 
 dotfiles_git() {
