@@ -81,6 +81,14 @@ For markdown-only skill and docs edits, full test runs are optional unless the u
 
 Check for unrelated changes first. Do not include unrelated user edits in the commit.
 
+Work directly on `master`. Do not create or keep a feature branch for skill
+changes. If the repo is not on `master`, switch to `master` before staging:
+
+```sh
+git -C "$repo_root" checkout master
+git -C "$repo_root" pull --rebase origin master
+```
+
 Stage only the intended files:
 
 ```sh
@@ -95,15 +103,15 @@ Commit with a specific message:
 git -C "$repo_root" commit -m "Add <skill-name> skill"
 ```
 
-Push the current branch, not a guessed branch name:
+Push directly to `origin/master`:
 
 ```sh
-branch=$(git -C "$repo_root" branch --show-current)
-git -C "$repo_root" push origin "$branch"
+git -C "$repo_root" push origin master
 ```
 
 ## Safety Rules
 
 - Never assume the repo root is the current directory.
+- Never create a feature branch or PR for skill-only changes.
 - Never use `git add -A` if unrelated changes are present.
 - Never revert unrelated work just to get a clean commit.
