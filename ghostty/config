@@ -31,7 +31,9 @@ keybind = cmd+6=text:\x026
 keybind = cmd+7=text:\x027
 keybind = cmd+8=text:\x028
 keybind = cmd+9=text:\x029
-keybind = cmd+0=text:\x020
+
+# Match the standard macOS shortcut for reset font size.
+keybind = cmd+0=reset_font_size
 
 # Ctrl+J newline (not sent natively without tmux)
 keybind = ctrl+j=text:\n
