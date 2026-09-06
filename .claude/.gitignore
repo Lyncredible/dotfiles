@@ -1,30 +1,13 @@
-# Runtime and state directories (not portable across machines)
-backups/
-debug/
-file-history/
-ide/
-paste-cache/
-plans/
-plugins/
-projects/
-session-env/
-sessions/
-shell-snapshots/
-tasks/
-todos/
+# Claude Code writes machine-local state here (sessions, caches, daemon and
+# job dirs), and each release adds more. Ignore everything, then re-include
+# only what this repo manages.
+*
 
-# Runtime files
-.credentials.json
-history.jsonl
-stats-cache.json
-mcp-needs-auth-cache.json
-*.log
+!.gitignore
+!CLAUDE.md
+!settings.json.dist
 
-# Cache
-cache/
-
-# Local overrides
-settings.json
-settings.local.json
-CLAUDE.local.md
-skills
+!agents/
+!agents/**
+!rules/
+!rules/**
