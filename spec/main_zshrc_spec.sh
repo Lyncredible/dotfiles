@@ -88,6 +88,11 @@ STUB
 
   write_fake_grep
 
+  make_stub podman <<'STUB'
+#!/bin/sh
+printf '%s\n' "$*"
+STUB
+
   make_stub hostname <<'STUB'
 #!/bin/sh
 echo "test-host"
@@ -421,6 +426,48 @@ TOML
     The status should be success
     The output should include 'zstyle :bracketed-paste-magic paste-init pasteinit'
     The output should include 'zstyle :bracketed-paste-magic paste-finish pastefinish'
+  End
+
+  It 'drops the PORTS and COMMAND columns from a bare podman ps'
+    When run run_main_eval 'podman ps'
+    The status should be success
+    The output should include '--format'
+    The output should include '{{.Names}}'
+    The output should not include '{{.Ports}}'
+    The output should not include '{{.Command}}'
+  End
+
+  It 'shortens the image column to repo/name:tag'
+    When run run_main_eval 'podman ps'
+    The status should be success
+    The output should include 'index (split .Image "@") 0'
+    The output should include 'join (slice (split $i "/") 1) "/"'
+    The output should not include '{{.Image}}'
+  End
+
+  It 'passes extra podman ps arguments through'
+    When run run_main_eval 'podman ps --all'
+    The status should be success
+    The output should include '--all'
+    The output should include '{{.Names}}'
+  End
+
+  It 'leaves an explicit podman ps format alone'
+    When run run_main_eval 'podman ps --format json'
+    The status should be success
+    The output should equal 'ps --format json'
+  End
+
+  It 'leaves podman ps -q alone'
+    When run run_main_eval 'podman ps -q'
+    The status should be success
+    The output should equal 'ps -q'
+  End
+
+  It 'does not touch other podman subcommands'
+    When run run_main_eval 'podman images'
+    The status should be success
+    The output should equal 'images'
   End
 
   It 'registers the reset-terminal widget and keybinding'

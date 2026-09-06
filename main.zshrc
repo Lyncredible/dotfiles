@@ -235,6 +235,24 @@ configure_reset_terminal() {
   bindkey '^Z' reset-terminal
 }
 
+# `podman ps` is far wider than a terminal: it publishes every pod port on the
+# pod's infra container, and prints fully qualified image names carrying a
+# registry and sometimes a sha256 digest. Drop PORTS and COMMAND, and shorten
+# IMAGE to repo/name:tag, unless the caller asked for a specific output shape.
+podman() {
+  if [[ "$1" == ps && "$*" != *--format* && "$*" != *-q* ]]; then
+    shift
+    local img='{{$i := index (split .Image "@") 0}}'
+    img+='{{if gt (len (split $i "/")) 1}}'
+    img+='{{join (slice (split $i "/") 1) "/"}}'
+    img+='{{else}}{{$i}}{{end}}'
+    command podman ps --format \
+      "table {{.ID}}\t${img}\t{{.CreatedHuman}}\t{{.Status}}\t{{.Names}}" "$@"
+  else
+    command podman "$@"
+  fi
+}
+
 setup_whereami() {
   export WHEREAMI=$("$HOME/.local/bin/whereami" 2>/dev/null \
     || hostname -s 2>/dev/null || echo "unknown")
