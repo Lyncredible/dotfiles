@@ -7,60 +7,48 @@ FZF_BIN="${FZF_BIN:-fzf}"
 FZF_APT_KEY_BINDINGS="${FZF_APT_KEY_BINDINGS:-/usr/share/doc/fzf/examples/key-bindings.zsh}"
 
 configure_antigen() {
-  # Acquire outer lock to protect entire antigen configuration
-  # This extends protection beyond antigen's built-in lock which is released too early
   if ! acquire_antigen_cache_lock; then
     printf 'Error: Failed to acquire antigen lock, cannot proceed safely\n' >&2
     return 1
   fi
 
-  # Ensure lock is released even if something fails
-  trap 'release_antigen_cache_lock' EXIT INT TERM
+  # Zsh's always block releases on return, failure, and interruption without
+  # replacing the caller's traps. Process exit also releases the native lock.
+  {
+    source ~/.antigen/antigen.zsh || return
 
-  # Using antigen to manage zsh plugins
-  source ~/.antigen/antigen.zsh
+    # Keep our custom terminal title instead of oh-my-zsh's termsupport title.
+    DISABLE_AUTO_TITLE="true"
 
-  # Disable oh-my-zsh's termsupport library from overriding our
-  # custom terminal title set by _set_terminal_title.
-  DISABLE_AUTO_TITLE="true"
+    antigen use oh-my-zsh || return
 
-  # Use oh-my-zsh
-  antigen use oh-my-zsh
+    # Plugins from oh-my-zsh
+    antigen bundle command-not-found || return
+    antigen bundle common-aliases || return
+    antigen bundle colored-man-pages || return
+    antigen bundle extract || return
+    antigen bundle git || return
+    antigen bundle sublime || return
+    antigen bundle z || return
 
-  # Plugins from oh-my-zsh
-  antigen bundle command-not-found
-  antigen bundle common-aliases
-  antigen bundle colored-man-pages
-  antigen bundle extract
-  antigen bundle git
-  antigen bundle sublime
-  antigen bundle z
+    # Plugins from zsh-users
+    antigen bundle zsh-users/zsh-autosuggestions || return
+    antigen bundle zsh-users/zsh-completions || return
+    antigen bundle zsh-users/zsh-syntax-highlighting || return
 
-  # Plugins from zsh-users
-  antigen bundle zsh-users/zsh-autosuggestions
-  antigen bundle zsh-users/zsh-completions
-  antigen bundle zsh-users/zsh-syntax-highlighting
+    antigen theme romkatv/powerlevel10k || return
+    antigen apply || return
+    wait_for_antigen_compile
 
-  # Bullet train theme
-  antigen theme romkatv/powerlevel10k
-
-  # Then, source plugins and add commands to $PATH
-  antigen apply
-
-  # Wait for background zcompile to complete before releasing lock
-  # This ensures no other process reads partially-compiled cache
-  wait_for_antigen_compile
-
-  # Release lock
-  release_antigen_cache_lock
-  trap - EXIT INT TERM
-
-  # Update antigen whenever dotfiles auto-update succeeds (periodic)
-  if [[ "${DOTFILES_UPDATED:-0}" -eq 1 ]]; then
-    printf 'Updating antigen...\n'
-    antigen selfupdate
-    antigen update
-  fi
+    # Updates reset caches and modify bundles, so they share initialization's lock.
+    if [[ "${DOTFILES_UPDATED:-0}" -eq 1 ]]; then
+      printf 'Updating antigen...\n'
+      antigen selfupdate
+      antigen update
+    fi
+  } always {
+    release_antigen_cache_lock
+  }
 }
 
 is_wsl() {

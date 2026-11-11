@@ -44,8 +44,12 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 - `acquire_antigen_cache_lock()` / `release_antigen_cache_lock()` in
   `common.sh` prevent race conditions when multiple shells start
   simultaneously (e.g. tmux with many panes).
-- Uses a lock directory with PID file; stale locks are cleaned up
-  based on age and PID liveness.
+- Uses `zsh/system` native file locking with a persistent file beside Antigen's
+  shared state (`${ADOTDIR:-$HOME/.antigen}/.dotfiles-cache.lock`).
+- Never delete that lock file. The OS releases ownership when the shell exits;
+  there are no PID files, age checks, or stale-lock deletion.
+- Initialization and periodic Antigen updates share the lock. Manual Antigen
+  commands outside this wrapper still rely on Antigen's internal locking.
 
 ## Gotchas
 

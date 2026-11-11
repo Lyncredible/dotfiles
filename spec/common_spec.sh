@@ -11,6 +11,8 @@ setup() {
 
   ANTIGEN_DOTFILES_LOCK="$TEST_HOME/.test-antigen-lock"
   export ANTIGEN_DOTFILES_LOCK
+  TEST_LOCK_ROOT="$TEST_HOME"
+  export TEST_LOCK_ROOT
 }
 
 cleanup() {
@@ -233,239 +235,162 @@ TOML
   End
 End
 
-Describe 'acquire_antigen_cache_lock()'
+run_lock_eval() {
+  COMMON_FILE="$SHELLSPEC_PROJECT_ROOT/common.sh" \
+  zsh -fc 'source "$COMMON_FILE"; eval "$1"' zsh "$1"
+}
+
+Describe 'native Antigen cache lock'
   Before 'setup'
   After 'cleanup'
 
-  It 'acquires lock successfully on first attempt'
-    FAKE_EPOCH=2000000000
-    export FAKE_EPOCH
-    When call acquire_antigen_cache_lock
+  It 'creates a persistent lock file and records the owning process'
+    When run run_lock_eval '
+      acquire_antigen_cache_lock || exit
+      [[ -n $_ANTIGEN_DOTFILES_LOCK_FD ]] || exit 1
+      [[ $_ANTIGEN_DOTFILES_LOCK_PID == ${sysparams[pid]} ]]
+    '
     The status should be success
-    The directory "$ANTIGEN_DOTFILES_LOCK" should be exist
+    The file "$ANTIGEN_DOTFILES_LOCK" should be exist
   End
 
-  It 'stores PID in lock directory'
-    FAKE_EPOCH=2000000000
-    export FAKE_EPOCH
-    When call acquire_antigen_cache_lock
+  It 'creates the parent directory at a custom lock location'
+    ANTIGEN_DOTFILES_LOCK="$TEST_HOME/custom/nested/cache.lock"
+    When run run_lock_eval 'acquire_antigen_cache_lock'
     The status should be success
-    The file "$ANTIGEN_DOTFILES_LOCK/pid" should be exist
-    The contents of file "$ANTIGEN_DOTFILES_LOCK/pid" should equal "$$"
+    The file "$ANTIGEN_DOTFILES_LOCK" should be exist
   End
 
-  It 'returns 1 when timeout is reached'
-    # Lock mtime is fresh so it won't be considered stale
-    FAKE_EPOCH=2000000000
-    FAKE_STAT_MTIME=1999999999
-    export FAKE_EPOCH FAKE_STAT_MTIME
-    # Create lock held by a live process ($$) so PID check won't remove it
-    mkdir "$ANTIGEN_DOTFILES_LOCK"
-    echo "$$" > "$ANTIGEN_DOTFILES_LOCK/pid"
+  It 'defaults to the shared Antigen directory instead of a dotfiles checkout'
+    When run run_lock_eval '
+      unset ANTIGEN_DOTFILES_LOCK
+      ADOTDIR="${TEST_LOCK_ROOT}/state"
+      source "$COMMON_FILE"
+      acquire_antigen_cache_lock
+    '
+    The status should be success
+    The file "$TEST_HOME/state/.dotfiles-cache.lock" should be exist
+  End
 
-    # Set very high stale age so lock won't be considered stale
-    ANTIGEN_LOCK_STALE_AGE=999999999
-    export ANTIGEN_LOCK_STALE_AGE
+  It 'rejects nested acquisition without discarding the original ownership'
+    When run run_lock_eval '
+      acquire_antigen_cache_lock || exit
+      fd=$_ANTIGEN_DOTFILES_LOCK_FD
+      acquire_antigen_cache_lock && exit 1
+      [[ $_ANTIGEN_DOTFILES_LOCK_FD == $fd ]] || exit 1
+      release_antigen_cache_lock
+    '
+    The status should be success
+    The stderr should include 'already held by this shell'
+  End
 
-    # Set very short timeout for fast test (1 second with sleep 1 intervals)
-    ANTIGEN_LOCK_TIMEOUT=1
-    export ANTIGEN_LOCK_TIMEOUT
+  It 'preserves ownership when common.sh is sourced again'
+    When run run_lock_eval '
+      acquire_antigen_cache_lock || exit
+      source "$COMMON_FILE"
+      release_antigen_cache_lock
+      [[ -z ${_ANTIGEN_DOTFILES_LOCK_FD:-} ]]
+    '
+    The status should be success
+  End
 
-    When call acquire_antigen_cache_lock
+  It 'leaves the lock file in place after release and supports reacquisition'
+    When run run_lock_eval '
+      acquire_antigen_cache_lock || exit
+      release_antigen_cache_lock || exit
+      [[ -f $ANTIGEN_DOTFILES_LOCK ]] || exit 1
+      [[ -z ${_ANTIGEN_DOTFILES_LOCK_FD:-} ]] || exit 1
+      acquire_antigen_cache_lock
+    '
+    The status should be success
+    The file "$ANTIGEN_DOTFILES_LOCK" should be exist
+  End
+
+  It 'allows release when no lock was acquired or it was already released'
+    When run run_lock_eval '
+      release_antigen_cache_lock || exit
+      acquire_antigen_cache_lock || exit
+      release_antigen_cache_lock || exit
+      release_antigen_cache_lock
+    '
+    The status should be success
+  End
+
+  It 'reports an unavailable module without creating a lock'
+    When run run_lock_eval '
+      zmodload() { return 1; }
+      acquire_antigen_cache_lock
+    '
     The status should equal 1
-    The stderr should include 'Failed to acquire cache lock'
+    The stderr should include 'Native file locking is unavailable'
+    The path "$ANTIGEN_DOTFILES_LOCK" should not be exist
   End
 
-  It 'waits and retries when lock is held temporarily'
-    # Lock mtime is fresh so it won't be considered stale
-    FAKE_EPOCH=2000000000
-    FAKE_STAT_MTIME=1999999999
-    export FAKE_EPOCH FAKE_STAT_MTIME
-
-    # Create lock held by a live process ($$) so PID check won't remove it
-    mkdir "$ANTIGEN_DOTFILES_LOCK"
-    echo "$$" > "$ANTIGEN_DOTFILES_LOCK/pid"
-
-    # Release lock after 0.5 seconds in background (within 1s sleep window)
-    (sleep 0.5 && rm -rf "$ANTIGEN_DOTFILES_LOCK") &
-
-    ANTIGEN_LOCK_TIMEOUT=5
-    export ANTIGEN_LOCK_TIMEOUT
-
-    When call acquire_antigen_cache_lock
-    The status should be success
-    The directory "$ANTIGEN_DOTFILES_LOCK" should be exist
-  End
-
-  It 'removes stale lock older than ANTIGEN_LOCK_STALE_AGE'
-    # Current time: 2000000000, lock mtime: 1999999600 (400s ago, > 300s stale age)
-    FAKE_EPOCH=2000000000
-    FAKE_STAT_MTIME=1999999600
-    export FAKE_EPOCH FAKE_STAT_MTIME
-
-    # Create old lock held by a live process ($$) so time-based path is exercised
-    mkdir "$ANTIGEN_DOTFILES_LOCK"
-    echo "$$" > "$ANTIGEN_DOTFILES_LOCK/pid"
-
-    When call acquire_antigen_cache_lock
-    The status should be success
-    The stderr should include 'Removing stale cache lock (age:'
-    The directory "$ANTIGEN_DOTFILES_LOCK" should be exist
-    # New PID should be current process
-    The contents of file "$ANTIGEN_DOTFILES_LOCK/pid" should equal "$$"
-  End
-
-  It 'respects ANTIGEN_LOCK_STALE_AGE environment variable'
-    # Current time: 2000000000, lock mtime: 1999999850 (150s ago, > 100s custom stale age)
-    FAKE_EPOCH=2000000000
-    FAKE_STAT_MTIME=1999999850
-    export FAKE_EPOCH FAKE_STAT_MTIME
-
-    # Create lock held by a live process ($$) so time-based path is exercised
-    mkdir "$ANTIGEN_DOTFILES_LOCK"
-    echo "$$" > "$ANTIGEN_DOTFILES_LOCK/pid"
-
-    # Override stale age to 100 seconds (lock should be considered stale)
-    ANTIGEN_LOCK_STALE_AGE=100
-    export ANTIGEN_LOCK_STALE_AGE
-
-    When call acquire_antigen_cache_lock
-    The status should be success
-    The stderr should include 'Removing stale cache lock (age:'
-  End
-
-  It 'respects ANTIGEN_DOTFILES_LOCK environment variable'
-    FAKE_EPOCH=2000000000
-    export FAKE_EPOCH
-
-    # Override lock location
-    custom_lock="$TEST_HOME/.custom-lock-location"
-    ANTIGEN_DOTFILES_LOCK="$custom_lock"
-    export ANTIGEN_DOTFILES_LOCK
-
-    When call acquire_antigen_cache_lock
-    The status should be success
-    The directory "$custom_lock" should be exist
-  End
-
-  It 'removes lock when holder PID is dead'
-    FAKE_EPOCH=2000000000
-    FAKE_STAT_MTIME=1999999999
-    export FAKE_EPOCH FAKE_STAT_MTIME
-
-    # Create lock with a PID that does not exist
-    mkdir "$ANTIGEN_DOTFILES_LOCK"
-    echo "99999" > "$ANTIGEN_DOTFILES_LOCK/pid"
-
-    When call acquire_antigen_cache_lock
-    The status should be success
-    The stderr should include 'holder PID 99999 is dead'
-    The contents of file "$ANTIGEN_DOTFILES_LOCK/pid" should equal "$$"
-  End
-
-  It 'falls back to time-based check when PID file is missing'
-    # Current time: 2000000000, lock mtime: 1999999600 (400s ago, > 300s stale age)
-    FAKE_EPOCH=2000000000
-    FAKE_STAT_MTIME=1999999600
-    export FAKE_EPOCH FAKE_STAT_MTIME
-
-    # Create lock directory without PID file
-    mkdir "$ANTIGEN_DOTFILES_LOCK"
-
-    When call acquire_antigen_cache_lock
-    The status should be success
-    The stderr should include 'Removing stale cache lock (age:'
-  End
-
-  It 'falls back to time-based check when PID file is empty'
-    FAKE_EPOCH=2000000000
-    FAKE_STAT_MTIME=1999999600
-    export FAKE_EPOCH FAKE_STAT_MTIME
-
-    # Create lock with empty PID file
-    mkdir "$ANTIGEN_DOTFILES_LOCK"
-    : > "$ANTIGEN_DOTFILES_LOCK/pid"
-
-    When call acquire_antigen_cache_lock
-    The status should be success
-    The stderr should include 'Removing stale cache lock (age:'
-  End
-
-  It 'does not remove fresh lock held by live process'
-    # Lock mtime is 10s ago, well under stale age of 999999999
-    FAKE_EPOCH=2000000000
-    FAKE_STAT_MTIME=1999999990
-    export FAKE_EPOCH FAKE_STAT_MTIME
-
-    # Use live process ($$) so neither PID nor time check removes it
-    mkdir "$ANTIGEN_DOTFILES_LOCK"
-    echo "$$" > "$ANTIGEN_DOTFILES_LOCK/pid"
-
-    # Set very high stale age so lock won't be removed
-    ANTIGEN_LOCK_STALE_AGE=999999999
-    export ANTIGEN_LOCK_STALE_AGE
-
-    ANTIGEN_LOCK_TIMEOUT=1
-    export ANTIGEN_LOCK_TIMEOUT
-
-    When call acquire_antigen_cache_lock
+  It 'reports an unsupported locking feature without creating a lock'
+    When run run_lock_eval '
+      zsystem() { return 1; }
+      acquire_antigen_cache_lock
+    '
     The status should equal 1
-    The stderr should not include 'Removing stale'
-    # Original PID should still be present
-    The contents of file "$ANTIGEN_DOTFILES_LOCK/pid" should equal "$$"
-  End
-End
-
-Describe 'release_antigen_cache_lock()'
-  Before 'setup'
-  After 'cleanup'
-
-  It 'removes the lock directory'
-    FAKE_EPOCH=2000000000
-    export FAKE_EPOCH
-
-    # Create lock first
-    acquire_antigen_cache_lock
-    The directory "$ANTIGEN_DOTFILES_LOCK" should be exist
-
-    # Release it
-    release_antigen_cache_lock
-
-    # Verify it's gone
-    The directory "$ANTIGEN_DOTFILES_LOCK" should not be exist
+    The stderr should include 'Native file locking is unavailable'
+    The path "$ANTIGEN_DOTFILES_LOCK" should not be exist
   End
 
-  It 'is idempotent (safe to call multiple times)'
-    FAKE_EPOCH=2000000000
-    export FAKE_EPOCH
-
-    # Create and release lock
-    acquire_antigen_cache_lock
-    release_antigen_cache_lock
-
-    # Call release again (no error should occur)
-    When call release_antigen_cache_lock
-    The status should be success
+  It 'rejects a negative timeout instead of waiting indefinitely'
+    When run run_lock_eval 'ANTIGEN_LOCK_TIMEOUT=-1; acquire_antigen_cache_lock'
+    The status should equal 1
+    The stderr should include 'must be a nonnegative number'
+    The path "$ANTIGEN_DOTFILES_LOCK" should not be exist
   End
 
-  It 'is safe to call when lock was never acquired'
-    When call release_antigen_cache_lock
-    The status should be success
+  It 'rejects a nonnumeric timeout'
+    When run run_lock_eval 'ANTIGEN_LOCK_TIMEOUT=invalid; acquire_antigen_cache_lock'
+    The status should equal 1
+    The stderr should include 'must be a nonnegative number'
+    The path "$ANTIGEN_DOTFILES_LOCK" should not be exist
   End
 
-  It 'removes lock even if PID file is missing'
+  It 'fails without deleting a directory supplied as the lock path'
     mkdir "$ANTIGEN_DOTFILES_LOCK"
-    # Don't create PID file
-
-    When call release_antigen_cache_lock
-    The status should be success
-    The directory "$ANTIGEN_DOTFILES_LOCK" should not be exist
+    When run run_lock_eval 'acquire_antigen_cache_lock'
+    The status should equal 1
+    The stderr should include 'is a directory'
+    The directory "$ANTIGEN_DOTFILES_LOCK" should be exist
   End
 End
 
 Describe 'wait_for_antigen_compile()'
   Before 'setup'
   After 'cleanup'
+
+  It 'does not poll for Antigen v2.3 or newer, even with missing bytecode'
+    ANTIGEN_CACHE="$TEST_HOME/init.zsh"
+    echo '# fixture' > "$ANTIGEN_CACHE"
+    SLEEP_BIN="$TEST_BIN/nonexistent-sleep"
+    export SLEEP_BIN
+    _ANTIGEN_CACHE_VERSION=v2.3.0
+
+    When call wait_for_antigen_compile
+    The status should be success
+    The stderr should equal ''
+  End
+
+  It 'keeps the polling fallback for older Antigen versions'
+    ANTIGEN_CACHE="$TEST_HOME/init.zsh"
+    echo '# fixture' > "$ANTIGEN_CACHE"
+    ANTIGEN_COMPILE_TIMEOUT=1
+    _ANTIGEN_CACHE_VERSION=v2.2.3
+    make_stub sleep <<'STUB'
+#!/bin/sh
+touch "$TEST_LOCK_ROOT/sleep-called"
+STUB
+    SLEEP_BIN="$TEST_BIN/sleep"
+    export SLEEP_BIN
+
+    When call wait_for_antigen_compile
+    The status should be success
+    The file "$TEST_HOME/sleep-called" should be exist
+  End
 
   It 'returns 0 immediately if cache file does not exist'
     ANTIGEN_CACHE="$TEST_HOME/nonexistent-cache"

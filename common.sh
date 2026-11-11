@@ -186,81 +186,68 @@ maybe_update_dotfiles() {
   unset UPDATE_AFTER_REF
 }
 
-# Antigen cache generation protection
-ANTIGEN_DOTFILES_LOCK="${ANTIGEN_DOTFILES_LOCK:-$HOME/.dotfiles/.antigen-cache.lock}"
+# A persistent file beside Antigen's shared state. Never unlink a native lock file:
+# another shell could still hold a lock on the old inode.
+ANTIGEN_DOTFILES_LOCK="${ANTIGEN_DOTFILES_LOCK:-${ADOTDIR:-$HOME/.antigen}/.dotfiles-cache.lock}"
 ANTIGEN_LOCK_TIMEOUT="${ANTIGEN_LOCK_TIMEOUT:-30}"  # seconds
-ANTIGEN_LOCK_STALE_AGE="${ANTIGEN_LOCK_STALE_AGE:-300}"  # 5 minutes
-ANTIGEN_COMPILE_TIMEOUT="${ANTIGEN_COMPILE_TIMEOUT:-5}"  # seconds
+ANTIGEN_COMPILE_TIMEOUT="${ANTIGEN_COMPILE_TIMEOUT:-5}"  # seconds (legacy Antigen)
 
-# Acquire lock with timeout and stale lock cleanup
-# Returns: 0 on success, 1 on failure
+# Use Zsh's fcntl lock on macOS/Linux/WSL; no PID files or stale-lock deletion.
+# Ownership ends when this shell closes the descriptor or exits, including SIGKILL.
 acquire_antigen_cache_lock() {
   local lock_file="$ANTIGEN_DOTFILES_LOCK"
-  local timeout="$ANTIGEN_LOCK_TIMEOUT"
-  local stale_age="$ANTIGEN_LOCK_STALE_AGE"
-  local waited=0
+  local lock_fd
 
-  # Try to acquire lock immediately (fast path)
-  if "$MKDIR_BIN" "$lock_file" 2>/dev/null; then
-    echo "$$" > "$lock_file/pid"
+  if ! zmodload zsh/system 2>/dev/null || ! zsystem supports flock; then
+    printf 'Antigen: Native file locking is unavailable (zsh/system).\n' >&2
+    return 1
+  fi
+
+  if [[ ! "$ANTIGEN_LOCK_TIMEOUT" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    printf 'Antigen: ANTIGEN_LOCK_TIMEOUT must be a nonnegative number.\n' >&2
+    return 1
+  fi
+
+  # Reopening/closing a locked file in the same process can release fcntl locks.
+  # Reject nested acquisition before touching the file, preserving the outer lock.
+  if [[ -n "${_ANTIGEN_DOTFILES_LOCK_FD:-}" ]]; then
+    printf 'Antigen: Cache lock is already held by this shell.\n' >&2
+    return 1
+  fi
+
+  "$MKDIR_BIN" -p "${lock_file:h}" || return 1
+  : >> "$lock_file" || return 1
+  if zsystem flock -t "$ANTIGEN_LOCK_TIMEOUT" -i 0.05 -f lock_fd "$lock_file"; then
+    typeset -g _ANTIGEN_DOTFILES_LOCK_FD="$lock_fd"
+    # $$ is the parent's PID inside Zsh subshells; sysparams identifies this process.
+    # shellcheck disable=SC2154
+    typeset -g _ANTIGEN_DOTFILES_LOCK_PID="${sysparams[pid]}"
     return 0
   fi
 
-  # Retry loop with stale lock detection
-  while [[ $waited -lt $timeout ]]; do
-    # Check for stale lock
-    if [[ -d "$lock_file" ]]; then
-      # PID-based detection: if holder process is dead, lock is definitively stale
-      if [[ -f "$lock_file/pid" ]]; then
-        local lock_pid
-        lock_pid=$(cat "$lock_file/pid" 2>/dev/null)
-        if [[ -n "$lock_pid" ]] && ! kill -0 "$lock_pid" 2>/dev/null; then
-          printf 'Antigen: Removing stale cache lock (holder PID %s is dead)\n' "$lock_pid" >&2
-          rm -rf "$lock_file" 2>/dev/null
-        fi
-      fi
-
-      # Time-based fallback: remove lock older than stale_age (PID file missing/unreadable)
-      if [[ -d "$lock_file" ]]; then
-        local mtime lock_age
-        mtime=$("$STAT_BIN" -c %Y "$lock_file" 2>/dev/null \
-          || "$STAT_BIN" -f %m "$lock_file" 2>/dev/null \
-          || echo 0)
-        lock_age=$(($(epoch_now) - mtime))
-        if [[ $lock_age -gt $stale_age ]]; then
-          printf 'Antigen: Removing stale cache lock (age: %ds)\n' "$lock_age" >&2
-          rm -rf "$lock_file" 2>/dev/null
-        fi
-      fi
-    fi
-
-    # Try to acquire lock atomically using mkdir
-    if "$MKDIR_BIN" "$lock_file" 2>/dev/null; then
-      echo "$$" > "$lock_file/pid"
-      return 0
-    fi
-
-    # Lock held by another process, wait
-    "$SLEEP_BIN" 1
-    waited=$((waited + 1))
-  done
-
-  printf 'Antigen: Failed to acquire cache lock after %ds\n' "$timeout" >&2
+  printf 'Antigen: Failed to acquire cache lock within %ss\n' "$ANTIGEN_LOCK_TIMEOUT" >&2
   return 1
 }
 
-# Release lock
 release_antigen_cache_lock() {
-  local lock_file="$ANTIGEN_DOTFILES_LOCK"
-  if [[ -d "$lock_file" ]]; then
-    rm -rf "$lock_file" 2>/dev/null
+  # A subshell inherits our variables but does not own the parent's fcntl lock.
+  if [[ -n "${_ANTIGEN_DOTFILES_LOCK_FD:-}" &&
+        "${_ANTIGEN_DOTFILES_LOCK_PID:-}" == "${sysparams[pid]}" ]]; then
+    zsystem flock -u "$_ANTIGEN_DOTFILES_LOCK_FD" || return 1
+    unset _ANTIGEN_DOTFILES_LOCK_FD _ANTIGEN_DOTFILES_LOCK_PID
   fi
+  return 0
 }
 
-# Wait for background zcompile to complete
-# Antigen runs zcompile in background with &! after cache generation
-# We poll for .zwc file to appear and be newer than source
+# Best-effort compatibility with Antigen before v2.3, which compiled the cache
+# in a disowned worker. Timestamps cannot prove that worker has finished.
+# Current Antigen compiles the main cache synchronously inside `antigen apply`.
 wait_for_antigen_compile() {
+  if [[ -n "${_ANTIGEN_CACHE_VERSION:-}" ]]; then
+    autoload -Uz is-at-least
+    is-at-least 2.3.0 "${_ANTIGEN_CACHE_VERSION#v}" && return 0
+  fi
+
   local cache_file="${ANTIGEN_CACHE:-$HOME/.antigen/init.zsh}"
   local zwc_file="${cache_file}.zwc"
   local max_wait=$(( ANTIGEN_COMPILE_TIMEOUT * 10 ))  # 0.1s intervals

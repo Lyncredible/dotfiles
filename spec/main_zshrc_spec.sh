@@ -48,9 +48,23 @@ plan_mode_reasoning_effort = "high"
 TOML
 
   cat > "$TEST_HOME/.antigen/antigen.zsh" <<'FILE'
+[[ ${TEST_ANTIGEN_SOURCE_FAIL:-0} == 1 ]] && return 23
 antigen() {
   printf '%s\n' "$*" >> "$HOME/.antigen_calls"
   printf 'antigen:%s\n' "$*" >> "$HOME/.startup_order"
+  if [[ ${TEST_VERIFY_ANTIGEN_LOCK:-0} == 1 ]]; then
+    if zsh -fc '
+      source "$HOME/.dotfiles/common.sh"
+      ANTIGEN_LOCK_TIMEOUT=0.05
+      acquire_antigen_cache_lock
+    ' 2>/dev/null; then
+      print -u2 -- "Unprotected Antigen command: $*"
+      return 1
+    fi
+    printf '%s\n' "$*" >> "$HOME/.protected_antigen_calls"
+  fi
+  [[ ${TEST_ANTIGEN_FAIL:-} == "$*" ]] && return 23
+  return 0
 }
 FILE
 
@@ -320,6 +334,86 @@ TOML
     The status should be success
     The contents of file "$TEST_HOME/.antigen_calls" should not include 'selfupdate'
     The contents of file "$TEST_HOME/.antigen_calls" should not include 'update'
+  End
+
+  It 'holds the lock through configuration, selfupdate, and update'
+    When run run_main_eval '
+      TEST_VERIFY_ANTIGEN_LOCK=1
+      DOTFILES_UPDATED=1
+      configure_antigen
+    '
+    The status should be success
+    The output should equal 'Updating antigen...'
+    The contents of file "$TEST_HOME/.protected_antigen_calls" should include 'use oh-my-zsh'
+    The contents of file "$TEST_HOME/.protected_antigen_calls" should include 'apply'
+    The contents of file "$TEST_HOME/.protected_antigen_calls" should include 'selfupdate'
+    The contents of file "$TEST_HOME/.protected_antigen_calls" should include 'update'
+  End
+
+  Describe 'Antigen failure cleanup'
+    Parameters
+      'bundle git' 'theme romkatv/powerlevel10k' ''
+      'apply' 'selfupdate' ''
+      'update' 'never-called' 'Updating antigen...'
+    End
+
+    It "releases the lock and propagates an Antigen failure: $1"
+      When run run_main_eval "
+        : > \"\$HOME/.antigen_calls\"
+        TEST_ANTIGEN_FAIL='$1'
+        DOTFILES_UPDATED=1
+        configure_antigen
+        result=\$?
+        [[ -z \${_ANTIGEN_DOTFILES_LOCK_FD:-} ]] || exit 1
+        acquire_antigen_cache_lock || exit 1
+        release_antigen_cache_lock || exit 1
+        exit \"\$result\"
+      "
+      The status should equal 23
+      The output should equal "$3"
+      The contents of file "$TEST_HOME/.antigen_calls" should not include "$2"
+    End
+  End
+
+  It 'releases the lock when sourcing Antigen fails'
+    When run run_main_eval '
+      TEST_ANTIGEN_SOURCE_FAIL=1
+      configure_antigen
+      result=$?
+      [[ -z ${_ANTIGEN_DOTFILES_LOCK_FD:-} ]] || exit 1
+      acquire_antigen_cache_lock || exit 1
+      release_antigen_cache_lock || exit 1
+      exit "$result"
+    '
+    The status should equal 23
+  End
+
+  It 'preserves existing EXIT, INT, and TERM traps on success and failure'
+    When run run_main_eval '
+      trap "print EXIT-preserved" EXIT
+      trap "print INT-preserved" INT
+      trap "print TERM-preserved" TERM
+      before=$(trap)
+      configure_antigen || exit 1
+      [[ $(trap) == $before ]] || exit 1
+      TEST_ANTIGEN_FAIL=apply
+      configure_antigen && exit 1
+      [[ $(trap) == $before ]]
+    '
+    The status should be success
+    The output should equal 'EXIT-preserved'
+  End
+
+  It 'does not source or invoke Antigen when locking is unavailable'
+    When run run_main_eval '
+      : > "$HOME/.antigen_calls"
+      zmodload() { return 1; }
+      configure_antigen
+    '
+    The status should equal 1
+    The stderr should include 'Native file locking is unavailable'
+    The stderr should include 'cannot proceed safely'
+    The contents of file "$TEST_HOME/.antigen_calls" should equal ''
   End
 
   It 'registers _update_ssh_agent in precmd_functions when TMUX is set'

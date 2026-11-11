@@ -17,7 +17,8 @@ SHELLCHECK_FILES = \
 	spec/whereami_color_spec.sh \
 	spec/tmux_sysstat_spec.sh \
 	spec/zshrc_update_spec.sh \
-	spec/integration_zsh_startup.sh
+	spec/integration_zsh_startup.sh \
+	spec/integration_antigen_lock.sh
 
 SCRIPT_FILES := $(sort $(patsubst ./%,%,$(shell \
 	{ find . -type f \( \
@@ -40,9 +41,10 @@ test: test-deps
 
 test-integration: test-integration-deps
 	@if [ -n "$(FILES)" ]; then \
-		for f in $(FILES); do env $(TEST_ENV) sh "$$f"; done; \
+		for f in $(FILES); do env $(TEST_ENV) sh "$$f" || exit $$?; done; \
 	else \
-		env $(TEST_ENV) sh ./spec/integration_zsh_startup.sh; \
+		env $(TEST_ENV) sh ./spec/integration_zsh_startup.sh && \
+		env $(TEST_ENV) sh ./spec/integration_antigen_lock.sh; \
 	fi
 
 test-deps:
