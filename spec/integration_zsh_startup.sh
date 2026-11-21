@@ -44,6 +44,12 @@ cat > "$TEST_HOME/.dotfiles/.claude/settings.json.dist" <<'JSON'
 {"attribution":{"commit":"","pr":""},"model":"claude-opus-4-6"}
 JSON
 
+# Debian/Ubuntu's /etc/zsh/zshrc runs compinit, which prompts (and fails without a terminal)
+# on insecure fpath dirs such as the CI runner's. Keep the host's global setup out of the test.
+cat > "$TEST_HOME/.zshenv" <<'EOF'
+skip_global_compinit=1
+EOF
+
 cat > "$TEST_HOME/.zshrc" <<'EOF'
 export HOME="$ZDOTDIR"
 export PATH="$HOME/bin:/bin:/usr/bin"
