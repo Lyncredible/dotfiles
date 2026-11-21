@@ -1,3 +1,4 @@
+.PHONY: test-powershell
 .PHONY: test test-integration lint lint-shell lint-lines test-deps test-integration-deps check
 
 SHELLCHECK_FILES = \
@@ -68,3 +69,7 @@ lint-lines:
 	} END { exit bad }' $(or $(FILES),$(LINE_LENGTH_FILES))
 
 check: lint test test-integration
+
+# Not part of check: needs pwsh and Pester 5, which the macOS/Linux hook may not have.
+test-powershell:
+	pwsh -NoProfile -Command 'Invoke-Pester -Path spec/powershell -CI'

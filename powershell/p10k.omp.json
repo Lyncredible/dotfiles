@@ -1,0 +1,121 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "version": 3,
+  "final_space": true,
+  "console_title_template": "{{ .Shell }} in {{ .Folder }}",
+  "blocks": [
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "newline": true,
+      "segments": [
+        {
+          "type": "os",
+          "style": "diamond",
+          "leading_diamond": "",
+          "foreground": "232",
+          "background": "7",
+          "template": " {{ .Icon }} "
+        },
+        {
+          "type": "session",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "foreground": "7",
+          "background": "14",
+          "template": " {{ .UserName }}@{{ .HostName }} "
+        },
+        {
+          "type": "path",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "foreground": "254",
+          "background": "4",
+          "options": {
+            "style": "full",
+            "home_icon": "~",
+            "folder_separator_icon": "/"
+          },
+          "template": " <b>{{ .Path }}</b> "
+        },
+        {
+          "type": "git",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "foreground": "0",
+          "background": "2",
+          "background_templates": [
+            "{{ if or .Staging.Changed (gt (add .Working.Modified .Working.Deleted .Working.Unmerged) 0) }}3{{ end }}"
+          ],
+          "options": {
+            "branch_icon": "",
+            "commit_icon": "@",
+            "fetch_status": true,
+            "fetch_stash_count": true
+          },
+          "template": " {{ .HEAD }}{{ if gt .Behind 0 }} ⇣{{ .Behind }}{{ end }}{{ if gt .Ahead 0 }}{{ if eq .Behind 0 }} {{ end }}⇡{{ .Ahead }}{{ end }}{{ if gt .StashCount 0 }} *{{ .StashCount }}{{ end }}{{ if gt .Working.Unmerged 0 }} <1>~{{ .Working.Unmerged }}</>{{ end }}{{ $staged := add .Staging.Added .Staging.Modified .Staging.Deleted }}{{ if gt $staged 0 }} +{{ $staged }}{{ end }}{{ $unstaged := add .Working.Modified .Working.Deleted }}{{ if gt $unstaged 0 }} !{{ $unstaged }}{{ end }}{{ if gt .Working.Untracked 0 }} ?{{ .Working.Untracked }}{{ end }} "
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "right",
+      "filler": "<244>·</>",
+      "segments": [
+        {
+          "type": "status",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "invert_powerline": true,
+          "foreground": "2",
+          "background": "0",
+          "foreground_templates": ["{{ if gt .Code 0 }}3{{ end }}"],
+          "background_templates": ["{{ if gt .Code 0 }}1{{ end }}"],
+          "options": {
+            "always_enabled": true
+          },
+          "template": " {{ if gt .Code 0 }}{{ .Code }} ✘{{ else }}✔{{ end }} "
+        },
+        {
+          "type": "executiontime",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "invert_powerline": true,
+          "foreground": "0",
+          "background": "3",
+          "options": {
+            "threshold": 3000,
+            "style": "round"
+          },
+          "template": " {{ .FormattedMs }} "
+        },
+        {
+          "type": "time",
+          "style": "diamond",
+          "invert_powerline": true,
+          "trailing_diamond": "",
+          "foreground": "0",
+          "background": "7",
+          "options": {
+            "time_format": "15:04:05"
+          },
+          "template": " {{ .CurrentDate | date .Format }} "
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "newline": true,
+      "segments": [
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "76",
+          "foreground_templates": ["{{ if gt .Code 0 }}196{{ end }}"],
+          "template": "❯"
+        }
+      ]
+    }
+  ]
+}

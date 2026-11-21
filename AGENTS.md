@@ -51,6 +51,24 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 - Initialization and periodic Antigen updates share the lock. Manual Antigen
   commands outside this wrapper still rely on Antigen's internal locking.
 
+## PowerShell (Windows)
+
+- `install.ps1` / `setup.ps1` mirror `install.sh` / `setup.sh`; `setup.ps1` stays idempotent.
+- `$PROFILE` (both Windows PowerShell and PowerShell 7) is a **sourcing wrapper** written by
+  `setup.ps1`: `~/.pwsh_pre.ps1`, then `powershell/profile.ps1`, then `~/.pwsh_post.ps1`.
+  A profile it did not write is moved to `.bak` first.
+- `powershell/p10k.omp.json` is the oh-my-posh port of `.p10k.zsh`. It uses palette color
+  indexes, not hex, so it follows the terminal theme like p10k does. Keep the two in sync.
+- PSReadLine colors in `profile.ps1` mirror the zsh-syntax-highlighting defaults.
+- Auto-update: the profile starts `powershell/update.ps1` in a hidden process when
+  `~/.dotfiles-update-pwsh` is a day old. It takes a lock on `~/.dotfiles-update-pwsh.lock`
+  (never delete it), fetches and rebases onto origin/master, reruns `setup.ps1 -SkipInstall`
+  if HEAD moved, then upgrades the winget packages and modules. Set `DOTFILES_SKIP_UPDATE=1`
+  to turn it off. Output goes to `~/.dotfiles-update-pwsh.log`.
+- Keep PowerShell files ASCII: Windows PowerShell 5.1 reads BOM-less scripts as ANSI.
+- Pester 5 tests live in `spec/powershell/` (`make test-powershell`). They are not part of
+  `make check`, and `setup.ps1` does not set `core.hooksPath` because Windows lacks `make`.
+
 ## Gotchas
 
 1. **Powerlevel10k requires Nerd Fonts** (MesloLGM).

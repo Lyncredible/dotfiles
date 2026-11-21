@@ -23,6 +23,20 @@ Clone in SSH mode
 sh -c "$(curl -sL --proto-redir -all,https https://raw.githubusercontent.com/Lyncredible/dotfiles/master/install.sh)" - -s
 ```
 
+### Windows PowerShell
+Installs git if needed, clones to `~\.dotfiles`, and runs `setup.ps1`, which points `$PROFILE`
+at `powershell\profile.ps1` and installs oh-my-posh, fzf, PSFzf, PSReadLine, and the Meslo Nerd
+Font. The prompt and colors mirror `.p10k.zsh` and zsh-syntax-highlighting.
+```
+irm https://raw.githubusercontent.com/Lyncredible/dotfiles/master/install.ps1 | iex
+```
+Clone in SSH mode
+```
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/Lyncredible/dotfiles/master/install.ps1))) -Ssh
+```
+Local changes go in `~\.pwsh_pre.ps1` and `~\.pwsh_post.ps1`. Updates run once a day in a
+hidden process and log to `~\.dotfiles-update-pwsh.log`.
+
 ## Testing
 Requires [shellspec](https://shellspec.info/) (`brew install shellspec`).
 ```
@@ -34,6 +48,10 @@ Pass `FILES=` to target specific files:
 ```
 make test FILES=spec/tmux_sysstat_spec.sh
 make lint FILES=.local/bin/tmux-sysstat
+```
+PowerShell tests need Pester 5 (`Install-Module Pester -Scope CurrentUser -SkipPublisherCheck`):
+```
+Invoke-Pester spec/powershell   # or: make test-powershell
 ```
 
 ## Agent Skills
