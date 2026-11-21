@@ -5,7 +5,7 @@
 cursor-click-to-move = true
 cursor-style = block
 font-family = JetBrains Mono
-shell-integration-features = ssh-terminfo
+shell-integration-features = no-cursor,ssh-terminfo
 theme = Dimmed Monokai
 window-width = 160
 window-height = 40
