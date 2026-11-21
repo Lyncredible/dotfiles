@@ -30,7 +30,7 @@
           "style": "powerline",
           "powerline_symbol": "",
           "foreground": "254",
-          "background": "#3465a4",
+          "background": "4",
           "options": {
             "style": "full",
             "home_icon": "~",
