@@ -3,6 +3,8 @@
 
 . (Join-Path $PSScriptRoot 'common.ps1')
 Request-DotfilesUpdate -DotfilesDir (Split-Path -Parent $PSScriptRoot)
+# The tab title in p10k.omp.json uses it, as main.zshrc's does.
+$env:WHEREAMI = Get-DotfilesWhereami
 . (Join-Path $PSScriptRoot 'aliases.ps1')
 
 Import-Module PSReadLine

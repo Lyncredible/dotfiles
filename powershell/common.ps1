@@ -43,6 +43,42 @@ function Get-DotfilesDefaultDir {
   return (Join-Path $HOME '.dotfiles')
 }
 
+# PowerShell port of .local/bin/whereami, which sets WHEREAMI for the zsh tab title: the
+# machine's name and an emoji. spec/whereami_spec.sh covers the original.
+function Get-DotfilesStringIndex {
+  param([Parameter(Mandatory)][string]$String, [Parameter(Mandatory)][int]$Modulo)
+  [long]$hash = 0
+  foreach ($char in $String.ToCharArray()) {
+    $hash = ($hash * 31 + [int]$char) % 2147483647
+  }
+  return [int]($hash % $Modulo)
+}
+
+function Get-DotfilesWhereami {
+  param([string]$Script = (Join-Path (Split-Path -Parent $PSScriptRoot) '.local\bin\whereami'))
+  $resolver = Get-Command whereami-resolve -CommandType Application -ErrorAction SilentlyContinue
+  $name = $null
+  $emoji = $null
+  if ($resolver) {
+    $name = (& $resolver 2> $null | Select-Object -First 1)
+    $emoji = (& $resolver --emoji 2> $null | Select-Object -First 1)
+  }
+  # GetHostName keeps the case `hostname` prints; COMPUTERNAME is upper case, a different hash.
+  if (-not $name) { $name = ([Net.Dns]::GetHostName() -split '\.')[0] }
+  if (-not $emoji -and (Test-Path -LiteralPath $Script)) {
+    # Read the list from the script so the two can't drift apart.
+    $line = Select-String -LiteralPath $Script -Pattern '^\s*emojis="(.*)"' -Encoding utf8 |
+      Select-Object -First 1
+    if ($line) {
+      $emojis = $line.Matches[0].Groups[1].Value -split ' '
+      # The script takes the hash modulo 75, not the list's length.
+      $emoji = $emojis[(Get-DotfilesStringIndex -String $name -Modulo 75)]
+    }
+  }
+  if ($emoji) { return "$name $emoji" }
+  return $name
+}
+
 function Get-DotfilesEpochNow {
   return [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 }

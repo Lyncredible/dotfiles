@@ -4,6 +4,60 @@ BeforeAll {
   . (Join-Path $PSScriptRoot '..\..\powershell\common.ps1')
 }
 
+Describe 'Get-DotfilesStringIndex' {
+  # Values from .local/bin/whereami's string_to_index "<string>" 75.
+  It 'hashes <String> to <Index> like the sh script' -ForEach @(
+    @{ String = 'Lephyrus'; Index = 18 }
+    @{ String = 'LEPHYRUS'; Index = 20 }
+    @{ String = 'test-host'; Index = 23 }
+    @{ String = 'a'; Index = 22 }
+  ) {
+    Get-DotfilesStringIndex -String $String -Modulo 75 | Should -Be $Index
+  }
+}
+
+Describe 'Get-DotfilesWhereami' {
+  BeforeAll {
+    $script:hostName = ([Net.Dns]::GetHostName() -split '\.')[0]
+    $script:repoScript = Join-Path $PSScriptRoot '..\..\.local\bin\whereami'
+  }
+
+  It "names the machine with the emoji the sh script would pick" {
+    $emojis = (Select-String -LiteralPath $repoScript -Pattern '^\s*emojis="(.*)"' -Encoding utf8
+      ).Matches[0].Groups[1].Value -split ' '
+    $expected = $emojis[(Get-DotfilesStringIndex -String $hostName -Modulo 75)]
+    Get-DotfilesWhereami -Script $repoScript | Should -BeExactly "$hostName $expected"
+  }
+
+  It 'reads the emoji list from the script' {
+    $fake = Join-Path $TestDrive 'whereami'
+    $list = (1..75 | ForEach-Object { "e$_" }) -join ' '
+    Set-Content -LiteralPath $fake -Value "    emojis=`"$list`""
+    $index = Get-DotfilesStringIndex -String $hostName -Modulo 75
+    Get-DotfilesWhereami -Script $fake | Should -BeExactly "$hostName e$($index + 1)"
+  }
+
+  It 'is the bare name when the script is missing' {
+    Get-DotfilesWhereami -Script (Join-Path $TestDrive 'missing') | Should -BeExactly $hostName
+  }
+
+  It 'uses whereami-resolve when it is on PATH' {
+    $bin = Join-Path $TestDrive 'bin'
+    $null = New-Item -ItemType Directory -Force -Path $bin
+    Set-Content -LiteralPath (Join-Path $bin 'whereami-resolve.cmd') -Value @(
+      '@echo off'
+      'if "%1"=="--emoji" (echo X) else (echo work-laptop)'
+    )
+    $savedPath = $env:Path
+    try {
+      $env:Path = "$bin;$env:Path"
+      Get-DotfilesWhereami -Script $repoScript | Should -BeExactly 'work-laptop X'
+    } finally {
+      $env:Path = $savedPath
+    }
+  }
+}
+
 Describe 'Read-DotfilesUpdateTimestamp' {
   It 'returns 0 when the file is missing' {
     Read-DotfilesUpdateTimestamp -Path (Join-Path $TestDrive 'missing') | Should -Be 0

@@ -66,6 +66,10 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
   Registry outranks PSGallery and answers Not Found.
 - `powershell/p10k.omp.json` is the oh-my-posh port of `.p10k.zsh`. It uses palette color
   indexes, not hex, so it follows the terminal theme like p10k does. Keep the two in sync.
+- The pwsh tab title matches the zsh one at the prompt (`user@$WHEREAMI:~\path`).
+  `Get-DotfilesWhereami` in `common.ps1` ports `.local/bin/whereami` and reads its emoji list
+  from that script, so keep the hash and the `emojis=` line format in step. Unlike zsh, the
+  running command isn't added; Ghostty's integration shows the command line then.
 - PSReadLine colors in `profile.ps1` mirror the zsh-syntax-highlighting defaults.
 - `powershell/aliases.ps1` ports `.aliases` as functions (PowerShell aliases take no
   arguments). Add new aliases to both, or list zsh-only ones in `$DotfilesZshOnlyAliases`;
