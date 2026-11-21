@@ -2,3 +2,7 @@
 # Pre-d6e8a75 Antigen lock: a directory, or an empty file left by shells that spanned the
 # update (they kept the old ANTIGEN_DOTFILES_LOCK). Unused now; safe to delete.
 .antigen-cache.lock
+# ~/.claude used to link here, so Claude Code's state (login, history, transcripts) lived in
+# this directory. setup.sh moves it back to ~/.claude; until then, keep it out of git. This
+# also covers project-local Claude settings for this repo.
+/.claude/

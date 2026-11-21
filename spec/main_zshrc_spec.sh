@@ -10,7 +10,8 @@ setup() {
   unset SSH_CONNECTION TMUX TEST_RUN_DOTFILES_UPDATED TEST_RUN_NO_UV TERM COLORTERM
 
   mkdir -p \
-    "$TEST_HOME/.dotfiles/.claude" \
+    "$TEST_HOME/.dotfiles/claude" \
+    "$TEST_HOME/.claude" \
     "$TEST_HOME/.dotfiles/.codex" \
     "$TEST_HOME/.antigen" \
     "$TEST_HOME/no-fzf"
@@ -28,14 +29,14 @@ FILE
 printf 'p10k\n' >> "$HOME/.startup_order"
 FILE
 
-  cat > "$TEST_HOME/.dotfiles/.claude/settings.json.dist" <<'JSON'
+  cat > "$TEST_HOME/.dotfiles/claude/settings.json" <<'JSON'
 {
   "attribution": { "commit": "", "pr": "" },
   "model": "claude-opus-4-6"
 }
 JSON
 
-  cat > "$TEST_HOME/.dotfiles/.claude/settings.json" <<'JSON'
+  cat > "$TEST_HOME/.claude/settings.json" <<'JSON'
 {
   "attribution": { "commit": "", "pr": "" },
   "model": "claude-opus-4-6",
@@ -283,15 +284,16 @@ FILE
     The output should equal 'unset'
   End
 
-  It 'creates Claude settings from dist when settings.json is missing'
-    rm -f "$TEST_HOME/.dotfiles/.claude/settings.json"
-    When run run_main_eval 'test -f "$HOME/.dotfiles/.claude/settings.json" && print ok'
+  It 'creates Claude settings from the repo file when settings.json is missing'
+    rm -f "$TEST_HOME/.claude/settings.json"
+    When run run_main_eval 'test -f "$HOME/.claude/settings.json" && print ok'
     The status should be success
     The output should include 'ok'
     Assert json_value_should_eq \
-      "$TEST_HOME/.dotfiles/.claude/settings.json" \
+      "$TEST_HOME/.claude/settings.json" \
       '.model' \
       'claude-opus-4-6'
+    The file "$TEST_HOME/.claude/.dotfiles-settings.json" should be exist
   End
 
   It 'creates Codex config from dist when config.toml is missing'

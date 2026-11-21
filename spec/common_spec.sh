@@ -78,7 +78,8 @@ JSON
     cat > "$TEST_HOME/settings.json" <<'JSON'
 { "attribution": { "commit": "", "pr": "" }, "model": "claude-opus-4-6", "enabledPlugins": ["foo"] }
 JSON
-    When call merge_claude_settings "$TEST_HOME/settings.json.dist" "$TEST_HOME/settings.json"
+    When call merge_claude_settings "$TEST_HOME/settings.json.dist" "$TEST_HOME/settings.json" \
+      "$TEST_HOME/applied.json"
     The status should be success
     Assert json_value_should_eq "$TEST_HOME/settings.json" '.enabledPlugins[0]' 'foo'
   End
@@ -87,7 +88,8 @@ JSON
     cat > "$TEST_HOME/settings.json.dist" <<'JSON'
 { "attribution": { "commit": "", "pr": "" }, "model": "claude-opus-4-6" }
 JSON
-    When call merge_claude_settings "$TEST_HOME/settings.json.dist" "$TEST_HOME/settings.json"
+    When call merge_claude_settings "$TEST_HOME/settings.json.dist" "$TEST_HOME/settings.json" \
+      "$TEST_HOME/applied.json"
     The status should be success
     Assert json_value_should_eq "$TEST_HOME/settings.json" '.model' 'claude-opus-4-6'
   End
@@ -99,7 +101,8 @@ JSON
     cat > "$TEST_HOME/settings.json" <<'JSON'
 { "attribution": { "commit": "", "pr": "" }, "model": "claude-opus-4-6", "enabledPlugins": ["bar"] }
 JSON
-    When call merge_claude_settings "$TEST_HOME/settings.json.dist" "$TEST_HOME/settings.json"
+    When call merge_claude_settings "$TEST_HOME/settings.json.dist" "$TEST_HOME/settings.json" \
+      "$TEST_HOME/applied.json"
     The status should be success
     Assert json_value_should_eq "$TEST_HOME/settings.json" '.newFeature' 'true'
   End
@@ -111,7 +114,8 @@ JSON
     cat > "$TEST_HOME/settings.json" <<'JSON'
 { "attribution": { "commit": "", "pr": "" }, "model": "claude-opus-4-6" }
 JSON
-    When call merge_claude_settings "$TEST_HOME/settings.json.dist" "$TEST_HOME/settings.json"
+    When call merge_claude_settings "$TEST_HOME/settings.json.dist" "$TEST_HOME/settings.json" \
+      "$TEST_HOME/applied.json"
     The status should be success
     Assert json_value_should_eq "$TEST_HOME/settings.json" '.model' 'claude-sonnet-4-20250514'
   End
@@ -125,9 +129,65 @@ JSON
 JSON
     JQ_BIN="$TEST_BIN/missing-jq"
     export JQ_BIN
-    When call merge_claude_settings "$TEST_HOME/settings.json.dist" "$TEST_HOME/settings.json"
+    When call merge_claude_settings "$TEST_HOME/settings.json.dist" "$TEST_HOME/settings.json" \
+      "$TEST_HOME/applied.json"
     The status should be success
     The contents of file "$TEST_HOME/settings.json" should equal '{ "model": "claude-opus-4-6" }'
+    The file "$TEST_HOME/applied.json" should not be exist
+  End
+
+  It 'combines lists instead of replacing them'
+    cat > "$TEST_HOME/settings.json.dist" <<'JSON'
+{ "permissions": { "allow": ["Bash(git:*)", "Read"], "defaultMode": "auto" } }
+JSON
+    cat > "$TEST_HOME/settings.json" <<'JSON'
+{ "permissions": { "allow": ["Read", "Edit"], "defaultMode": "default" } }
+JSON
+    When call merge_claude_settings "$TEST_HOME/settings.json.dist" "$TEST_HOME/settings.json" \
+      "$TEST_HOME/applied.json"
+    The status should be success
+    Assert json_value_should_eq "$TEST_HOME/settings.json" '.permissions.allow | join(",")' \
+      'Read,Edit,Bash(git:*)'
+    Assert json_value_should_eq "$TEST_HOME/settings.json" '.permissions.defaultMode' 'auto'
+  End
+
+  It 'records the merged repo file'
+    printf '{ "model": "opus" }\n' > "$TEST_HOME/settings.json.dist"
+    printf '{}\n' > "$TEST_HOME/settings.json"
+    When call merge_claude_settings "$TEST_HOME/settings.json.dist" "$TEST_HOME/settings.json" \
+      "$TEST_HOME/applied.json"
+    The status should be success
+    The contents of file "$TEST_HOME/applied.json" should equal '{ "model": "opus" }'
+  End
+
+  It 'leaves a setting changed in Claude Code until the repo file changes'
+    printf '{ "model": "opus" }\n' > "$TEST_HOME/settings.json.dist"
+    cp "$TEST_HOME/settings.json.dist" "$TEST_HOME/applied.json"
+    printf '{ "model": "sonnet" }\n' > "$TEST_HOME/settings.json"
+    When call merge_claude_settings "$TEST_HOME/settings.json.dist" "$TEST_HOME/settings.json" \
+      "$TEST_HOME/applied.json"
+    The status should be success
+    The contents of file "$TEST_HOME/settings.json" should equal '{ "model": "sonnet" }'
+  End
+
+  It 'merges again once the repo file changes'
+    printf '{ "model": "opus" }\n' > "$TEST_HOME/applied.json"
+    printf '{ "model": "opus", "tui": "fullscreen" }\n' > "$TEST_HOME/settings.json.dist"
+    printf '{ "model": "sonnet" }\n' > "$TEST_HOME/settings.json"
+    When call merge_claude_settings "$TEST_HOME/settings.json.dist" "$TEST_HOME/settings.json" \
+      "$TEST_HOME/applied.json"
+    The status should be success
+    Assert json_value_should_eq "$TEST_HOME/settings.json" '.model' 'opus'
+    Assert json_value_should_eq "$TEST_HOME/settings.json" '.tui' 'fullscreen'
+  End
+
+  It 'creates the settings directory when it is missing'
+    printf '{ "model": "opus" }\n' > "$TEST_HOME/settings.json.dist"
+    When call merge_claude_settings "$TEST_HOME/settings.json.dist" \
+      "$TEST_HOME/new/settings.json" "$TEST_HOME/new/applied.json"
+    The status should be success
+    The file "$TEST_HOME/new/settings.json" should be exist
+    The file "$TEST_HOME/new/applied.json" should be exist
   End
 End
 

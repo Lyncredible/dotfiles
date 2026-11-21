@@ -10,6 +10,7 @@ MKDIR_BIN="${MKDIR_BIN:-mkdir}"
 AWK_BIN="${AWK_BIN:-/usr/bin/awk}"
 CP_BIN="${CP_BIN:-/bin/cp}"
 MV_BIN="${MV_BIN:-/bin/mv}"
+CMP_BIN="${CMP_BIN:-cmp}"
 RM_BIN="${RM_BIN:-/bin/rm}"
 MKTEMP_BIN="${MKTEMP_BIN:-/usr/bin/mktemp}"
 
@@ -48,22 +49,43 @@ write_update_timestamp() {
   printf '%s\n' "$(epoch_now)" > "$1"
 }
 
+# Deep-merge two JSON files: objects merge key by key, the second file's values win, and
+# lists are combined (the second file's new items appended, duplicates dropped), so a
+# repo-managed permission list can't erase rules added on one machine.
+# setup.ps1's Merge-ClaudeSettings does the same on Windows.
 merge_json_prefer_second() {
-  "$JQ_BIN" -s '.[0] * .[1]' "$1" "$2" 2>/dev/null
+  # $a and $b are value parameters: filter parameters would be evaluated against the
+  # reduce's accumulator instead of the two documents.
+  # shellcheck disable=SC2016  # $a, $b, $k and $x are jq variables.
+  "$JQ_BIN" -s '
+    def deepmerge($a; $b):
+      if ($a | type) == "object" and ($b | type) == "object" then
+        reduce ($b | keys_unsorted[]) as $k ($a; .[$k] = deepmerge($a[$k]; $b[$k]))
+      elif ($a | type) == "array" and ($b | type) == "array" then
+        reduce $b[] as $x ($a; if any(.[]; . == $x) then . else . + [$x] end)
+      else $b end;
+    deepmerge(.[0]; .[1])' "$1" "$2" 2>/dev/null
 }
 
-# Merge settings.json.dist defaults into settings.json.
-# dist keys win; extra local-only keys in settings.json are preserved.
-# Args: $1 = dist file, $2 = settings file
+# Merge the repo's claude/settings.json into ~/.claude/settings.json, which Claude Code also
+# writes (/config, /model, plugin installs). Only runs when the repo file changed since the
+# last merge, recorded as a copy in $3, so a setting changed in Claude Code sticks until the
+# repo changes that file. Repo keys win; local-only keys are kept.
+# Args: $1 = repo settings, $2 = Claude Code settings, $3 = copy of the last merged repo file
 merge_claude_settings() {
   local claude_dist="$1"
   local claude_settings="$2"
+  local claude_applied="$3"
   if [[ ! -f "$claude_dist" ]]; then
     return 0
   fi
+  if [[ -f "$claude_applied" ]] && "$CMP_BIN" -s "$claude_dist" "$claude_applied"; then
+    return 0
+  fi
 
+  "$MKDIR_BIN" -p "${claude_settings:h}"
   if [[ ! -f "$claude_settings" ]]; then
-    "$CP_BIN" "$claude_dist" "$claude_settings"
+    "$CP_BIN" "$claude_dist" "$claude_settings" && "$CP_BIN" "$claude_dist" "$claude_applied"
     return 0
   fi
 
@@ -75,6 +97,7 @@ merge_claude_settings() {
   merged=$(merge_json_prefer_second "$claude_settings" "$claude_dist")
   if [[ -n "$merged" ]]; then
     printf '%s\n' "$merged" > "$claude_settings"
+    "$CP_BIN" "$claude_dist" "$claude_applied"
   fi
 }
 

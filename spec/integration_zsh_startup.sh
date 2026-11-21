@@ -39,8 +39,8 @@ exit 1
 EOF
 chmod +x "$TEST_HOME/bin/fzf"
 
-mkdir -p "$TEST_HOME/.dotfiles/.claude"
-cat > "$TEST_HOME/.dotfiles/.claude/settings.json.dist" <<'JSON'
+mkdir -p "$TEST_HOME/.dotfiles/claude"
+cat > "$TEST_HOME/.dotfiles/claude/settings.json" <<'JSON'
 {"attribution":{"commit":"","pr":""},"model":"claude-opus-4-6"}
 JSON
 

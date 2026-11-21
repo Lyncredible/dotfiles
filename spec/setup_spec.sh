@@ -4,7 +4,7 @@
 setup() {
   create_test_root
   mkdir -p "$TEST_HOME/.dotfiles"
-  mkdir -p "$TEST_HOME/.dotfiles/.claude"
+  mkdir -p "$TEST_HOME/.dotfiles/claude/agents" "$TEST_HOME/.dotfiles/claude/rules"
 
   TEST_DOTFILES_DIR="$TEST_HOME/.dotfiles"
   TEST_CONFIG_DIR="$TEST_HOME/.config"
@@ -88,7 +88,12 @@ Describe 'setup.sh'
     Assert symlink_to "$TEST_HOME/.vimrc" "$TEST_DOTFILES_DIR/.vimrc"
     Assert symlink_to "$TEST_HOME/.tmux.conf" "$TEST_DOTFILES_DIR/.tmux.conf"
     Assert symlink_to "$TEST_HOME/.hammerspoon" "$TEST_DOTFILES_DIR/.hammerspoon"
-    Assert symlink_to "$TEST_HOME/.claude" "$TEST_DOTFILES_DIR/.claude"
+    The path "$TEST_HOME/.claude" should not be symlink
+    The directory "$TEST_HOME/.claude" should be exist
+    The line 2 of contents of file "$TEST_HOME/.claude/CLAUDE.md" \
+      should equal "@$TEST_DOTFILES_DIR/claude/CLAUDE.md"
+    Assert symlink_to "$TEST_HOME/.claude/agents" "$TEST_DOTFILES_DIR/claude/agents"
+    Assert symlink_to "$TEST_HOME/.claude/rules" "$TEST_DOTFILES_DIR/claude/rules"
     Assert symlink_to "$TEST_HOME/.claude/skills" "$TEST_HOME/.agents/skills"
     The directory "$TEST_CONFIG_DIR" should be exist
     Assert symlink_to "$TEST_CONFIG_DIR/karabiner" "$TEST_DOTFILES_DIR/karabiner"
@@ -169,7 +174,7 @@ Describe 'setup.sh'
 
   It 'uses DOTFILES_DIR override for links and include path'
     TEST_DOTFILES_DIR="$TEST_HOME/dotfiles-custom"
-    mkdir -p "$TEST_DOTFILES_DIR" "$TEST_DOTFILES_DIR/.claude"
+    mkdir -p "$TEST_DOTFILES_DIR"
     When run run_setup
     The status should be success
     The output should include 'Installing antigen...'
@@ -259,11 +264,60 @@ Describe 'setup.sh'
   End
   It 'replaces a stale ~/.claude/skills symlink'
     mkdir -p "$TEST_ANTIGEN_DIR" "$TEST_DOTFILES_DIR/.agents/skills/add-lync-skill"
-    ln -s "$TEST_DOTFILES_DIR/.claude" "$TEST_HOME/.claude"
-    ln -s /tmp/wrong "$TEST_DOTFILES_DIR/.claude/skills"
+    mkdir -p "$TEST_HOME/.claude"
+    ln -s /tmp/wrong "$TEST_HOME/.claude/skills"
     When run run_setup
     The status should be success
     Assert symlink_to "$TEST_HOME/.claude/skills" "$TEST_HOME/.agents/skills"
+  End
+
+  It "moves Claude Code's state out of the repo when ~/.claude linked to it"
+    mkdir -p "$TEST_ANTIGEN_DIR" "$TEST_DOTFILES_DIR/.claude/projects/p" \
+      "$TEST_DOTFILES_DIR/.claude/rules"
+    echo token > "$TEST_DOTFILES_DIR/.claude/.credentials.json"
+    echo session > "$TEST_DOTFILES_DIR/.claude/projects/p/s.jsonl"
+    : > "$TEST_DOTFILES_DIR/.claude/rules/.gitkeep"
+    ln -s "$TEST_DOTFILES_DIR/.claude" "$TEST_HOME/.claude"
+    When run run_setup
+    The status should be success
+    The path "$TEST_HOME/.claude" should not be symlink
+    The contents of file "$TEST_HOME/.claude/.credentials.json" should equal 'token'
+    The contents of file "$TEST_HOME/.claude/projects/p/s.jsonl" should equal 'session'
+    The path "$TEST_DOTFILES_DIR/.claude" should not be exist
+    The path "$TEST_HOME/.claude/rules.bak" should not be exist
+    Assert symlink_to "$TEST_HOME/.claude/rules" "$TEST_DOTFILES_DIR/claude/rules"
+  End
+
+  It 'backs up a ~/.claude link that points somewhere else'
+    mkdir -p "$TEST_ANTIGEN_DIR" "$TEST_HOME/elsewhere"
+    ln -s "$TEST_HOME/elsewhere" "$TEST_HOME/.claude"
+    When run run_setup
+    The status should be success
+    Assert symlink_to "$TEST_HOME/.claude.bak" "$TEST_HOME/elsewhere"
+    The path "$TEST_HOME/.claude" should not be symlink
+  End
+
+  It 'keeps machine-local lines under the CLAUDE.md import, and backs up a hand-written one'
+    mkdir -p "$TEST_ANTIGEN_DIR" "$TEST_HOME/.claude"
+    echo '# mine' > "$TEST_HOME/.claude/CLAUDE.md"
+    run_setup_twice() {
+      run_setup >/dev/null
+      echo '- local' >> "$TEST_HOME/.claude/CLAUDE.md"
+      run_setup
+    }
+    When run run_setup_twice
+    The status should be success
+    The contents of file "$TEST_HOME/.claude/CLAUDE.md.bak" should equal '# mine'
+    The line 3 of contents of file "$TEST_HOME/.claude/CLAUDE.md" should equal '- local'
+  End
+
+  It 'escapes spaces in the CLAUDE.md import path'
+    TEST_DOTFILES_DIR="$TEST_HOME/dot files"
+    mkdir -p "$TEST_ANTIGEN_DIR" "$TEST_DOTFILES_DIR/claude"
+    When run run_setup
+    The status should be success
+    The line 2 of contents of file "$TEST_HOME/.claude/CLAUDE.md" \
+      should equal "@$TEST_HOME/dot\\ files/claude/CLAUDE.md"
   End
 
   It 'writes a ghostty wrapper that includes config, linux, then config.local on Linux'

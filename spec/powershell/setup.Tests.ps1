@@ -222,6 +222,134 @@ Describe 'Set-GitInclude' {
   }
 }
 
+Describe 'Merge-ClaudeSettings' {
+  BeforeEach {
+    $script:dir = Join-Path $TestDrive ([guid]::NewGuid())
+    $null = New-Item -ItemType Directory -Path $dir
+    $script:dist = Join-Path $dir 'repo.json'
+    $script:settings = Join-Path $dir 'settings.json'
+    $script:applied = Join-Path $dir 'applied.json'
+    function Invoke-Merge {
+      Merge-ClaudeSettings -Dist $dist -Settings $settings -Applied $applied
+    }
+    function Read-Settings { [IO.File]::ReadAllText($settings) | ConvertFrom-Json -AsHashtable }
+  }
+
+  It 'copies the repo file when there are no settings yet' {
+    Set-Content -LiteralPath $dist -Value '{ "model": "opus" }'
+    Invoke-Merge
+    (Read-Settings).model | Should -Be 'opus'
+    Test-Path $applied | Should -BeTrue
+  }
+
+  It 'lets repo keys win and keeps local-only keys in order' {
+    Set-Content -LiteralPath $dist -Value '{ "permissions": { "defaultMode": "auto" } }'
+    Set-Content -LiteralPath $settings -Value (
+      '{ "model": "opus", "permissions": { "defaultMode": "default", "deny": ["x"] } }')
+    Invoke-Merge
+    $merged = Read-Settings
+    @($merged.Keys) | Should -Be @('model', 'permissions')
+    $merged.permissions.defaultMode | Should -Be 'auto'
+    @($merged.permissions.deny) | Should -Be @('x')
+  }
+
+  It 'combines lists instead of replacing them' {
+    Set-Content -LiteralPath $dist -Value '{ "permissions": { "allow": ["Bash(git:*)", "Read"] } }'
+    Set-Content -LiteralPath $settings -Value '{ "permissions": { "allow": ["Read", "Edit"] } }'
+    Invoke-Merge
+    @((Read-Settings).permissions.allow) | Should -Be @('Read', 'Edit', 'Bash(git:*)')
+  }
+
+  It 'keeps a one-item list a list, and plain values plain' {
+    Set-Content -LiteralPath $dist -Value '{ "a": ["only"], "b": 1, "c": { "d": [] } }'
+    Set-Content -LiteralPath $settings -Value '{}'
+    Invoke-Merge
+    $text = [IO.File]::ReadAllText($settings)
+    $text | Should -Match '"a": \[\s*"only"\s*\]'
+    $text | Should -Match '"b": 1'
+    $text | Should -Match '"d": \[\]'
+  }
+
+  It 'leaves Claude Code''s change alone until the repo file changes' {
+    Set-Content -LiteralPath $dist -Value '{ "model": "opus" }'
+    Invoke-Merge
+    Set-Content -LiteralPath $settings -Value '{ "model": "sonnet" }'
+    Invoke-Merge
+    (Read-Settings).model | Should -Be 'sonnet'
+
+    Set-Content -LiteralPath $dist -Value '{ "model": "opus", "tui": "fullscreen" }'
+    Invoke-Merge
+    (Read-Settings).model | Should -Be 'opus'
+    (Read-Settings).tui | Should -Be 'fullscreen'
+  }
+
+  It 'leaves settings it cannot parse untouched' {
+    Set-Content -LiteralPath $dist -Value '{ "model": "opus" }'
+    Set-Content -LiteralPath $settings -Value '{ not json'
+    Invoke-Merge 3> $null
+    [IO.File]::ReadAllText($settings).Trim() | Should -Be '{ not json'
+    Test-Path $applied | Should -BeFalse
+  }
+}
+
+Describe 'Set-ClaudeConfig' {
+  BeforeEach {
+    $script:root = Join-Path $TestDrive ([guid]::NewGuid())
+    $script:dots = Join-Path $root 'dot files'
+    $script:claude = Join-Path $root '.claude'
+    foreach ($sub in 'claude\agents', 'claude\rules', '.agents\skills\one') {
+      $null = New-Item -ItemType Directory -Force -Path (Join-Path $dots $sub)
+    }
+    Set-Content -LiteralPath (Join-Path $dots 'claude\CLAUDE.md') -Value '- be brief'
+    Set-Content -LiteralPath (Join-Path $dots 'claude\settings.json') -Value '{ "model": "opus" }'
+  }
+
+  It 'imports CLAUDE.md, links agents, rules and skills, and merges settings' {
+    Set-ClaudeConfig -DotfilesDir $dots -ClaudeDir $claude
+    $lines = Get-Content (Join-Path $claude 'CLAUDE.md')
+    $lines[0] | Should -Be $ClaudeMdHeader
+    $lines[1] | Should -Be "@$($dots.Replace('\', '/').Replace(' ', '\ '))/claude/CLAUDE.md"
+    (Get-Item (Join-Path $claude 'agents')).Target | Should -Be (Join-Path $dots 'claude\agents')
+    (Get-Item (Join-Path $claude 'rules')).LinkType | Should -Be 'Junction'
+    (Get-Item (Join-Path $claude 'skills\one')).Target |
+      Should -Be (Join-Path $dots '.agents\skills\one')
+    (Get-Item (Join-Path $claude 'skills')).LinkType | Should -BeNullOrEmpty
+    (Get-Content (Join-Path $claude 'settings.json') -Raw | ConvertFrom-Json).model |
+      Should -Be 'opus'
+  }
+
+  It 'keeps local instructions under the import, and backs up a hand-written CLAUDE.md' {
+    $null = New-Item -ItemType Directory -Force -Path $claude
+    $md = Join-Path $claude 'CLAUDE.md'
+    Set-Content -LiteralPath $md -Value '# mine'
+    Set-ClaudeConfig -DotfilesDir $dots -ClaudeDir $claude
+    Get-Content "$md.bak" | Should -Be '# mine'
+
+    Add-Content -LiteralPath $md -Value '- local rule'
+    Set-ClaudeConfig -DotfilesDir $dots -ClaudeDir $claude
+    (Get-Content $md)[-1] | Should -Be '- local rule'
+  }
+
+  It 'keeps skills synced from claude.ai and a non-empty agents folder' {
+    $null = New-Item -ItemType Directory -Force -Path (Join-Path $claude 'skills\synced'),
+      (Join-Path $claude 'agents')
+    Set-Content -LiteralPath (Join-Path $claude 'agents\mine.md') -Value 'x'
+    $null = New-Item -ItemType Directory -Force -Path (Join-Path $claude 'rules')
+    Set-Content -LiteralPath (Join-Path $claude 'rules\.gitkeep') -Value ''
+    Set-ClaudeConfig -DotfilesDir $dots -ClaudeDir $claude
+    Test-Path (Join-Path $claude 'skills\synced') | Should -BeTrue
+    Test-Path (Join-Path $claude 'agents.bak\mine.md') | Should -BeTrue
+    Test-Path (Join-Path $claude 'rules.bak') | Should -BeFalse
+    (Get-Item (Join-Path $claude 'rules')).LinkType | Should -Be 'Junction'
+  }
+
+  It 'is idempotent' {
+    Set-ClaudeConfig -DotfilesDir $dots -ClaudeDir $claude
+    { Set-ClaudeConfig -DotfilesDir $dots -ClaudeDir $claude } | Should -Not -Throw
+    Get-ChildItem $claude -Filter '*.bak' | Should -BeNullOrEmpty
+  }
+}
+
 Describe 'repo .gitconfig' {
   It 'loads in Git for Windows, which setup.sh includes it into' {
     $gitconfig = (Resolve-Path (Join-Path $PSScriptRoot '..\..\.gitconfig')).Path

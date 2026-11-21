@@ -120,9 +120,26 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 - `hooks/pre-push` runs full `make check` (lint + test + integration).
 - `setup.sh` auto-configures `core.hooksPath hooks`.
 
+## Claude Code
+
+- `~/.claude` is Claude Code's own directory (login, history, transcripts, caches). Never link
+  it to the repo; older setups did, and `setup.sh` moves that state back home.
+- `claude/` holds what roams: `CLAUDE.md`, `settings.json`, `agents/`, and `rules/`.
+  - `~/.claude/CLAUDE.md` is a generated one-line `@import` of `claude/CLAUDE.md`.
+    Machine-local instructions go below the import; setup keeps them.
+  - `~/.claude/agents` and `~/.claude/rules` link to `claude/` (junctions on Windows).
+  - `claude/settings.json` is merged into `~/.claude/settings.json`, which Claude Code also
+    writes. Repo keys win, lists are combined, local-only keys stay. It only merges when the
+    repo file changed since the last merge (copy kept in `~/.claude/.dotfiles-settings.json`),
+    so `/config` changes stick until then. zsh merges at startup (`merge_claude_settings`);
+    `setup.ps1` merges on Windows (`Merge-ClaudeSettings`).
+- `/.claude/` is gitignored: the old link target, and this repo's project-local settings.
+
 ## Agent Skills
 
 - Skills live in `.agents/skills/` and are installed to `~/.agents/skills`.
+  `~/.claude/skills` links there on Unix. On Windows, `setup.ps1` links each skill inside
+  `~/.claude/skills`, which also holds the skills Claude Code syncs from claude.ai.
 - `add-lync-skill`: Add or update a skill in this repo from any working
   directory, then commit and push the intended changes.
 

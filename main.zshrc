@@ -122,8 +122,9 @@ configure_terminal_capabilities() {
 
 sync_claude_settings() {
   merge_claude_settings \
-    "$HOME/.dotfiles/.claude/settings.json.dist" \
-    "$HOME/.dotfiles/.claude/settings.json"
+    "$HOME/.dotfiles/claude/settings.json" \
+    "$HOME/.claude/settings.json" \
+    "$HOME/.claude/.dotfiles-settings.json"
 }
 
 sync_codex_settings() {
