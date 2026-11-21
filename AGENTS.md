@@ -65,7 +65,8 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 - Modules install with PSResourceGet using `-Repository PSGallery`: the Microsoft Artifact
   Registry outranks PSGallery and answers Not Found.
 - `powershell/p10k.omp.json` is the oh-my-posh port of `.p10k.zsh`. It uses palette color
-  indexes, not hex, so it follows the terminal theme like p10k does. Keep the two in sync.- PSReadLine colors in `profile.ps1` mirror the zsh-syntax-highlighting defaults.
+  indexes, not hex, so it follows the terminal theme like p10k does. Keep the two in sync.
+- PSReadLine colors in `profile.ps1` mirror the zsh-syntax-highlighting defaults.
 - `powershell/aliases.ps1` ports `.aliases` as functions (PowerShell aliases take no
   arguments). Add new aliases to both, or list zsh-only ones in `$DotfilesZshOnlyAliases`;
   `spec/powershell/aliases.Tests.ps1` fails otherwise. It removes built-in aliases that would
