@@ -1,2 +1,4 @@
 *.zwc
-.antigen-cache.lock/
+# Pre-d6e8a75 Antigen lock: a directory, or an empty file left by shells that spanned the
+# update (they kept the old ANTIGEN_DOTFILES_LOCK). Unused now; safe to delete.
+.antigen-cache.lock

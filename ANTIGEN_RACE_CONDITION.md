@@ -189,6 +189,10 @@ sessions; ownership is tracked by the OS. We never unlink it during release or
 recovery. Otherwise, one shell could still hold a lock on the old inode while
 another creates and locks a new file at the same pathname.
 
+A shell that was already running when it picked up this change kept the old
+`ANTIGEN_DOTFILES_LOCK` value, so it created an empty `.dotfiles/.antigen-cache.lock`
+file. `.gitignore` covers that file as well as the old directory.
+
 The old `.dotfiles/.antigen-cache.lock/` directory is no longer used and is not
 automatically removed.
 
