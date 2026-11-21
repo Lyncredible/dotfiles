@@ -173,6 +173,16 @@ Describe 'Test-DotfilesPackageInstalled' {
   }
 }
 
+Describe 'repo .gitconfig' {
+  It 'loads in Git for Windows, which setup.sh includes it into' {
+    $gitconfig = (Resolve-Path (Join-Path $PSScriptRoot '..\..\.gitconfig')).Path
+    $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+    # Integer settings are only checked when git reads them, so run a real command.
+    $out = & git -c "include.path=$gitconfig" -C $repo status --short 2>&1
+    $LASTEXITCODE | Should -Be 0 -Because "$out"
+  }
+}
+
 Describe 'repo PowerShell files' {
   It 'are ASCII so Windows PowerShell 5.1 reads them correctly' {
     $root = Join-Path $PSScriptRoot '..\..'

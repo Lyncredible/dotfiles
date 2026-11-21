@@ -12,7 +12,8 @@
 [core]
     pager =
 	preloadindex = true
-	deltabasecachelimit = 4g
+	# Git for Windows rejects anything above 2g ("bad numeric config value ... out of range").
+	deltabasecachelimit = 2g
 [pager]
 	log = less
 	diff = less
