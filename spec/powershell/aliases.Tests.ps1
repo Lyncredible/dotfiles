@@ -16,7 +16,8 @@ Describe 'alias parity with .aliases' {
     # fresh shell. A built-in alias (rmo is Remove-Module) would hide the function, and
     # Pester's own scope cannot remove AllScope aliases.
     $script = Join-Path $repo 'powershell\aliases.ps1'
-    $command = "`$ProgressPreference = 'SilentlyContinue'; . '$script'; foreach (`$n in '$($ported -join "','")') " +
+    $command = "`$ProgressPreference = 'SilentlyContinue'; . '$script'; " +
+      "foreach (`$n in '$($ported -join "','")') " +
       '{ "$n=$((Get-Command $n | Select-Object -First 1).CommandType)" }'
     $shell = (Get-Process -Id $PID).Path
     # -EncodedCommand: Windows PowerShell 5.1 drops the double quotes in a -Command argument.
