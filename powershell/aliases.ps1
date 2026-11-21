@@ -26,10 +26,6 @@ function act {
 # Activate.ps1 defines a global `deactivate` function.
 function dact { deactivate }
 
-function rmo {
-  Get-ChildItem -Recurse -Force -File -Filter '*.orig' | Remove-Item -Force
-}
-
 function grpo { & git remote prune origin @args }
 
 # Delete local branches already merged into the current one, except the current branch,
@@ -43,9 +39,9 @@ function gbdm {
   }
 }
 
-# PowerShell resolves aliases before functions, and some names are built-in aliases
-# (rmo is Remove-Module). Drop those so the functions above run.
-foreach ($name in 'venv', 'act', 'dact', 'rmo', 'grpo', 'gbdm') {
+# PowerShell resolves aliases before functions, so a built-in alias with the same name would
+# hide a function above (e.g. gc is Get-Content). Drop any such alias.
+foreach ($name in 'venv', 'act', 'dact', 'grpo', 'gbdm') {
   if (Test-Path -LiteralPath "Alias:$name") {
     Remove-Item -LiteralPath "Alias:$name" -Force
   }

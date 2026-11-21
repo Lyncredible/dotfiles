@@ -65,7 +65,7 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 - `powershell/aliases.ps1` ports `.aliases` as functions (PowerShell aliases take no
   arguments). Add new aliases to both, or list zsh-only ones in `$DotfilesZshOnlyAliases`;
   `spec/powershell/aliases.Tests.ps1` fails otherwise. It removes built-in aliases that would
-  hide a function (`rmo` is `Remove-Module`).
+  hide a function; check new names with `Get-Alias <name>`.
 - Auto-update: the profile starts `powershell/update.ps1` in a hidden process when
   `~/.dotfiles-update-pwsh` is a day old. It takes a lock on `~/.dotfiles-update-pwsh.lock`
   (never delete it), fetches and rebases onto origin/master, reruns `setup.ps1 -SkipInstall`

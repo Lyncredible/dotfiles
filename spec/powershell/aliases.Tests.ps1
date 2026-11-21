@@ -13,7 +13,7 @@ Describe 'alias parity with .aliases' {
     $names | Should -Not -BeNullOrEmpty
     $ported = @($names | Where-Object { $DotfilesZshOnlyAliases -notcontains $_ })
     # Resolve the names the way the profile loads them: dot-sourced at global scope in a
-    # fresh shell. A built-in alias (rmo is Remove-Module) would hide the function, and
+    # fresh shell. A built-in alias with the same name would hide the function, and
     # Pester's own scope cannot remove AllScope aliases.
     $script = Join-Path $repo 'powershell\aliases.ps1'
     $command = "`$ProgressPreference = 'SilentlyContinue'; . '$script'; " +
@@ -26,22 +26,6 @@ Describe 'alias parity with .aliases' {
     foreach ($name in $ported) {
       $resolved | Should -Contain "$name=Function" -Because "'$name' is in .aliases"
     }
-  }
-}
-
-Describe 'rmo' {
-  It 'deletes .orig files recursively, including hidden ones, and nothing else' {
-    $dir = Join-Path $TestDrive 'rmo'
-    $null = New-Item -ItemType Directory -Force -Path "$dir\sub"
-    Set-Content "$dir\a.orig" 'x'
-    Set-Content "$dir\sub\b.orig" 'x'
-    Set-Content "$dir\keep.txt" 'x'
-    $hidden = New-Item -ItemType File -Path "$dir\sub\c.orig" -Value 'x'
-    $hidden.Attributes = 'Hidden'
-    Push-Location $dir
-    # Call the function itself; the parity test covers the built-in rmo alias.
-    try { & $function:rmo } finally { Pop-Location }
-    @(Get-ChildItem $dir -Recurse -Force -File).Name | Should -Be @('keep.txt')
   }
 }
 
