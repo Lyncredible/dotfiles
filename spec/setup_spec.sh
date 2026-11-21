@@ -42,6 +42,12 @@ STUB
 #!/bin/sh
 exit 0
 STUB
+
+  unset TEST_UNAME
+  make_stub uname <<'STUB'
+#!/bin/sh
+echo "$FAKE_UNAME"
+STUB
 }
 
 cleanup() {
@@ -60,6 +66,8 @@ run_setup() {
   ZSH_BIN="${TEST_ZSH_BIN:-$TEST_BIN/zsh}" \
   CHSH_BIN="${TEST_CHSH_BIN:-$TEST_BIN/chsh}" \
   SKIP_CHSH="${TEST_SKIP_CHSH:-}" \
+  UNAME_BIN="$TEST_BIN/uname" \
+  FAKE_UNAME="${TEST_UNAME:-Linux}" \
     /bin/sh "$SHELLSPEC_PROJECT_ROOT/setup.sh"
 }
 
@@ -85,7 +93,7 @@ Describe 'setup.sh'
     The directory "$TEST_CONFIG_DIR" should be exist
     Assert symlink_to "$TEST_CONFIG_DIR/karabiner" "$TEST_DOTFILES_DIR/karabiner"
     The contents of file "$TEST_CONFIG_DIR/ghostty/config.ghostty" \
-      should include "config-file = \"$TEST_DOTFILES_DIR/ghostty/unix\""
+      should include "config-file = \"$TEST_DOTFILES_DIR/ghostty/linux\""
     The contents of file "$TEST_HOME/.setup_calls" \
       should include 'clone https://github.com/zsh-users/antigen.git'
     The contents of file "$TEST_HOME/.setup_calls" \
@@ -258,7 +266,7 @@ Describe 'setup.sh'
     Assert symlink_to "$TEST_HOME/.claude/skills" "$TEST_HOME/.agents/skills"
   End
 
-  It 'writes a ghostty wrapper that includes config, unix, then config.local'
+  It 'writes a ghostty wrapper that includes config, linux, then config.local on Linux'
     mkdir -p "$TEST_ANTIGEN_DIR"
     When run run_setup
     The status should be success
@@ -267,9 +275,26 @@ Describe 'setup.sh'
     The line 2 of contents of file "$TEST_CONFIG_DIR/ghostty/config.ghostty" \
       should equal "config-file = \"$TEST_DOTFILES_DIR/ghostty/config\""
     The line 3 of contents of file "$TEST_CONFIG_DIR/ghostty/config.ghostty" \
-      should equal "config-file = \"$TEST_DOTFILES_DIR/ghostty/unix\""
+      should equal "config-file = \"$TEST_DOTFILES_DIR/ghostty/linux\""
     The line 4 of contents of file "$TEST_CONFIG_DIR/ghostty/config.ghostty" \
       should equal 'config-file = ?config.local'
+  End
+
+  It 'includes ghostty/macos on macOS'
+    mkdir -p "$TEST_ANTIGEN_DIR"
+    TEST_UNAME=Darwin
+    When run run_setup
+    The status should be success
+    The line 3 of contents of file "$TEST_CONFIG_DIR/ghostty/config.ghostty" \
+      should equal "config-file = \"$TEST_DOTFILES_DIR/ghostty/macos\""
+  End
+
+  It 'ships every ghostty file the wrappers include'
+    When call ls "$SHELLSPEC_PROJECT_ROOT/ghostty/config" \
+      "$SHELLSPEC_PROJECT_ROOT/ghostty/macos" "$SHELLSPEC_PROJECT_ROOT/ghostty/linux" \
+      "$SHELLSPEC_PROJECT_ROOT/ghostty/windows" "$SHELLSPEC_PROJECT_ROOT/ghostty/keys-alt"
+    The status should be success
+    The output should include 'keys-alt'
   End
 
   It 'replaces the old ghostty directory symlink without touching the repo'

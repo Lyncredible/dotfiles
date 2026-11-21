@@ -67,12 +67,13 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
   (never delete it), fetches and rebases onto origin/master, reruns `setup.ps1 -SkipInstall`
   if HEAD moved, then upgrades the winget packages and modules. Set `DOTFILES_SKIP_UPDATE=1`
   to turn it off. Output goes to `~/.dotfiles-update-pwsh.log`.
-- Ghostty has no per-OS config conditionals. `ghostty/config` is shared; `ghostty/unix`
-  (macOS and Linux) and `ghostty/windows` hold per-OS settings (Cmd vs Alt shortcuts, fonts,
-  `command`). Ghostty's config dir is a real directory, not a link to the repo: `setup.sh`
-  writes `~/.config/ghostty/config.ghostty` and `setup.ps1` writes
+- Ghostty has no per-OS config conditionals. `ghostty/config` is shared; `ghostty/macos`,
+  `ghostty/linux`, and `ghostty/windows` hold per-OS settings. Shortcuts use Cmd in `macos`
+  and Alt in `keys-alt`, which `linux` and `windows` include. Ghostty's config dir is a real
+  directory, not a link to the repo: `setup.sh` writes `~/.config/ghostty/config.ghostty`
+  (picking `macos` or `linux` from `uname -s`) and `setup.ps1` writes
   `%LOCALAPPDATA%\ghostty\config.ghostty`. Each includes `config`, the OS file, then an
-  optional machine-local `config.local`. Change shortcuts in both OS files.
+  optional machine-local `config.local`. Change shortcuts in both `macos` and `keys-alt`.
 - AutoHotkey (`init.ahk`) is installed with winget and run at logon from a Startup-folder
   shortcut, `init.ahk.lnk`. `setup.ps1`, including the daily `-SkipInstall` rerun, restarts
   it with `/restart` so edits to `init.ahk` take effect.

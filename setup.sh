@@ -35,6 +35,7 @@ set_defaults() {
   ZSH_BIN="${ZSH_BIN:-zsh}"
   CHSH_BIN="${CHSH_BIN:-chsh}"
   SKIP_CHSH="${SKIP_CHSH:-0}"
+  UNAME_BIN="${UNAME_BIN:-uname}"
 }
 
 write_zsh_wrapper() {
@@ -129,10 +130,15 @@ backup_unmanaged_ghostty_config() {
 }
 
 # Ghostty has no per-OS config conditionals, so ~/.config/ghostty holds a wrapper that
-# includes the shared config, then the macOS/Linux one, then an optional config.local.
-# setup.ps1 writes the Windows equivalent.
+# includes the shared config, then ghostty/macos or ghostty/linux, then an optional
+# config.local. setup.ps1 writes the Windows equivalent.
 write_ghostty_wrapper() {
   ghostty_dir="$CONFIG_DIR/ghostty"
+  if [ "$("$UNAME_BIN" -s)" = "Darwin" ]; then
+    ghostty_os=macos
+  else
+    ghostty_os=linux
+  fi
   # Older setups linked the whole directory to the repo; replace the link, not its target.
   if [ -L "$ghostty_dir" ]; then
     rm "$ghostty_dir"
@@ -144,7 +150,7 @@ write_ghostty_wrapper() {
   cat > "$ghostty_dir/config.ghostty" <<EOF
 $GHOSTTY_WRAPPER_HEADER Local changes go in config.local next to this file.
 config-file = "$DOTFILES_DIR/ghostty/config"
-config-file = "$DOTFILES_DIR/ghostty/unix"
+config-file = "$DOTFILES_DIR/ghostty/$ghostty_os"
 config-file = ?config.local
 EOF
 }

@@ -73,7 +73,7 @@ Describe 'Get-GhosttyWrapper' {
 
   It 'points at files that exist in the repo' {
     $repo = Resolve-Path (Join-Path $PSScriptRoot '..\..')
-    foreach ($name in 'config', 'windows', 'unix') {
+    foreach ($name in 'config', 'windows', 'linux', 'macos', 'keys-alt') {
       Join-Path $repo "ghostty\$name" | Should -Exist
     }
   }

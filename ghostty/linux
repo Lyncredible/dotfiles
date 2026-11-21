@@ -1,0 +1,9 @@
+# Linux only. Loaded after ghostty/config from the ~/.config/ghostty/config.ghostty
+# wrapper that setup.sh writes.
+font-family = MesloLGM Nerd Font
+font-size = 12
+font-thicken = true
+adjust-cell-width = 0
+
+# Same shortcuts as Windows. Relative to this file.
+config-file = keys-alt

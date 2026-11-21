@@ -1,0 +1,13 @@
+# Shortcuts for Linux and Windows: the Cmd shortcuts from ghostty/macos, on Alt.
+# Included by ghostty/linux and ghostty/windows. Keep in sync with ghostty/macos.
+
+# Tab navigation
+keybind = alt+arrow_left=previous_tab
+keybind = alt+arrow_right=next_tab
+
+# Tmux window switching (prefix = Ctrl+B = \x02)
+keybind = alt+n=text:\x02n
+keybind = alt+p=text:\x02p
+
+# Reset font size, like Cmd+0 on macOS.
+keybind = alt+0=reset_font_size

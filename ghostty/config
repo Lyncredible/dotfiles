@@ -1,6 +1,7 @@
 # Shared by every OS. Per-OS settings live next to this file and are loaded after it:
-#   macOS, Linux: ghostty/unix, via the ~/.config/ghostty/config.ghostty setup.sh writes
-#   Windows:      ghostty/windows, via the %LOCALAPPDATA%\ghostty\config.ghostty setup.ps1 writes
+#   macOS, Linux: ghostty/macos or ghostty/linux, via ~/.config/ghostty/config.ghostty
+#   Windows:      ghostty/windows, via %LOCALAPPDATA%\ghostty\config.ghostty
+# setup.sh and setup.ps1 write those wrappers. Linux and Windows share keys-alt.
 cursor-click-to-move = true
 cursor-style = block
 shell-integration-features = ssh-terminfo

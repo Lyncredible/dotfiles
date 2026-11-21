@@ -1,5 +1,5 @@
-# macOS and Linux (Cmd is Super on Linux). Loaded after ghostty/config from the
-# ~/.config/ghostty/config.ghostty wrapper that setup.sh writes.
+# macOS only. Loaded after ghostty/config from the ~/.config/ghostty/config.ghostty
+# wrapper that setup.sh writes. Linux and Windows use Alt instead of Cmd: see keys-alt.
 font-family = MesloLGM Nerd Font
 font-size = 12
 font-thicken = true
@@ -13,15 +13,6 @@ keybind = cmd+arrow_right=next_tab
 # Tmux window switching (prefix = Ctrl+B = \x02)
 keybind = cmd+n=text:\x02n
 keybind = cmd+p=text:\x02p
-keybind = cmd+1=text:\x021
-keybind = cmd+2=text:\x022
-keybind = cmd+3=text:\x023
-keybind = cmd+4=text:\x024
-keybind = cmd+5=text:\x025
-keybind = cmd+6=text:\x026
-keybind = cmd+7=text:\x027
-keybind = cmd+8=text:\x028
-keybind = cmd+9=text:\x029
 
 # Match the standard macOS shortcut for reset font size.
 keybind = cmd+0=reset_font_size
