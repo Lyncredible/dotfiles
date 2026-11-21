@@ -54,6 +54,8 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 ## PowerShell (Windows)
 
 - `install.ps1` / `setup.ps1` mirror `install.sh` / `setup.sh`; `setup.ps1` stays idempotent.
+- Both setups add `.gitconfig` to the global git `include.path`, so every OS shares it.
+  Keep it valid for Git for Windows: size values must be 2g or less.
 - `$PROFILE` (both Windows PowerShell and PowerShell 7) is a **sourcing wrapper** written by
   `setup.ps1`: `~/.pwsh_pre.ps1`, then `powershell/profile.ps1`, then `~/.pwsh_post.ps1`.
   A profile it did not write is moved to `.bak` first.

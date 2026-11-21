@@ -173,6 +173,25 @@ Describe 'Test-DotfilesPackageInstalled' {
   }
 }
 
+Describe 'Set-GitInclude' {
+  BeforeEach {
+    # Point git's global config at a scratch file instead of ~/.gitconfig.
+    $script:savedGlobal = $env:GIT_CONFIG_GLOBAL
+    $env:GIT_CONFIG_GLOBAL = Join-Path $TestDrive "$([guid]::NewGuid()).gitconfig"
+  }
+  AfterEach {
+    $env:GIT_CONFIG_GLOBAL = $savedGlobal
+  }
+
+  It 'adds the repo .gitconfig once, keeping other includes' {
+    & git config --global include.path 'C:/other.gitconfig'
+    Set-GitInclude -DotfilesDir 'C:\dots'
+    Set-GitInclude -DotfilesDir 'C:\dots'
+    $includes = @(& git config --global --get-all include.path)
+    $includes | Should -Be @('C:/other.gitconfig', 'C:/dots/.gitconfig')
+  }
+}
+
 Describe 'repo .gitconfig' {
   It 'loads in Git for Windows, which setup.sh includes it into' {
     $gitconfig = (Resolve-Path (Join-Path $PSScriptRoot '..\..\.gitconfig')).Path

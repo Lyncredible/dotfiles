@@ -192,6 +192,17 @@ function Install-NerdFont {
   & oh-my-posh font install Meslo
 }
 
+# Share .gitconfig with macOS and Linux, like ensure_git_config in setup.sh. Adds the include
+# only when it is missing, so other include.path entries are kept.
+function Set-GitInclude {
+  param([Parameter(Mandatory)][string]$DotfilesDir)
+  if (-not (Get-Command git -ErrorAction SilentlyContinue)) { return }
+  $path = (Join-Path $DotfilesDir '.gitconfig').Replace('\', '/')
+  $existing = @(& git config --global --get-all include.path 2>$null)
+  if ($existing -contains $path) { return }
+  & git config --global --add include.path $path
+}
+
 # The profile is a local script, so the Windows default of Restricted would block it.
 function Set-ProfileExecutionPolicy {
   $policy = Get-ExecutionPolicy -Scope CurrentUser
@@ -210,6 +221,7 @@ function Invoke-Setup {
   }
   Write-LocalProfiles
   Write-GhosttyWrapper -ConfigPath (Get-GhosttyConfigPath) -DotfilesDir $DotfilesDir
+  Set-GitInclude -DotfilesDir $DotfilesDir
   # No core.hooksPath here: hooks/pre-push runs `make check`, which needs make and shellspec.
   if (-not $SkipInstall) {
     Set-ProfileExecutionPolicy
