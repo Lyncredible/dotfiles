@@ -35,6 +35,9 @@ set_defaults() {
   ZSH_BIN="${ZSH_BIN:-zsh}"
   CHSH_BIN="${CHSH_BIN:-chsh}"
   SKIP_CHSH="${SKIP_CHSH:-0}"
+  UNAME_BIN="${UNAME_BIN:-uname}"
+  app_support="$HOME/Library/Application Support"
+  GHOSTTY_APP_SUPPORT_DIR="${GHOSTTY_APP_SUPPORT_DIR:-$app_support/com.mitchellh.ghostty}"
 }
 
 write_zsh_wrapper() {
@@ -114,6 +117,16 @@ ensure_local_bin() {
   done
 }
 
+# Ghostty has no per-OS config conditionals, but on macOS it also loads a config from
+# Application Support after the XDG one. Use that for ghostty/macos.
+ensure_ghostty_macos() {
+  if [ "$("$UNAME_BIN" -s)" != "Darwin" ]; then
+    return 0
+  fi
+  mkdir -p "$GHOSTTY_APP_SUPPORT_DIR"
+  ensure_symlink "$DOTFILES_DIR/ghostty/macos" "$GHOSTTY_APP_SUPPORT_DIR/config.ghostty"
+}
+
 ensure_agent_skills() {
   target_dir="$HOME/.agents/skills"
   ensure_dir "$HOME/.agents"
@@ -138,6 +151,7 @@ main() {
   ensure_dir "$CONFIG_DIR"
   ensure_symlink "$DOTFILES_DIR/karabiner" "$CONFIG_DIR/karabiner"
   ensure_symlink "$DOTFILES_DIR/ghostty" "$CONFIG_DIR/ghostty"
+  ensure_ghostty_macos
   ensure_symlink "$DOTFILES_DIR/.claude" "$HOME/.claude"
   ensure_local_bin
   ensure_agent_skills

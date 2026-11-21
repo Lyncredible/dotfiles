@@ -42,6 +42,12 @@ STUB
 #!/bin/sh
 exit 0
 STUB
+
+  unset TEST_UNAME
+  make_stub uname <<'STUB'
+#!/bin/sh
+echo "$FAKE_UNAME"
+STUB
 }
 
 cleanup() {
@@ -60,6 +66,8 @@ run_setup() {
   ZSH_BIN="${TEST_ZSH_BIN:-$TEST_BIN/zsh}" \
   CHSH_BIN="${TEST_CHSH_BIN:-$TEST_BIN/chsh}" \
   SKIP_CHSH="${TEST_SKIP_CHSH:-}" \
+  UNAME_BIN="$TEST_BIN/uname" \
+  FAKE_UNAME="${TEST_UNAME:-Linux}" \
     /bin/sh "$SHELLSPEC_PROJECT_ROOT/setup.sh"
 }
 
@@ -255,5 +263,34 @@ Describe 'setup.sh'
     When run run_setup
     The status should be success
     Assert symlink_to "$TEST_HOME/.claude/skills" "$TEST_HOME/.agents/skills"
+  End
+
+  It 'links ghostty/macos into Application Support on macOS'
+    mkdir -p "$TEST_ANTIGEN_DIR"
+    TEST_UNAME=Darwin
+    When run run_setup
+    The status should be success
+    Assert symlink_to \
+      "$TEST_HOME/Library/Application Support/com.mitchellh.ghostty/config.ghostty" \
+      "$TEST_DOTFILES_DIR/ghostty/macos"
+  End
+
+  It 'backs up an existing Application Support ghostty config on macOS'
+    mkdir -p "$TEST_ANTIGEN_DIR"
+    app_support="$TEST_HOME/Library/Application Support/com.mitchellh.ghostty"
+    mkdir -p "$app_support"
+    echo 'font-size = 20' > "$app_support/config.ghostty"
+    TEST_UNAME=Darwin
+    When run run_setup
+    The status should be success
+    The contents of file "$app_support/config.ghostty.bak" should equal 'font-size = 20'
+    Assert symlink_to "$app_support/config.ghostty" "$TEST_DOTFILES_DIR/ghostty/macos"
+  End
+
+  It 'does not touch Application Support off macOS'
+    mkdir -p "$TEST_ANTIGEN_DIR"
+    When run run_setup
+    The status should be success
+    The directory "$TEST_HOME/Library" should not be exist
   End
 End

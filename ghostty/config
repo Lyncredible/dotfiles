@@ -1,39 +1,16 @@
-adjust-cell-width = 0
+# Shared by every OS. Per-OS settings live next to this file and are loaded after it:
+#   macOS:   ghostty/macos, linked from Application Support by setup.sh
+#   Windows: ghostty/windows, included from %LOCALAPPDATA%\ghostty\config.ghostty by setup.ps1
 cursor-click-to-move = true
 cursor-style = block
-font-family = MesloLGM Nerd Font
-font-size = 12
-font-thicken = true
-adjust-cell-width = 0
 shell-integration-features = ssh-terminfo
-macos-titlebar-style = tabs
 theme = Dimmed Monokai
 
 # Bells
 bell-features = no-audio
 
-# Tab navigation
-keybind = cmd+arrow_left=previous_tab
-keybind = cmd+arrow_right=next_tab
-
 # Quick terminal
 keybind = ctrl+grave_accent=toggle_quick_terminal
-
-# Tmux window switching (prefix = Ctrl+B = \x02)
-keybind = cmd+n=text:\x02n
-keybind = cmd+p=text:\x02p
-keybind = cmd+1=text:\x021
-keybind = cmd+2=text:\x022
-keybind = cmd+3=text:\x023
-keybind = cmd+4=text:\x024
-keybind = cmd+5=text:\x025
-keybind = cmd+6=text:\x026
-keybind = cmd+7=text:\x027
-keybind = cmd+8=text:\x028
-keybind = cmd+9=text:\x029
-
-# Match the standard macOS shortcut for reset font size.
-keybind = cmd+0=reset_font_size
 
 # Ctrl+J newline (not sent natively without tmux)
 keybind = ctrl+j=text:\n
