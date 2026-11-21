@@ -62,6 +62,36 @@ Describe 'Write-ProfileWrapper' {
   }
 }
 
+Describe 'Get-ProfilePath' {
+  It 'is the PowerShell 7 profile, not the Windows PowerShell one' {
+    Get-ProfilePath | Should -BeLike '*\PowerShell\Microsoft.PowerShell_profile.ps1'
+    Get-ProfilePath | Should -Not -BeLike '*\WindowsPowerShell\*'
+  }
+}
+
+Describe 'Remove-WindowsPowerShellWrapper' {
+  BeforeEach {
+    $script:legacy = Join-Path $TestDrive "$([guid]::NewGuid())\profile.ps1"
+    $null = New-Item -ItemType Directory -Force -Path (Split-Path -Parent $legacy)
+  }
+
+  It 'removes the wrapper an earlier setup wrote' {
+    [IO.File]::WriteAllText($legacy, (Get-ProfileWrapper -DotfilesDir 'C:\dots'))
+    Remove-WindowsPowerShellWrapper -ProfilePath $legacy
+    Test-Path $legacy | Should -BeFalse
+  }
+
+  It 'keeps a hand-written Windows PowerShell profile' {
+    [IO.File]::WriteAllText($legacy, 'Import-Module Foo')
+    Remove-WindowsPowerShellWrapper -ProfilePath $legacy
+    [IO.File]::ReadAllText($legacy) | Should -Be 'Import-Module Foo'
+  }
+
+  It 'does nothing when there is no profile' {
+    { Remove-WindowsPowerShellWrapper -ProfilePath $legacy } | Should -Not -Throw
+  }
+}
+
 Describe 'Get-GhosttyWrapper' {
   It 'includes the shared config, then the Windows config, then config.local' {
     $lines = (Get-GhosttyWrapper -DotfilesDir 'C:\my dots') -split "`r`n"
@@ -164,7 +194,7 @@ Describe 'Set-AutoHotkeyStartup' {
 
 Describe 'Test-DotfilesPackageInstalled' {
   It 'finds a package by command or by path' {
-    $byCommand = [pscustomobject]@{ Command = 'powershell'; Paths = @() }
+    $byCommand = [pscustomobject]@{ Command = 'pwsh'; Paths = @() }
     $byPath = [pscustomobject]@{ Command = $null; Paths = @($PSCommandPath) }
     $missing = [pscustomobject]@{ Command = 'no-such-cmd-xyz'; Paths = @('C:\no\such.exe') }
     Test-DotfilesPackageInstalled -Package $byCommand | Should -BeTrue
@@ -202,17 +232,33 @@ Describe 'repo .gitconfig' {
   }
 }
 
-Describe 'repo PowerShell files' {
-  It 'are ASCII so Windows PowerShell 5.1 reads them correctly' {
-    $root = Join-Path $PSScriptRoot '..\..'
-    $files = @(Get-ChildItem (Join-Path $root 'powershell') -Filter '*.ps*') +
-      @(Get-Item (Join-Path $root 'setup.ps1'), (Join-Path $root 'install.ps1'))
-    foreach ($file in $files) {
-      $bytes = [IO.File]::ReadAllBytes($file.FullName)
-      @($bytes | Where-Object { $_ -gt 127 }).Count | Should -Be 0 -Because $file.Name
-    }
+Describe 'install.ps1 bootstrap' {
+  # A fresh Windows machine only has Windows PowerShell 5.1, so install.ps1 must run there.
+  BeforeAll {
+    $script:install = (Resolve-Path (Join-Path $PSScriptRoot '..\..\install.ps1')).Path
   }
 
+  It 'is ASCII, since 5.1 reads BOM-less scripts as ANSI' {
+    $bytes = [IO.File]::ReadAllBytes($install)
+    @($bytes | Where-Object { $_ -gt 127 }).Count | Should -Be 0
+  }
+
+  It 'parses in Windows PowerShell 5.1' -Skip:(-not (Get-Command powershell.exe -EA 0)) {
+    $command = '$t = $null; $e = $null; ' +
+      "[void][Management.Automation.Language.Parser]::ParseFile('$install', [ref]`$t, [ref]`$e); " +
+      '$e | ForEach-Object { $_.Message }; "errors=$($e.Count)"'
+    $out = & powershell.exe -NoProfile -NonInteractive -Command $command
+    $out | Should -Contain 'errors=0' -Because ($out -join "`n")
+  }
+
+  It 'installs pwsh and runs setup.ps1 with it' {
+    $text = [IO.File]::ReadAllText($install)
+    $text | Should -Match "Install-WingetPackage -Id 'Microsoft.PowerShell' -Command 'pwsh'"
+    $text | Should -Match '& pwsh -NoProfile -ExecutionPolicy Bypass -File'
+  }
+}
+
+Describe 'repo PowerShell files' {
   It 'parse without errors' {
     $root = Join-Path $PSScriptRoot '..\..'
     $files = @(Get-ChildItem (Join-Path $root 'powershell') -Filter '*.ps1') +

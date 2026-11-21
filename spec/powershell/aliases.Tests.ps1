@@ -20,10 +20,7 @@ Describe 'alias parity with .aliases' {
     $command = "`$ProgressPreference = 'SilentlyContinue'; . '$script'; " +
       "foreach (`$n in '$($ported -join "','")') " +
       '{ "$n=$((Get-Command $n | Select-Object -First 1).CommandType)" }'
-    $shell = (Get-Process -Id $PID).Path
-    # -EncodedCommand: Windows PowerShell 5.1 drops the double quotes in a -Command argument.
-    $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command))
-    $resolved = & $shell -NoProfile -NonInteractive -EncodedCommand $encoded
+    $resolved = & (Get-Process -Id $PID).Path -NoProfile -NonInteractive -Command $command
     foreach ($name in $ported) {
       $resolved | Should -Contain "$name=Function" -Because "'$name' should run our function"
     }
@@ -84,8 +81,6 @@ Describe 'git plugin aliases' {
       & git -c user.name=t -c user.email=t@t commit -q --allow-empty -m one
       & git checkout -q -b feature
       # Call the function itself: inside Pester's scope gcm is still Get-Command.
-      # 5.1 turns git's redirected stderr into errors, which abort under CI's 'Stop'.
-      $ErrorActionPreference = 'Continue'
       & $function:gcm *> $null
       & git branch --show-current | Should -Be 'main'
     } finally { Pop-Location }

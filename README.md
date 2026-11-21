@@ -23,11 +23,13 @@ Clone in SSH mode
 sh -c "$(curl -sL --proto-redir -all,https https://raw.githubusercontent.com/Lyncredible/dotfiles/master/install.sh)" - -s
 ```
 
-### Windows PowerShell
-Installs git if needed, clones to `~\.dotfiles`, and runs `setup.ps1`, which points `$PROFILE`
-at `powershell\profile.ps1` and Ghostty at the shared config, installs oh-my-posh, fzf, PSFzf,
-PSReadLine, AutoHotkey, and the Meslo Nerd Font, and runs `init.ahk` at logon. The prompt and
-colors mirror `.p10k.zsh` and zsh-syntax-highlighting.
+### Windows (PowerShell 7)
+Run from any PowerShell, including the built-in Windows PowerShell 5.1. Installs git and
+PowerShell 7 (`pwsh`) if needed, clones to `~\.dotfiles`, and runs `setup.ps1` with pwsh. That
+points the pwsh `$PROFILE` at `powershell\profile.ps1` and Ghostty at the shared config, installs
+oh-my-posh, fzf, PSFzf, AutoHotkey, and the Meslo Nerd Font, and runs `init.ahk` at logon. The
+prompt and colors mirror `.p10k.zsh` and zsh-syntax-highlighting. Windows PowerShell 5.1 does not
+load the profile; open `pwsh` instead.
 ```
 irm https://raw.githubusercontent.com/Lyncredible/dotfiles/master/install.ps1 | iex
 ```
@@ -50,7 +52,8 @@ Pass `FILES=` to target specific files:
 make test FILES=spec/tmux_sysstat_spec.sh
 make lint FILES=.local/bin/tmux-sysstat
 ```
-PowerShell tests need Pester 5 (`Install-Module Pester -Scope CurrentUser -SkipPublisherCheck`):
+PowerShell tests run in pwsh and need Pester 5 or later
+(`Install-PSResource Pester -Repository PSGallery -Scope CurrentUser`):
 ```
 Invoke-Pester spec/powershell   # or: make test-powershell
 ```

@@ -2,7 +2,6 @@
 # spec/powershell/aliases.Tests.ps1 fails when .aliases gains a name that is neither here nor
 # in $DotfilesZshOnlyAliases.
 # These are functions because PowerShell aliases cannot take arguments.
-# Keep this file ASCII: Windows PowerShell 5.1 reads BOM-less scripts as ANSI.
 
 # Aliases from .aliases with no Windows equivalent.
 $DotfilesZshOnlyAliases = @(
@@ -52,9 +51,6 @@ function glg { & git log --stat @args }
 # Port of git_main_branch from the oh-my-zsh git plugin: the first of these local or remote
 # branches that exists, then the remote's HEAD, then master.
 function Get-GitMainBranch {
-  # Windows PowerShell 5.1 turns redirected native stderr into errors, which abort under
-  # $ErrorActionPreference = 'Stop'. Exit codes carry the answers here.
-  $ErrorActionPreference = 'Continue'
   & git rev-parse --git-dir *> $null
   if ($LASTEXITCODE -ne 0) { return }
   $names = 'main', 'trunk', 'mainline', 'default', 'stable', 'master'

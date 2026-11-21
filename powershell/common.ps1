@@ -1,5 +1,5 @@
-# Shared PowerShell helpers for profile.ps1, update.ps1, and setup.ps1.
-# Keep PowerShell files ASCII: Windows PowerShell 5.1 reads BOM-less scripts as ANSI.
+# Shared PowerShell helpers for profile.ps1, update.ps1, and setup.ps1. PowerShell 7 (pwsh)
+# only; install.ps1 is the one script that must also run in Windows PowerShell 5.1.
 
 # Windows tools. Setup skips a package when its Command is on PATH or one of its Paths exists.
 $AutoHotkeyPaths = @(
@@ -7,6 +7,8 @@ $AutoHotkeyPaths = @(
   "$env:LOCALAPPDATA\Programs\AutoHotkey\v2\AutoHotkey.exe"
 )
 $DotfilesWingetPackages = @(
+  # install.ps1 installs this one first, since setup.ps1 needs it to run.
+  [pscustomobject]@{ Id = 'Microsoft.PowerShell'; Command = 'pwsh'; Paths = @() }
   [pscustomobject]@{ Id = 'JanDeDobbeleer.OhMyPosh'; Command = 'oh-my-posh'; Paths = @() }
   [pscustomobject]@{ Id = 'junegunn.fzf'; Command = 'fzf'; Paths = @() }
   # init.ahk: window management, mirroring .hammerspoon on macOS.
@@ -30,9 +32,9 @@ function Find-AutoHotkey {
   }
   return $null
 }
+
+# PowerShell Gallery modules. PSReadLine is not listed: PowerShell 7 ships a current one.
 $DotfilesModules = @(
-  # Windows PowerShell 5.1 ships PSReadLine 2.0, which has no -PredictionSource.
-  [pscustomobject]@{ Name = 'PSReadLine'; MinimumVersion = [version]'2.1.0' }
   [pscustomobject]@{ Name = 'PSFzf'; MinimumVersion = [version]'2.0.0' }
 )
 
@@ -129,9 +131,9 @@ function Update-DotfilesTools {
   }
   foreach ($module in $DotfilesModules) {
     try {
-      Update-Module -Name $module.Name -ErrorAction Stop
+      Update-PSResource -Name $module.Name -Repository PSGallery -Scope CurrentUser `
+        -TrustRepository -ErrorAction Stop
     } catch {
-      # Modules that were not installed with Install-Module cannot be updated this way.
       Write-Warning "Failed to update module $($module.Name): $_"
     }
   }

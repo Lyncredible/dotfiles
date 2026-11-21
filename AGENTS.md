@@ -56,9 +56,14 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 - `install.ps1` / `setup.ps1` mirror `install.sh` / `setup.sh`; `setup.ps1` stays idempotent.
 - Both setups add `.gitconfig` to the global git `include.path`, so every OS shares it.
   Keep it valid for Git for Windows: size values must be 2g or less.
-- `$PROFILE` (both Windows PowerShell and PowerShell 7) is a **sourcing wrapper** written by
-  `setup.ps1`: `~/.pwsh_pre.ps1`, then `powershell/profile.ps1`, then `~/.pwsh_post.ps1`.
-  A profile it did not write is moved to `.bak` first.
+- PowerShell 7 (`pwsh`) only. `install.ps1` is the exception: a fresh machine only has Windows
+  PowerShell 5.1, so it installs git and pwsh, clones, then runs `setup.ps1` with pwsh. Keep
+  `install.ps1` ASCII with 5.1 syntax; a Pester test parses it in `powershell.exe`.
+- The pwsh `$PROFILE` is a **sourcing wrapper** written by `setup.ps1`: `~/.pwsh_pre.ps1`,
+  then `powershell/profile.ps1`, then `~/.pwsh_post.ps1`. A profile it did not write is moved
+  to `.bak` first. It removes the Windows PowerShell 5.1 wrapper earlier versions wrote.
+- Modules install with PSResourceGet using `-Repository PSGallery`: the Microsoft Artifact
+  Registry outranks PSGallery and answers Not Found.
 - `powershell/p10k.omp.json` is the oh-my-posh port of `.p10k.zsh`. It uses palette color
   indexes, not hex, so it follows the terminal theme like p10k does. Keep the two in sync.
 - PSReadLine colors in `profile.ps1` mirror the zsh-syntax-highlighting defaults.
@@ -84,7 +89,6 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 - AutoHotkey (`init.ahk`) is installed with winget and run at logon from a Startup-folder
   shortcut, `init.ahk.lnk`. `setup.ps1`, including the daily `-SkipInstall` rerun, restarts
   it with `/restart` so edits to `init.ahk` take effect.
-- Keep PowerShell files ASCII: Windows PowerShell 5.1 reads BOM-less scripts as ANSI.
 - Pester 5 tests live in `spec/powershell/` (`make test-powershell`). They are not part of
   `make check`, and `setup.ps1` does not set `core.hooksPath` because Windows lacks `make`.
 
@@ -124,8 +128,8 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 - Integration tests in `spec/integration_*.sh` are stub-driven.
 - `make check` runs lint + test + integration in one command.
 - GitHub Actions (`.github/workflows/ci.yml`) runs lint on Ubuntu, `make test` and
-  `make test-integration` on Ubuntu and macOS, and the Pester tests on Windows under both
-  Windows PowerShell 5.1 and PowerShell 7.
+  `make test-integration` on Ubuntu and macOS, and the Pester tests on Windows under
+  PowerShell 7.
 - `make lint`: ShellCheck, line-length (100 chars), CRLF, exec-bit.
 - Pass `FILES=` to target specific files.
 

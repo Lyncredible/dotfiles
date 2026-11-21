@@ -46,25 +46,20 @@ jobs:
       - run: make test-integration
 
   powershell:
+    # PowerShell 7 only. The tests also check that install.ps1, which bootstraps pwsh on a
+    # fresh machine, still parses in Windows PowerShell 5.1.
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # The profile targets Windows PowerShell 5.1; PowerShell 7 should work too.
-        shell: [powershell, pwsh]
     defaults:
       run:
-        shell: ${{ matrix.shell }}
+        shell: pwsh
     steps:
       - uses: actions/checkout@v5
       - name: Install Pester 5
         run: |
-          [Net.ServicePointManager]::SecurityProtocol =
-            [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
           $pester5 = Get-Module -ListAvailable Pester |
             Where-Object { $_.Version -ge [version]'5.0.0' }
           if (-not $pester5) {
-            Install-Module Pester -MinimumVersion 5.0 -Scope CurrentUser -Force -SkipPublisherCheck
+            Install-PSResource Pester -Repository PSGallery -Scope CurrentUser -TrustRepository
           }
       - name: Run Pester
         run: |
