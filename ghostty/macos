@@ -1,6 +1,5 @@
 # macOS only. Loaded after ghostty/config from the ~/.config/ghostty/config.ghostty
 # wrapper that setup.sh writes. Linux and Windows use Alt instead of Cmd: see keys-alt.
-font-family = MesloLGM Nerd Font
 font-size = 12
 font-thicken = true
 adjust-cell-width = 0
