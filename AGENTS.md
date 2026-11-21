@@ -62,6 +62,10 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 - `powershell/p10k.omp.json` is the oh-my-posh port of `.p10k.zsh`. It uses palette color
   indexes, not hex, so it follows the terminal theme like p10k does. Keep the two in sync.
 - PSReadLine colors in `profile.ps1` mirror the zsh-syntax-highlighting defaults.
+- `powershell/aliases.ps1` ports `.aliases` as functions (PowerShell aliases take no
+  arguments). Add new aliases to both, or list zsh-only ones in `$DotfilesZshOnlyAliases`;
+  `spec/powershell/aliases.Tests.ps1` fails otherwise. It removes built-in aliases that would
+  hide a function (`rmo` is `Remove-Module`).
 - Auto-update: the profile starts `powershell/update.ps1` in a hidden process when
   `~/.dotfiles-update-pwsh` is a day old. It takes a lock on `~/.dotfiles-update-pwsh.lock`
   (never delete it), fetches and rebases onto origin/master, reruns `setup.ps1 -SkipInstall`

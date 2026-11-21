@@ -4,6 +4,7 @@
 
 . (Join-Path $PSScriptRoot 'common.ps1')
 Request-DotfilesUpdate -DotfilesDir (Split-Path -Parent $PSScriptRoot)
+. (Join-Path $PSScriptRoot 'aliases.ps1')
 
 Import-Module PSReadLine
 try {

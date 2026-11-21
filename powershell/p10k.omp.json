@@ -90,6 +90,20 @@
           "template": " {{ .FormattedMs }} "
         },
         {
+          "type": "python",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "invert_powerline": true,
+          "foreground": "0",
+          "background": "4",
+          "options": {
+            "display_mode": "environment",
+            "fetch_virtual_env": true,
+            "home_enabled": true
+          },
+          "template": " {{ .Venv }} {{ .Full }}  "
+        },
+        {
           "type": "time",
           "style": "diamond",
           "invert_powerline": true,
