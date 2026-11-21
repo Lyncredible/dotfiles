@@ -65,11 +65,15 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
   (never delete it), fetches and rebases onto origin/master, reruns `setup.ps1 -SkipInstall`
   if HEAD moved, then upgrades the winget packages and modules. Set `DOTFILES_SKIP_UPDATE=1`
   to turn it off. Output goes to `~/.dotfiles-update-pwsh.log`.
-- Ghostty has no per-OS config conditionals. `ghostty/config` is shared; `ghostty/macos` and
-  `ghostty/windows` hold per-OS settings (Cmd vs Alt shortcuts, fonts, `command`). macOS loads
-  `ghostty/macos` through a `setup.sh` symlink in Application Support, which Ghostty reads after
-  the XDG config. Windows loads a `setup.ps1`-generated `%LOCALAPPDATA%\ghostty\config.ghostty`
-  that includes `config`, `windows`, then an optional `config.local`. Change shortcuts in both.
+- Ghostty has no per-OS config conditionals. `ghostty/config` is shared; `ghostty/unix`
+  (macOS and Linux) and `ghostty/windows` hold per-OS settings (Cmd vs Alt shortcuts, fonts,
+  `command`). Ghostty's config dir is a real directory, not a link to the repo: `setup.sh`
+  writes `~/.config/ghostty/config.ghostty` and `setup.ps1` writes
+  `%LOCALAPPDATA%\ghostty\config.ghostty`. Each includes `config`, the OS file, then an
+  optional machine-local `config.local`. Change shortcuts in both OS files.
+- AutoHotkey (`init.ahk`) is installed with winget and run at logon from a Startup-folder
+  shortcut, `init.ahk.lnk`. `setup.ps1`, including the daily `-SkipInstall` rerun, restarts
+  it with `/restart` so edits to `init.ahk` take effect.
 - Keep PowerShell files ASCII: Windows PowerShell 5.1 reads BOM-less scripts as ANSI.
 - Pester 5 tests live in `spec/powershell/` (`make test-powershell`). They are not part of
   `make check`, and `setup.ps1` does not set `core.hooksPath` because Windows lacks `make`.

@@ -73,7 +73,7 @@ Describe 'Get-GhosttyWrapper' {
 
   It 'points at files that exist in the repo' {
     $repo = Resolve-Path (Join-Path $PSScriptRoot '..\..')
-    foreach ($name in 'config', 'windows', 'macos') {
+    foreach ($name in 'config', 'windows', 'unix') {
       Join-Path $repo "ghostty\$name" | Should -Exist
     }
   }
@@ -100,6 +100,76 @@ Describe 'Write-GhosttyWrapper' {
     Write-GhosttyWrapper -ConfigPath $path -DotfilesDir 'C:\dots'
     [IO.File]::ReadAllText("$path.bak") | Should -Be 'font-size = 20'
     [IO.File]::ReadAllText($path) | Should -Be (Get-GhosttyWrapper -DotfilesDir 'C:\dots')
+  }
+}
+
+Describe 'Write-AutoHotkeyStartup' {
+  BeforeAll {
+    $script:shell = New-Object -ComObject WScript.Shell
+    $script:ahk = 'C:\Program Files\AutoHotkey\v2\AutoHotkey.exe'
+  }
+  BeforeEach {
+    $script:lnk = Join-Path $TestDrive "$([guid]::NewGuid()).lnk"
+  }
+
+  It 'creates a shortcut that runs init.ahk with AutoHotkey' {
+    Write-AutoHotkeyStartup -ShortcutPath $lnk -AutoHotkey $ahk -Script 'C:\my dots\init.ahk'
+    $saved = $shell.CreateShortcut($lnk)
+    $saved.TargetPath | Should -Be $ahk
+    $saved.Arguments | Should -Be '"C:\my dots\init.ahk"'
+    $saved.WorkingDirectory | Should -Be 'C:\my dots'
+  }
+
+  It 'repoints a shortcut to an old checkout' {
+    $old = $shell.CreateShortcut($lnk)
+    $old.TargetPath = 'C:\Code\dotfiles\init.ahk'
+    $old.Save()
+    Write-AutoHotkeyStartup -ShortcutPath $lnk -AutoHotkey $ahk -Script 'C:\dots\init.ahk' `
+      6>$null
+    $shell.CreateShortcut($lnk).TargetPath | Should -Be $ahk
+  }
+
+  It 'leaves a correct shortcut untouched' {
+    Write-AutoHotkeyStartup -ShortcutPath $lnk -AutoHotkey $ahk -Script 'C:\dots\init.ahk'
+    $past = [datetime]'2000-01-01'
+    (Get-Item $lnk).LastWriteTime = $past
+    Write-AutoHotkeyStartup -ShortcutPath $lnk -AutoHotkey $ahk -Script 'C:\dots\init.ahk'
+    (Get-Item $lnk).LastWriteTime | Should -Be $past
+  }
+}
+
+Describe 'Set-AutoHotkeyStartup' {
+  BeforeEach {
+    Mock Write-AutoHotkeyStartup {}
+    Mock Start-AutoHotkey {}
+  }
+
+  It 'registers and restarts init.ahk from the repo' {
+    Mock Find-AutoHotkey { 'C:\ahk.exe' }
+    Set-AutoHotkeyStartup -DotfilesDir 'C:\dots'
+    Should -Invoke Write-AutoHotkeyStartup -Times 1 -Exactly -ParameterFilter {
+      $AutoHotkey -eq 'C:\ahk.exe' -and $Script -eq 'C:\dots\init.ahk' -and
+        $ShortcutPath -like '*\Startup\init.ahk.lnk'
+    }
+    Should -Invoke Start-AutoHotkey -Times 1 -Exactly
+  }
+
+  It 'skips everything when AutoHotkey is missing' {
+    Mock Find-AutoHotkey { $null }
+    Set-AutoHotkeyStartup -DotfilesDir 'C:\dots' -WarningAction SilentlyContinue
+    Should -Invoke Write-AutoHotkeyStartup -Times 0 -Exactly
+    Should -Invoke Start-AutoHotkey -Times 0 -Exactly
+  }
+}
+
+Describe 'Test-DotfilesPackageInstalled' {
+  It 'finds a package by command or by path' {
+    $byCommand = [pscustomobject]@{ Command = 'powershell'; Paths = @() }
+    $byPath = [pscustomobject]@{ Command = $null; Paths = @($PSCommandPath) }
+    $missing = [pscustomobject]@{ Command = 'no-such-cmd-xyz'; Paths = @('C:\no\such.exe') }
+    Test-DotfilesPackageInstalled -Package $byCommand | Should -BeTrue
+    Test-DotfilesPackageInstalled -Package $byPath | Should -BeTrue
+    Test-DotfilesPackageInstalled -Package $missing | Should -BeFalse
   }
 }
 

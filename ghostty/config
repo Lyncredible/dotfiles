@@ -1,6 +1,6 @@
 # Shared by every OS. Per-OS settings live next to this file and are loaded after it:
-#   macOS:   ghostty/macos, linked from Application Support by setup.sh
-#   Windows: ghostty/windows, included from %LOCALAPPDATA%\ghostty\config.ghostty by setup.ps1
+#   macOS, Linux: ghostty/unix, via the ~/.config/ghostty/config.ghostty setup.sh writes
+#   Windows:      ghostty/windows, via the %LOCALAPPDATA%\ghostty\config.ghostty setup.ps1 writes
 cursor-click-to-move = true
 cursor-style = block
 shell-integration-features = ssh-terminfo

@@ -1,5 +1,5 @@
 # Windows only. Loaded after ghostty/config from the %LOCALAPPDATA%\ghostty\config.ghostty
-# wrapper that setup.ps1 writes. Cmd shortcuts from ghostty/macos use Alt here.
+# wrapper that setup.ps1 writes. Cmd shortcuts from ghostty/unix use Alt here.
 command = wsl.exe
 window-width = 160
 window-height = 40

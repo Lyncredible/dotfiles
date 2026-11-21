@@ -25,8 +25,9 @@ sh -c "$(curl -sL --proto-redir -all,https https://raw.githubusercontent.com/Lyn
 
 ### Windows PowerShell
 Installs git if needed, clones to `~\.dotfiles`, and runs `setup.ps1`, which points `$PROFILE`
-at `powershell\profile.ps1` and installs oh-my-posh, fzf, PSFzf, PSReadLine, and the Meslo Nerd
-Font. The prompt and colors mirror `.p10k.zsh` and zsh-syntax-highlighting.
+at `powershell\profile.ps1` and Ghostty at the shared config, installs oh-my-posh, fzf, PSFzf,
+PSReadLine, AutoHotkey, and the Meslo Nerd Font, and runs `init.ahk` at logon. The prompt and
+colors mirror `.p10k.zsh` and zsh-syntax-highlighting.
 ```
 irm https://raw.githubusercontent.com/Lyncredible/dotfiles/master/install.ps1 | iex
 ```

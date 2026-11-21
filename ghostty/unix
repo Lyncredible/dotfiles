@@ -1,5 +1,5 @@
-# macOS only. Loaded after ghostty/config; setup.sh links it to
-# ~/Library/Application Support/com.mitchellh.ghostty/config.ghostty.
+# macOS and Linux (Cmd is Super on Linux). Loaded after ghostty/config from the
+# ~/.config/ghostty/config.ghostty wrapper that setup.sh writes.
 font-family = MesloLGM Nerd Font
 font-size = 12
 font-thicken = true

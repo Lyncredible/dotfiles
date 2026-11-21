@@ -87,6 +87,54 @@ function Write-GhosttyWrapper {
   Write-ManagedFile -Path $ConfigPath -Content (Get-GhosttyWrapper -DotfilesDir $DotfilesDir)
 }
 
+function Get-StartupShortcutPath {
+  return (Join-Path ([Environment]::GetFolderPath('Startup')) 'init.ahk.lnk')
+}
+
+# Run init.ahk at logon. Rewrites the shortcut only when it points somewhere else.
+function Write-AutoHotkeyStartup {
+  param(
+    [Parameter(Mandatory)][string]$ShortcutPath,
+    [Parameter(Mandatory)][string]$AutoHotkey,
+    [Parameter(Mandatory)][string]$Script
+  )
+  $shell = New-Object -ComObject WScript.Shell
+  $arguments = "`"$Script`""
+  if (Test-Path -LiteralPath $ShortcutPath) {
+    $existing = $shell.CreateShortcut($ShortcutPath)
+    if ($existing.TargetPath -eq $AutoHotkey -and $existing.Arguments -eq $arguments) { return }
+    Write-Host "Replacing startup shortcut to $($existing.TargetPath) $($existing.Arguments)"
+  }
+  $shortcut = $shell.CreateShortcut($ShortcutPath)
+  $shortcut.TargetPath = $AutoHotkey
+  $shortcut.Arguments = $arguments
+  $shortcut.WorkingDirectory = Split-Path -Parent $Script
+  $shortcut.Description = 'Window management from ~/.dotfiles/init.ahk'
+  $shortcut.Save()
+}
+
+# /restart replaces a running copy of the same script, so changes to init.ahk apply now.
+function Start-AutoHotkey {
+  param(
+    [Parameter(Mandatory)][string]$AutoHotkey,
+    [Parameter(Mandatory)][string]$Script
+  )
+  Start-Process -FilePath $AutoHotkey -ArgumentList @('/restart', "`"$Script`"")
+}
+
+function Set-AutoHotkeyStartup {
+  param([Parameter(Mandatory)][string]$DotfilesDir)
+  $autoHotkey = Find-AutoHotkey
+  if (-not $autoHotkey) {
+    Write-Warning 'AutoHotkey v2 is not installed; skipping init.ahk.'
+    return
+  }
+  $script = Join-Path $DotfilesDir 'init.ahk'
+  Write-AutoHotkeyStartup -ShortcutPath (Get-StartupShortcutPath) `
+    -AutoHotkey $autoHotkey -Script $script
+  Start-AutoHotkey -AutoHotkey $autoHotkey -Script $script
+}
+
 function Write-LocalProfiles {
   foreach ($name in '.pwsh_pre.ps1', '.pwsh_post.ps1') {
     $path = Join-Path $HOME $name
@@ -104,7 +152,7 @@ function Update-SessionPath {
 
 function Install-WingetPackages {
   foreach ($package in $DotfilesWingetPackages) {
-    if (Get-Command $package.Command -ErrorAction SilentlyContinue) { continue }
+    if (Test-DotfilesPackageInstalled -Package $package) { continue }
     Write-Host "Installing $($package.Id)..."
     & winget install --id $package.Id --exact --silent --disable-interactivity `
       --accept-package-agreements --accept-source-agreements
@@ -163,16 +211,18 @@ function Invoke-Setup {
   Write-LocalProfiles
   Write-GhosttyWrapper -ConfigPath (Get-GhosttyConfigPath) -DotfilesDir $DotfilesDir
   # No core.hooksPath here: hooks/pre-push runs `make check`, which needs make and shellspec.
-  if ($SkipInstall) { return }
-
-  Set-ProfileExecutionPolicy
-  if (Get-Command winget -ErrorAction SilentlyContinue) {
-    Install-WingetPackages
-  } else {
-    Write-Warning 'winget is not installed; install oh-my-posh and fzf yourself.'
+  if (-not $SkipInstall) {
+    Set-ProfileExecutionPolicy
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+      Install-WingetPackages
+    } else {
+      Write-Warning 'winget is not installed; install oh-my-posh, fzf, and AutoHotkey yourself.'
+    }
+    Install-Modules
+    Install-NerdFont
   }
-  Install-Modules
-  Install-NerdFont
+  # Also on -SkipInstall, so the daily update restarts AutoHotkey with the new init.ahk.
+  Set-AutoHotkeyStartup -DotfilesDir $DotfilesDir
 }
 
 # Tests dot-source this file to get the functions without running setup.

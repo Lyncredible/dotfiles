@@ -1,11 +1,35 @@
 # Shared PowerShell helpers for profile.ps1, update.ps1, and setup.ps1.
 # Keep PowerShell files ASCII: Windows PowerShell 5.1 reads BOM-less scripts as ANSI.
 
-# Tools the PowerShell profile needs. Command is what setup checks for before installing.
-$DotfilesWingetPackages = @(
-  [pscustomobject]@{ Id = 'JanDeDobbeleer.OhMyPosh'; Command = 'oh-my-posh' }
-  [pscustomobject]@{ Id = 'junegunn.fzf'; Command = 'fzf' }
+# Windows tools. Setup skips a package when its Command is on PATH or one of its Paths exists.
+$AutoHotkeyPaths = @(
+  "$env:ProgramFiles\AutoHotkey\v2\AutoHotkey.exe",
+  "$env:LOCALAPPDATA\Programs\AutoHotkey\v2\AutoHotkey.exe"
 )
+$DotfilesWingetPackages = @(
+  [pscustomobject]@{ Id = 'JanDeDobbeleer.OhMyPosh'; Command = 'oh-my-posh'; Paths = @() }
+  [pscustomobject]@{ Id = 'junegunn.fzf'; Command = 'fzf'; Paths = @() }
+  # init.ahk: window management, mirroring .hammerspoon on macOS.
+  [pscustomobject]@{ Id = 'AutoHotkey.AutoHotkey'; Command = $null; Paths = $AutoHotkeyPaths }
+)
+
+function Test-DotfilesPackageInstalled {
+  param([Parameter(Mandatory)]$Package)
+  if ($Package.Command -and (Get-Command $Package.Command -ErrorAction SilentlyContinue)) {
+    return $true
+  }
+  foreach ($path in $Package.Paths) {
+    if (Test-Path -LiteralPath $path) { return $true }
+  }
+  return $false
+}
+
+function Find-AutoHotkey {
+  foreach ($path in $AutoHotkeyPaths) {
+    if (Test-Path -LiteralPath $path) { return $path }
+  }
+  return $null
+}
 $DotfilesModules = @(
   # Windows PowerShell 5.1 ships PSReadLine 2.0, which has no -PredictionSource.
   [pscustomobject]@{ Name = 'PSReadLine'; MinimumVersion = [version]'2.1.0' }
