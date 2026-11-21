@@ -113,6 +113,9 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 - Unit tests use [shellspec](https://shellspec.info/) under `spec/`.
 - Integration tests in `spec/integration_*.sh` are stub-driven.
 - `make check` runs lint + test + integration in one command.
+- GitHub Actions (`.github/workflows/ci.yml`) runs lint on Ubuntu, `make test` and
+  `make test-integration` on Ubuntu and macOS, and the Pester tests on Windows under both
+  Windows PowerShell 5.1 and PowerShell 7.
 - `make lint`: ShellCheck, line-length (100 chars), CRLF, exec-bit.
 - Pass `FILES=` to target specific files.
 

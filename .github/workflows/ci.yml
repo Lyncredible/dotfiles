@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SHELLSPEC_VERSION: 0.28.1
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - run: make lint
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y zsh jq
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: command -v jq >/dev/null || brew install jq
+      - name: Install shellspec
+        run: |
+          git clone --depth 1 --branch "$SHELLSPEC_VERSION" \
+            https://github.com/shellspec/shellspec.git "$HOME/.local/lib/shellspec"
+          mkdir -p "$HOME/.local/bin"
+          ln -s "$HOME/.local/lib/shellspec/shellspec" "$HOME/.local/bin/shellspec"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: make test
+      - run: make test-integration
+
+  powershell:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The profile targets Windows PowerShell 5.1; PowerShell 7 should work too.
+        shell: [powershell, pwsh]
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Pester 5
+        run: |
+          [Net.ServicePointManager]::SecurityProtocol =
+            [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+          if (-not (Get-Module -ListAvailable Pester | Where-Object Version -ge 5.0)) {
+            Install-Module Pester -MinimumVersion 5.0 -Scope CurrentUser -Force -SkipPublisherCheck
+          }
+      - name: Run Pester
+        run: |
+          Import-Module Pester -MinimumVersion 5.0
+          $config = New-PesterConfiguration
+          $config.Run.Path = 'spec/powershell'
+          $config.Run.Exit = $true
+          $config.Output.Verbosity = 'Detailed'
+          Invoke-Pester -Configuration $config
