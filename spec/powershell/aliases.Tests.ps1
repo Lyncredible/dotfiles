@@ -11,7 +11,8 @@ Describe 'alias parity with .aliases' {
       Where-Object { $_ -match '^alias ([^=]+)=' } |
       ForEach-Object { $Matches[1] }
     $names | Should -Not -BeNullOrEmpty
-    $ported = @($names | Where-Object { $DotfilesZshOnlyAliases -notcontains $_ })
+    $ported = @($names | Where-Object { $DotfilesZshOnlyAliases -notcontains $_ }) +
+      $DotfilesGitAliases
     # Resolve the names the way the profile loads them: dot-sourced at global scope in a
     # fresh shell. A built-in alias with the same name would hide the function, and
     # Pester's own scope cannot remove AllScope aliases.
@@ -24,8 +25,80 @@ Describe 'alias parity with .aliases' {
     $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command))
     $resolved = & $shell -NoProfile -NonInteractive -EncodedCommand $encoded
     foreach ($name in $ported) {
-      $resolved | Should -Contain "$name=Function" -Because "'$name' is in .aliases"
+      $resolved | Should -Contain "$name=Function" -Because "'$name' should run our function"
     }
+  }
+}
+
+Describe 'Get-GitMainBranch' {
+  BeforeAll {
+    function New-TestRepo([string]$Name, [string]$Branch) {
+      $dir = Join-Path $TestDrive $Name
+      & git init -q -b $Branch $dir
+      & git -C $dir -c user.name=t -c user.email=t@t commit -q --allow-empty -m one
+      return $dir
+    }
+  }
+
+  It 'prefers main over master, like the oh-my-zsh helper' {
+    $dir = New-TestRepo 'main-and-master' 'master'
+    & git -C $dir branch main
+    Push-Location $dir
+    try { Get-GitMainBranch | Should -Be 'main' } finally { Pop-Location }
+  }
+
+  It 'finds master' {
+    $dir = New-TestRepo 'master-only' 'master'
+    Push-Location $dir
+    try { Get-GitMainBranch | Should -Be 'master' } finally { Pop-Location }
+  }
+
+  It "falls back to the remote's HEAD branch" {
+    $origin = New-TestRepo 'origin-develop' 'develop'
+    $clone = Join-Path $TestDrive 'clone-develop'
+    & git clone -q $origin $clone 2> $null
+    Push-Location $clone
+    try { Get-GitMainBranch | Should -Be 'develop' } finally { Pop-Location }
+  }
+
+  It 'returns nothing outside a repository' {
+    $dir = Join-Path $TestDrive 'not-a-repo'
+    $null = New-Item -ItemType Directory -Force -Path $dir
+    $env:GIT_CEILING_DIRECTORIES = $TestDrive
+    Push-Location $dir
+    try {
+      Get-GitMainBranch | Should -BeNullOrEmpty
+    } finally {
+      Pop-Location
+      $env:GIT_CEILING_DIRECTORIES = $null
+    }
+  }
+}
+
+Describe 'git plugin aliases' {
+  It 'gcm checks out the main branch' {
+    $dir = Join-Path $TestDrive 'gcm'
+    & git init -q -b main $dir
+    Push-Location $dir
+    try {
+      & git -c user.name=t -c user.email=t@t commit -q --allow-empty -m one
+      & git checkout -q -b feature
+      # Call the function itself: inside Pester's scope gcm is still Get-Command.
+      & $function:gcm *> $null
+      & git branch --show-current | Should -Be 'main'
+    } finally { Pop-Location }
+  }
+
+  It 'passes arguments through' {
+    $dir = Join-Path $TestDrive 'gco'
+    & git init -q -b main $dir
+    Push-Location $dir
+    try {
+      & git -c user.name=t -c user.email=t@t commit -q --allow-empty -m one
+      gco -q -b topic
+      & git branch --show-current | Should -Be 'topic'
+      (gst --short --branch) | Should -BeLike '## topic*'
+    } finally { Pop-Location }
   }
 }
 

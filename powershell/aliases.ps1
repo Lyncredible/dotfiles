@@ -39,9 +39,40 @@ function gbdm {
   }
 }
 
+# The oh-my-zsh git plugin aliases that main.zshrc loads through antigen, limited to the ones
+# in use. Same definitions as plugins/git/git.plugin.zsh.
+$DotfilesGitAliases = @('gst', 'gl', 'gco', 'gcm', 'glg')
+
+function gst { & git status @args }
+function gl { & git pull @args }
+function gco { & git checkout @args }
+function gcm { & git checkout (Get-GitMainBranch) @args }
+function glg { & git log --stat @args }
+
+# Port of git_main_branch from the oh-my-zsh git plugin: the first of these local or remote
+# branches that exists, then the remote's HEAD, then master.
+function Get-GitMainBranch {
+  & git rev-parse --git-dir *> $null
+  if ($LASTEXITCODE -ne 0) { return }
+  $names = 'main', 'trunk', 'mainline', 'default', 'stable', 'master'
+  foreach ($prefix in 'refs/heads', 'refs/remotes/origin', 'refs/remotes/upstream') {
+    foreach ($name in $names) {
+      & git show-ref -q --verify "$prefix/$name"
+      if ($LASTEXITCODE -eq 0) { return $name }
+    }
+  }
+  foreach ($remote in 'origin', 'upstream') {
+    $ref = & git rev-parse --abbrev-ref "$remote/HEAD" 2> $null
+    if ($LASTEXITCODE -eq 0 -and "$ref" -like "$remote/*") {
+      return "$ref".Substring($remote.Length + 1)
+    }
+  }
+  return 'master'
+}
+
 # PowerShell resolves aliases before functions, so a built-in alias with the same name would
-# hide a function above (e.g. gc is Get-Content). Drop any such alias.
-foreach ($name in 'venv', 'act', 'dact', 'grpo', 'gbdm') {
+# hide a function above: gl is Get-Location and gcm is Get-Command. Drop any such alias.
+foreach ($name in @('venv', 'act', 'dact', 'grpo', 'gbdm') + $DotfilesGitAliases) {
   if (Test-Path -LiteralPath "Alias:$name") {
     Remove-Item -LiteralPath "Alias:$name" -Force
   }

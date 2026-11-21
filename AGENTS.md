@@ -66,6 +66,9 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
   arguments). Add new aliases to both, or list zsh-only ones in `$DotfilesZshOnlyAliases`;
   `spec/powershell/aliases.Tests.ps1` fails otherwise. It removes built-in aliases that would
   hide a function; check new names with `Get-Alias <name>`.
+- It also ports the oh-my-zsh git plugin aliases in actual use (`$DotfilesGitAliases`: gst,
+  gl, gco, gcm, glg), with `Get-GitMainBranch` standing in for `git_main_branch`. On Windows
+  they replace the built-in `gl` (Get-Location) and `gcm` (Get-Command) aliases.
 - Auto-update: the profile starts `powershell/update.ps1` in a hidden process when
   `~/.dotfiles-update-pwsh` is a day old. It takes a lock on `~/.dotfiles-update-pwsh.lock`
   (never delete it), fetches and rebases onto origin/master, reruns `setup.ps1 -SkipInstall`
