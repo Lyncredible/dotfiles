@@ -52,6 +52,9 @@ function glg { & git log --stat @args }
 # Port of git_main_branch from the oh-my-zsh git plugin: the first of these local or remote
 # branches that exists, then the remote's HEAD, then master.
 function Get-GitMainBranch {
+  # Windows PowerShell 5.1 turns redirected native stderr into errors, which abort under
+  # $ErrorActionPreference = 'Stop'. Exit codes carry the answers here.
+  $ErrorActionPreference = 'Continue'
   & git rev-parse --git-dir *> $null
   if ($LASTEXITCODE -ne 0) { return }
   $names = 'main', 'trunk', 'mainline', 'default', 'stable', 'master'

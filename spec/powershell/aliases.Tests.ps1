@@ -84,6 +84,8 @@ Describe 'git plugin aliases' {
       & git -c user.name=t -c user.email=t@t commit -q --allow-empty -m one
       & git checkout -q -b feature
       # Call the function itself: inside Pester's scope gcm is still Get-Command.
+      # 5.1 turns git's redirected stderr into errors, which abort under CI's 'Stop'.
+      $ErrorActionPreference = 'Continue'
       & $function:gcm *> $null
       & git branch --show-current | Should -Be 'main'
     } finally { Pop-Location }
