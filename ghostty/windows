@@ -1,8 +1,6 @@
 # Windows only. Loaded after ghostty/config from the %LOCALAPPDATA%\ghostty\config.ghostty
 # wrapper that setup.ps1 writes.
 command = wsl.exe
-window-width = 160
-window-height = 40
 window-save-state = always
 
 # Same shortcuts as Linux. Relative to this file.
