@@ -126,8 +126,12 @@ function Read-DotfilesUpdateTimestamp {
 }
 
 function Write-DotfilesUpdateTimestamp {
-  param([Parameter(Mandatory)][string]$Path)
-  [IO.File]::WriteAllText($Path, "$(Get-DotfilesEpochNow)`n")
+  param(
+    [Parameter(Mandatory)][string]$Path,
+    # Seconds to date the timestamp back by.
+    [long]$Age = 0
+  )
+  [IO.File]::WriteAllText($Path, "$((Get-DotfilesEpochNow) - $Age)`n")
 }
 
 function Test-DotfilesUpToDate {
@@ -183,6 +187,8 @@ function Update-DotfilesRepo {
   }
   & git -C $DotfilesDir rebase --quiet origin/master
   if ($LASTEXITCODE -ne 0) {
+    # Don't leave the repo mid-rebase after a conflict.
+    & git -C $DotfilesDir rebase --abort *> $null
     Write-Warning 'Failed to rebase dotfiles repo.'
     return $false
   }
@@ -220,7 +226,11 @@ function Invoke-DotfilesUpdate {
     if (Test-DotfilesUpToDate -TimestampFile $TimestampFile) { return }
 
     $before = Get-DotfilesHead -DotfilesDir $DotfilesDir
-    if (-not (Update-DotfilesRepo -DotfilesDir $DotfilesDir)) { return }
+    if (-not (Update-DotfilesRepo -DotfilesDir $DotfilesDir)) {
+      # Retry in an hour, as maybe_update_dotfiles does, not from every new shell.
+      Write-DotfilesUpdateTimestamp -Path $TimestampFile -Age (23 * 3600)
+      return
+    }
     $after = Get-DotfilesHead -DotfilesDir $DotfilesDir
     Write-DotfilesUpdateTimestamp -Path $TimestampFile
 

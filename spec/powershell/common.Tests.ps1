@@ -216,10 +216,13 @@ Describe 'Update-DotfilesRepo' {
     Should -Invoke git -Times 0 -Exactly -ParameterFilter { $args -contains 'rebase' }
   }
 
-  It 'reports a failed rebase' {
+  It 'reports a failed rebase and aborts it' {
     Mock git { $global:LASTEXITCODE = if ($args -contains 'rebase') { 1 } else { 0 } }
     Update-DotfilesRepo -DotfilesDir $TestDrive -WarningAction SilentlyContinue |
       Should -BeFalse
+    Should -Invoke git -Times 1 -Exactly -ParameterFilter {
+      $args -contains 'rebase' -and $args -contains '--abort'
+    }
   }
 }
 
@@ -252,11 +255,13 @@ Describe 'Invoke-DotfilesUpdate' {
     Should -Invoke Update-DotfilesTools -Times 1 -Exactly
   }
 
-  It 'leaves the timestamp alone when the repo update fails' {
+  It 'retries in an hour when the repo update fails' {
     Mock Update-DotfilesRepo { $false }
     Mock Get-DotfilesHead { 'aaa' }
     Invoke-DotfilesUpdate -DotfilesDir $dir -TimestampFile $stamp -LockFile $lock
-    Test-Path $stamp | Should -BeFalse
+    $now = Get-DotfilesEpochNow
+    Test-DotfilesUpToDate -TimestampFile $stamp -Now $now | Should -BeTrue
+    Test-DotfilesUpToDate -TimestampFile $stamp -Now ($now + 3601) | Should -BeFalse
     Should -Invoke Update-DotfilesTools -Times 0 -Exactly
   }
 

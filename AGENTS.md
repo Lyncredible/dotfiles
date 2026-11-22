@@ -81,7 +81,8 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 - Auto-update: the profile starts `powershell/update.ps1` in a hidden process when
   `~/.dotfiles-update-pwsh` is a day old. It takes a lock on `~/.dotfiles-update-pwsh.lock`
   (never delete it), fetches and rebases onto origin/master, reruns `setup.ps1 -SkipInstall`
-  if HEAD moved, then upgrades the winget packages and modules. Set `DOTFILES_SKIP_UPDATE=1`
+  if HEAD moved, then upgrades the winget packages and modules. Like zsh, a failed rebase is
+  aborted and a failed update retried an hour later. Set `DOTFILES_SKIP_UPDATE=1`
   to turn it off. Output goes to `~/.dotfiles-update-pwsh.log`.
 - Ghostty has no per-OS config conditionals. `ghostty/config` is shared; `ghostty/macos`,
   `ghostty/linux`, and `ghostty/windows` hold per-OS settings. Shortcuts use Cmd in `macos`
