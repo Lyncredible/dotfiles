@@ -34,7 +34,7 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 ## Auto-update behavior
 
 - `maybe_update_dotfiles()` in `.zshrc` runs every 24 hours
-  (tracked via `~/.dotfiles_last_update`).
+  (tracked via `~/.dotfiles-update`).
 - Runs `git fetch && git rebase origin/master`.
 - On success, triggers `antigen selfupdate && antigen update`.
 - On failure it warns, aborts a failed rebase, and retries an hour later.

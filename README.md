@@ -7,7 +7,7 @@ Multi-platform development environment configuration for macOS, Linux, WSL, and 
 - **Window Management**: Hammerspoon (macOS) and AutoHotkey (Windows) with unified keybindings
 - **Terminal Emulators**: Ghostty and iTerm2 configurations
 - **Keyboard Remapping**: Karabiner-Elements for RDP/remote desktop workflows
-- **Development Tools**: Git, Vim, Tmux configs with NVM, rbenv, Go, Python support
+- **Development Tools**: Git, Vim, Tmux configs with nodenv, rbenv, Go, and uv support
 - **AI Integration**: Claude Code configuration with custom instructions and settings
 - **Agent Skills**: Repo-managed skills installed to `~/.agents/skills`
 - **Auto-Update**: Automatic dotfiles and plugin updates every 24 hours
