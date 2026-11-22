@@ -52,7 +52,8 @@ configure_antigen() {
 }
 
 is_wsl() {
-  [[ -e "$PROC_VERSION_FILE" ]] && "$GREP_BIN" -q Microsoft "$PROC_VERSION_FILE"
+  # WSL1 writes "Microsoft", WSL2 "microsoft".
+  [[ -r "$PROC_VERSION_FILE" && "$(<"$PROC_VERSION_FILE")" == *[Mm]icrosoft* ]]
 }
 
 selected_editor() {

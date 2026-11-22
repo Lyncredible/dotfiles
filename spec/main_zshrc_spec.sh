@@ -178,6 +178,15 @@ FILE
     The output should equal 'wslsubl -n -w'
   End
 
+  It 'detects WSL2, whose kernel version is lowercase'
+    cat > "$PROC_VERSION_FILE" <<'FILE'
+Linux version 6.6.0-microsoft-standard-WSL2
+FILE
+    When run run_main_eval 'print -r -- "$EDITOR"'
+    The status should be success
+    The output should equal 'wslsubl -n -w'
+  End
+
   It 'sets EDITOR to subl by default'
     When run run_main_eval 'print -r -- "$EDITOR"'
     The status should be success
