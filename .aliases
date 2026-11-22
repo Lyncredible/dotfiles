@@ -4,4 +4,6 @@ alias act='source .venv/bin/activate'
 alias dact='deactivate'
 alias aup='antigen selfupdate && antigen update && chmod -R g-w ~/.antigen'
 alias grpo='git remote prune origin'
-alias gbdm='git branch --merged | egrep -v "(^\*|master|dev)" | xargs git branch -d'
+# Delete merged branches, except the current one, ones checked out in worktrees, and
+# master, main, and dev.
+alias gbdm="git branch --merged | grep -vE '^[*+]|^ *(master|main|dev)\$' | xargs -r git branch -d"

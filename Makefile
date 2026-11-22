@@ -9,6 +9,7 @@ SHELLCHECK_FILES = \
 	.local/bin/whereami-color \
 	.local/bin/tmux-set-colors \
 	.local/bin/tmux-sysstat \
+	spec/aliases_spec.sh \
 	spec/common_spec.sh \
 	spec/install_spec.sh \
 	spec/main_zshrc_spec.sh \

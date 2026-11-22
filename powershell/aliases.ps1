@@ -28,10 +28,10 @@ function dact { deactivate }
 function grpo { & git remote prune origin @args }
 
 # Delete local branches already merged into the current one, except the current branch,
-# master, and dev.
+# ones checked out in other worktrees, and master, main, and dev.
 function gbdm {
   $branches = @(& git branch --merged |
-    Where-Object { $_ -notmatch '(^\*|master|dev)' } |
+    Where-Object { $_ -notmatch '^[*+]|^\s*(master|main|dev)$' } |
     ForEach-Object { $_.Trim() })
   if ($branches.Count -gt 0) {
     & git branch -d @branches

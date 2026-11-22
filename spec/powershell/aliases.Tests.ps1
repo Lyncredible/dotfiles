@@ -123,20 +123,21 @@ Describe 'act' {
 }
 
 Describe 'gbdm' {
-  It 'deletes merged branches but keeps the current branch, master, and dev' {
+  It 'deletes merged branches but keeps the current branch, master, main, and dev' {
     $dir = Join-Path $TestDrive 'gbdm'
     & git init -q -b master $dir
     Push-Location $dir
     try {
       & git -c user.name=t -c user.email=t@t commit -q --allow-empty -m one
-      foreach ($branch in 'merged-a', 'merged-b', 'dev', 'develop-x') { & git branch $branch }
+      foreach ($branch in 'merged-a', 'merged-b', 'main', 'dev', 'develop-x') {
+        & git branch $branch
+      }
       & git checkout -q -b unmerged
       & git -c user.name=t -c user.email=t@t commit -q --allow-empty -m two
       & git checkout -q master
       gbdm *> $null
       $left = @(& git branch --format='%(refname:short)') | Sort-Object
-      # develop-x matches "dev", which the zsh alias also keeps.
-      $left | Should -Be @('dev', 'develop-x', 'master', 'unmerged')
+      $left | Should -Be @('dev', 'main', 'master', 'unmerged')
     } finally { Pop-Location }
   }
 
