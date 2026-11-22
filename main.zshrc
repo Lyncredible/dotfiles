@@ -4,6 +4,7 @@ GIT_BIN="${GIT_BIN:-git}"
 PROC_VERSION_FILE="${PROC_VERSION_FILE:-/proc/version}"
 UV_BIN="${UV_BIN:-uv}"
 FZF_BIN="${FZF_BIN:-fzf}"
+GO_BIN="${GO_BIN:-go}"
 FZF_APT_KEY_BINDINGS="${FZF_APT_KEY_BINDINGS:-/usr/share/doc/fzf/examples/key-bindings.zsh}"
 
 configure_antigen() {
@@ -90,7 +91,8 @@ setup_node() {
 }
 
 setup_go() {
-  export GOPATH=~/go
+  command_exists "$GO_BIN" || return 0
+  export GOPATH="${GOPATH:-$HOME/go}"
   export PATH="$PATH:$GOPATH/bin"
 }
 

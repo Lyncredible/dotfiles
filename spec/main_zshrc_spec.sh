@@ -238,7 +238,11 @@ FILE
     The output should equal 'unset'
   End
 
-  It 'sets GOPATH and appends GOPATH/bin to PATH'
+  It 'sets GOPATH and appends GOPATH/bin to PATH when go is installed'
+    unset GOPATH
+    make_stub go <<'STUB'
+#!/bin/sh
+STUB
     When run run_main_eval '
       print -r -- "$GOPATH"
       print -r -- "${path[-1]}"
@@ -247,6 +251,24 @@ FILE
     The output should equal "$(printf '%s\n' \
       "$TEST_HOME/go" \
       "$TEST_HOME/go/bin")"
+  End
+
+  It 'keeps a GOPATH that is already set'
+    make_stub go <<'STUB'
+#!/bin/sh
+STUB
+    export GOPATH="$TEST_HOME/custom-go"
+    When run run_main_eval 'print -r -- "$GOPATH"'
+    The status should be success
+    The output should equal "$TEST_HOME/custom-go"
+  End
+
+  It 'leaves GOPATH unset without go'
+    unset GOPATH
+    export GO_BIN="$TEST_BIN/no-go"
+    When run run_main_eval 'print -r -- "${GOPATH:-unset}"'
+    The status should be success
+    The output should equal 'unset'
   End
 
   It 'runs rbenv init only when ~/.rbenv exists'
