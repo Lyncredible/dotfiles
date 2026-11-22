@@ -54,6 +54,8 @@ cat > "$TEST_HOME/.zshrc" <<'EOF'
 export HOME="$ZDOTDIR"
 export PATH="$HOME/bin:/bin:/usr/bin"
 export FZF_APT_KEY_BINDINGS="$HOME/no-fzf/key-bindings.zsh"
+# Not WSL, even when the host is, so EDITOR is the plain default.
+export PROC_VERSION_FILE="$HOME/no-proc-version"
 source "$HOME/.dotfiles/common.sh"
 source "$HOME/.dotfiles/main.zshrc"
 print -r -- "EDITOR=$EDITOR"
