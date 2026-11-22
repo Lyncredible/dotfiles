@@ -140,8 +140,9 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 ## Agent Skills
 
 - Skills live in `.agents/skills/` and are installed to `~/.agents/skills`.
-  `~/.claude/skills` links there on Unix. On Windows, `setup.ps1` links each skill inside
-  `~/.claude/skills`, which also holds the skills Claude Code syncs from claude.ai.
+  `~/.claude/skills` links there on Unix. On Windows, `setup.ps1` junctions each skill into
+  `~/.agents/skills` and into `~/.claude/skills`, which also holds the skills Claude Code syncs
+  from claude.ai.
 - `add-lync-skill`: Add or update a skill in this repo from any working
   directory, then commit and push the intended changes.
 

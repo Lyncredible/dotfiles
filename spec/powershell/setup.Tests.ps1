@@ -377,6 +377,25 @@ Describe 'Set-ClaudeConfig' {
   }
 }
 
+Describe 'Set-AgentSkills' {
+  BeforeEach {
+    $script:root = Join-Path $TestDrive ([guid]::NewGuid())
+    $script:dots = Join-Path $root 'dot files'
+    $script:agents = Join-Path $root '.agents'
+    $null = New-Item -ItemType Directory -Force -Path (Join-Path $dots '.agents\skills\one'),
+      (Join-Path $agents 'skills\other-tool')
+  }
+
+  It 'junctions each repo skill into ~/.agents/skills and keeps other skills' {
+    Set-AgentSkills -DotfilesDir $dots -AgentsDir $agents
+    $link = Get-Item (Join-Path $agents 'skills\one')
+    $link.LinkType | Should -Be 'Junction'
+    $link.Target | Should -Be (Join-Path $dots '.agents\skills\one')
+    Test-Path (Join-Path $agents 'skills\other-tool') | Should -BeTrue
+    { Set-AgentSkills -DotfilesDir $dots -AgentsDir $agents } | Should -Not -Throw
+  }
+}
+
 Describe 'repo .gitconfig' {
   It 'loads in Git for Windows, which setup.sh includes it into' {
     $gitconfig = (Resolve-Path (Join-Path $PSScriptRoot '..\..\.gitconfig')).Path

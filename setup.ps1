@@ -235,6 +235,30 @@ function Merge-ClaudeSettings {
   [IO.File]::WriteAllText($Applied, $distText, $utf8)
 }
 
+# Junction each of the repo's skills into $SkillsDir, keeping whatever else is there.
+function Set-SkillLinks {
+  param(
+    [Parameter(Mandatory)][string]$DotfilesDir,
+    [Parameter(Mandatory)][string]$SkillsDir
+  )
+  $null = New-Item -ItemType Directory -Force -Path $SkillsDir
+  $repoSkills = Join-Path $DotfilesDir '.agents\skills'
+  $skills = Get-ChildItem -LiteralPath $repoSkills -Directory -ErrorAction SilentlyContinue
+  foreach ($skill in $skills) {
+    Set-DirectoryLink -Link (Join-Path $SkillsDir $skill.Name) -Target $skill.FullName
+  }
+}
+
+# ~/.agents/skills is where agents other than Claude Code look, as ensure_agent_skills in
+# setup.sh sets up. Unlike there, ~/.claude/skills is not linked to it (see Set-ClaudeConfig).
+function Set-AgentSkills {
+  param(
+    [Parameter(Mandatory)][string]$DotfilesDir,
+    [string]$AgentsDir = (Join-Path $HOME '.agents')
+  )
+  Set-SkillLinks -DotfilesDir $DotfilesDir -SkillsDir (Join-Path $AgentsDir 'skills')
+}
+
 function Set-ClaudeConfig {
   param(
     [Parameter(Mandatory)][string]$DotfilesDir,
@@ -247,13 +271,7 @@ function Set-ClaudeConfig {
       -Target (Join-Path $DotfilesDir "claude\$name")
   }
   # One junction per skill: skills\ also holds the ones Claude Code syncs from claude.ai.
-  $skillsDir = Join-Path $ClaudeDir 'skills'
-  $null = New-Item -ItemType Directory -Force -Path $skillsDir
-  $repoSkills = Join-Path $DotfilesDir '.agents\skills'
-  $skills = Get-ChildItem -LiteralPath $repoSkills -Directory -ErrorAction SilentlyContinue
-  foreach ($skill in $skills) {
-    Set-DirectoryLink -Link (Join-Path $skillsDir $skill.Name) -Target $skill.FullName
-  }
+  Set-SkillLinks -DotfilesDir $DotfilesDir -SkillsDir (Join-Path $ClaudeDir 'skills')
   Merge-ClaudeSettings -Dist (Join-Path $DotfilesDir 'claude\settings.json') `
     -Settings (Join-Path $ClaudeDir 'settings.json') `
     -Applied (Join-Path $ClaudeDir '.dotfiles-settings.json')
@@ -390,6 +408,7 @@ function Invoke-Setup {
   Write-VimrcWrappers -DotfilesDir $DotfilesDir
   Set-GitInclude -DotfilesDir $DotfilesDir
   Set-ClaudeConfig -DotfilesDir $DotfilesDir
+  Set-AgentSkills -DotfilesDir $DotfilesDir
   # No core.hooksPath here: hooks/pre-push runs `make check`, which needs make and shellspec.
   if (-not $SkipInstall) {
     Set-ProfileExecutionPolicy
