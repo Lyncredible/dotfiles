@@ -8,3 +8,5 @@
 /.claude/
 # Karabiner-Elements writes these into ~/.config/karabiner, which links here.
 /karabiner/automatic_backups/
+# Written by Invoke-Pester -CI.
+testResults.xml
