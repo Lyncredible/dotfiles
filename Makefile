@@ -1,26 +1,13 @@
-.PHONY: test-powershell
 .PHONY: test test-integration lint lint-shell lint-lines test-deps test-integration-deps check
+.PHONY: test-powershell
 
+# Every spec is checked, so a new one can't be missed.
 SHELLCHECK_FILES = \
 	common.sh \
 	install.sh \
 	setup.sh \
-	.local/bin/whereami \
-	.local/bin/whereami-color \
-	.local/bin/tmux-set-colors \
-	.local/bin/tmux-sysstat \
-	spec/aliases_spec.sh \
-	spec/common_spec.sh \
-	spec/install_spec.sh \
-	spec/main_zshrc_spec.sh \
-	spec/setup_spec.sh \
-	spec/spec_helper.sh \
-	spec/whereami_spec.sh \
-	spec/whereami_color_spec.sh \
-	spec/tmux_sysstat_spec.sh \
-	spec/zshrc_update_spec.sh \
-	spec/integration_zsh_startup.sh \
-	spec/integration_antigen_lock.sh
+	$(wildcard .local/bin/*) \
+	$(wildcard spec/*.sh)
 
 SCRIPT_FILES := $(sort $(patsubst ./%,%,$(shell \
 	{ find . -type f \( \
