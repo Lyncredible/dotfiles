@@ -5,7 +5,7 @@ Multi-platform development environment configuration for macOS, Linux, WSL, and 
 - **Shell**: Zsh with [antigen](https://github.com/zsh-users/antigen) and [Powerlevel10k](https://github.com/romkatv/powerlevel10k) theme
 - **Plugins**: Auto-suggestions, syntax highlighting, completions, git integration
 - **Window Management**: Hammerspoon (macOS) and AutoHotkey (Windows) with unified keybindings
-- **Terminal Emulators**: Ghostty, iTerm2, Terminal.app configurations
+- **Terminal Emulators**: Ghostty and iTerm2 configurations
 - **Keyboard Remapping**: Karabiner-Elements for RDP/remote desktop workflows
 - **Development Tools**: Git, Vim, Tmux configs with NVM, rbenv, Go, Python support
 - **AI Integration**: Claude Code configuration with custom instructions and settings
