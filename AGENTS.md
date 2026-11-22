@@ -90,6 +90,8 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
   (picking `macos` or `linux` from `uname -s`) and `setup.ps1` writes
   `%LOCALAPPDATA%\ghostty\config.ghostty`. Each includes `config`, the OS file, then an
   optional machine-local `config.local`. Change shortcuts in both `macos` and `keys-alt`.
+- `~/.vimrc` (Git for Windows' Vim) and `~/_vimrc` (native Vim) are generated files that source
+  the repo `.vimrc`, then `~/.vimrc_local`; links would need admin or Developer Mode.
 - AutoHotkey (`init.ahk`) is installed with winget and run at logon from a Startup-folder
   shortcut, `init.ahk.lnk`. `setup.ps1`, including the daily `-SkipInstall` rerun, restarts
   it with `/restart` so edits to `init.ahk` take effect.

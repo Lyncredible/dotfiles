@@ -133,6 +133,33 @@ Describe 'Write-GhosttyWrapper' {
   }
 }
 
+Describe 'Write-VimrcWrappers' {
+  BeforeEach {
+    $script:home_ = Join-Path $TestDrive ([guid]::NewGuid())
+    $null = New-Item -ItemType Directory -Path $home_
+  }
+
+  It 'sources the repo .vimrc from ~/.vimrc and ~/_vimrc, with LF line endings' {
+    $dots = Join-Path $TestDrive "it's here"
+    Write-VimrcWrappers -DotfilesDir $dots -HomeDir $home_
+    $vimrc = "$($dots.Replace('\', '/').Replace("'", "''"))/.vimrc"
+    foreach ($name in '.vimrc', '_vimrc') {
+      $text = [IO.File]::ReadAllText((Join-Path $home_ $name))
+      $text | Should -BeLike "$VimrcHeader*"
+      $text | Should -BeLike "*execute 'source' fnameescape('$vimrc')*"
+      $text | Should -Not -Match "`r"
+    }
+  }
+
+  It 'backs up a hand-written vimrc and leaves a current one alone' {
+    Set-Content -LiteralPath (Join-Path $home_ '_vimrc') -Value 'set nu'
+    Write-VimrcWrappers -DotfilesDir $TestDrive -HomeDir $home_
+    Get-Content (Join-Path $home_ '_vimrc.bak') | Should -Be 'set nu'
+    Write-VimrcWrappers -DotfilesDir $TestDrive -HomeDir $home_
+    Test-Path (Join-Path $home_ '.vimrc.bak') | Should -BeFalse
+  }
+}
+
 Describe 'Write-AutoHotkeyStartup' {
   BeforeAll {
     $script:shell = New-Object -ComObject WScript.Shell
