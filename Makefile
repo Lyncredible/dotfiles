@@ -15,8 +15,7 @@ SCRIPT_FILES := $(sort $(patsubst ./%,%,$(shell \
 		-name "*.zsh" -o \
 		-name ".zshrc" -o \
 		-name "main.zshrc" \
-	\) ! -name ".p10k.zsh" -print; \
-	find bin -type f -print 2>/dev/null; } \
+	\) ! -name ".p10k.zsh" -print; } \
 	| git check-ignore --stdin --non-matching -v 2>/dev/null \
 	| awk -F '\t' '$$1 ~ /^::/ { print $$2 }' \
 )))

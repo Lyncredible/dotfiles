@@ -212,13 +212,11 @@ FILE
       print -r -- "${path[3]}"
       print -r -- "${path[4]}"
       print -r -- "${path[5]}"
-      print -r -- "${path[6]}"
       print -r -- "${(j:\n:)path}"
     '
     The status should be success
     The output should include "$(printf '%s\n' \
       "$TEST_HOME/bin" \
-      "$TEST_HOME/.dotfiles/bin" \
       "$TEST_HOME/.local/bin" \
       '/usr/local/bin' \
       '/usr/local/sbin' \

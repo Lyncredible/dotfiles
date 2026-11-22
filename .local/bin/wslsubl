@@ -1,10 +1,12 @@
 #!/bin/zsh
+# shellcheck shell=bash
+# Open files in Windows Sublime Text from WSL. EDITOR uses it there; see main.zshrc.
 
 # extract last argument (the file path)
 for last; do true; done
 
 # get all the initial command arguments
-all=( "${@:1:$(($# - 1))}" "$(wslpath -w $last)" )
+all=( "${@:1:$(($# - 1))}" "$(wslpath -w "$last")" )
 
 # launch with windows path
 subl.exe "${all[@]}"

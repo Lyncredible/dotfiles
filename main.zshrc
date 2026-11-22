@@ -74,7 +74,6 @@ configure_editor() {
 setup_path() {
   path=(
     "$HOME/bin"
-    "$HOME/.dotfiles/bin"
     "$HOME/.local/bin"
     "/usr/local/bin"
     "/usr/local/sbin"
