@@ -87,7 +87,7 @@ Describe 'setup.sh'
     Assert symlink_to "$TEST_HOME/.p10k.zsh" "$TEST_DOTFILES_DIR/.p10k.zsh"
     Assert symlink_to "$TEST_HOME/.vimrc" "$TEST_DOTFILES_DIR/.vimrc"
     Assert symlink_to "$TEST_HOME/.tmux.conf" "$TEST_DOTFILES_DIR/.tmux.conf"
-    Assert symlink_to "$TEST_HOME/.hammerspoon" "$TEST_DOTFILES_DIR/.hammerspoon"
+    The path "$TEST_HOME/.hammerspoon" should not be exist
     The path "$TEST_HOME/.claude" should not be symlink
     The directory "$TEST_HOME/.claude" should be exist
     The line 2 of contents of file "$TEST_HOME/.claude/CLAUDE.md" \
@@ -96,7 +96,7 @@ Describe 'setup.sh'
     Assert symlink_to "$TEST_HOME/.claude/rules" "$TEST_DOTFILES_DIR/claude/rules"
     Assert symlink_to "$TEST_HOME/.claude/skills" "$TEST_HOME/.agents/skills"
     The directory "$TEST_CONFIG_DIR" should be exist
-    Assert symlink_to "$TEST_CONFIG_DIR/karabiner" "$TEST_DOTFILES_DIR/karabiner"
+    The path "$TEST_CONFIG_DIR/karabiner" should not be exist
     The contents of file "$TEST_CONFIG_DIR/ghostty/config.ghostty" \
       should include "config-file = \"$TEST_DOTFILES_DIR/ghostty/linux\""
     The contents of file "$TEST_HOME/.setup_calls" \
@@ -105,6 +105,28 @@ Describe 'setup.sh'
       should include "chsh:-s $TEST_BIN/zsh"
     The contents of file "$TEST_HOME/.setup_calls" \
       should include "-C $TEST_DOTFILES_DIR config core.hooksPath hooks"
+  End
+
+  It 'links Hammerspoon and Karabiner on macOS'
+    TEST_UNAME=Darwin
+    When run run_setup
+    The status should be success
+    The output should include 'Installing antigen...'
+    Assert symlink_to "$TEST_HOME/.hammerspoon" "$TEST_DOTFILES_DIR/.hammerspoon"
+    Assert symlink_to "$TEST_CONFIG_DIR/karabiner" "$TEST_DOTFILES_DIR/karabiner"
+  End
+
+  It 'removes Hammerspoon and Karabiner links an older setup made off macOS'
+    mkdir -p "$TEST_CONFIG_DIR" "$TEST_HOME/my-karabiner"
+    ln -s "$TEST_DOTFILES_DIR/.hammerspoon" "$TEST_HOME/.hammerspoon"
+    ln -s "$TEST_HOME/my-karabiner" "$TEST_CONFIG_DIR/karabiner"
+    When run run_setup
+    The status should be success
+    The output should include 'Installing antigen...'
+    The path "$TEST_HOME/.hammerspoon" should not be exist
+    The path "$TEST_HOME/.hammerspoon" should not be symlink
+    # Not a link to the repo, so it stays.
+    Assert symlink_to "$TEST_CONFIG_DIR/karabiner" "$TEST_HOME/my-karabiner"
   End
 
   It 'sets git include.path idempotently'
@@ -185,6 +207,7 @@ Describe 'setup.sh'
 
   It 'uses CONFIG_DIR override for config links'
     TEST_CONFIG_DIR="$TEST_HOME/custom-config"
+    TEST_UNAME=Darwin
     When run run_setup
     The status should be success
     The output should include 'Installing antigen...'
