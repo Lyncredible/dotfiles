@@ -6,6 +6,7 @@ Request-DotfilesUpdate -DotfilesDir (Split-Path -Parent $PSScriptRoot)
 # The tab title in p10k.omp.json uses it, as main.zshrc's does.
 $env:WHEREAMI = Get-DotfilesWhereami
 . (Join-Path $PSScriptRoot 'aliases.ps1')
+foreach ($tool in Get-DotfilesMissingTools) { Write-Warning "$tool is not installed" }
 
 Import-Module PSReadLine
 try {

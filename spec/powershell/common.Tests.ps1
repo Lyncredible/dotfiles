@@ -58,6 +58,30 @@ Describe 'Get-DotfilesWhereami' {
   }
 }
 
+Describe 'Get-DotfilesMissingTools' {
+  BeforeEach {
+    $script:noUv = $env:NO_UV
+    Remove-Item Env:NO_UV -ErrorAction SilentlyContinue
+  }
+  AfterEach { $env:NO_UV = $noUv }
+
+  It 'lists uv and fzf when they are not on PATH' {
+    Mock Get-Command { $null }
+    Get-DotfilesMissingTools | Should -Be @('uv', 'fzf')
+  }
+
+  It 'skips uv when NO_UV is true, like main.zshrc' {
+    Mock Get-Command { $null }
+    $env:NO_UV = 'true'
+    Get-DotfilesMissingTools | Should -Be @('fzf')
+  }
+
+  It 'is empty when both are installed' {
+    Mock Get-Command { [pscustomobject]@{ Name = $Name } }
+    Get-DotfilesMissingTools | Should -BeNullOrEmpty
+  }
+}
+
 Describe 'Read-DotfilesUpdateTimestamp' {
   It 'returns 0 when the file is missing' {
     Read-DotfilesUpdateTimestamp -Path (Join-Path $TestDrive 'missing') | Should -Be 0

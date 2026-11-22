@@ -11,6 +11,8 @@ $DotfilesWingetPackages = @(
   [pscustomobject]@{ Id = 'Microsoft.PowerShell'; Command = 'pwsh'; Paths = @() }
   [pscustomobject]@{ Id = 'JanDeDobbeleer.OhMyPosh'; Command = 'oh-my-posh'; Paths = @() }
   [pscustomobject]@{ Id = 'junegunn.fzf'; Command = 'fzf'; Paths = @() }
+  # The venv alias runs uv.
+  [pscustomobject]@{ Id = 'astral-sh.uv'; Command = 'uv'; Paths = @() }
   # init.ahk: window management, mirroring .hammerspoon on macOS.
   [pscustomobject]@{ Id = 'AutoHotkey.AutoHotkey'; Command = $null; Paths = $AutoHotkeyPaths }
 )
@@ -24,6 +26,16 @@ function Test-DotfilesPackageInstalled {
     if (Test-Path -LiteralPath $path) { return $true }
   }
   return $false
+}
+
+# The tools main.zshrc warns about when missing: uv (unless NO_UV is true) and fzf.
+function Get-DotfilesMissingTools {
+  $missing = @()
+  if ($env:NO_UV -ne 'true' -and -not (Get-Command uv -ErrorAction SilentlyContinue)) {
+    $missing += 'uv'
+  }
+  if (-not (Get-Command fzf -ErrorAction SilentlyContinue)) { $missing += 'fzf' }
+  return $missing
 }
 
 function Find-AutoHotkey {

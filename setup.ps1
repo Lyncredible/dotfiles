@@ -366,7 +366,7 @@ function Invoke-Setup {
     if (Get-Command winget -ErrorAction SilentlyContinue) {
       Install-WingetPackages
     } else {
-      Write-Warning 'winget is missing; install oh-my-posh, fzf, and AutoHotkey yourself.'
+      Write-Warning 'winget is missing; install oh-my-posh, fzf, uv, and AutoHotkey yourself.'
     }
     Install-Modules
     Install-NerdFont
