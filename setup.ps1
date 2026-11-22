@@ -277,6 +277,55 @@ function Set-ClaudeConfig {
     -Applied (Join-Path $ClaudeDir '.dotfiles-settings.json')
 }
 
+# Port of merge_codex_settings in common.sh. Each root-level `key = value` line in the
+# repo's config.toml.dist replaces that key's root-level line in config.toml, or goes before
+# the first table. Tables, such as trusted projects and MCP servers, are left alone.
+function Merge-CodexSettings {
+  param(
+    [Parameter(Mandatory)][string]$Dist,
+    [Parameter(Mandatory)][string]$Settings
+  )
+  if (-not (Test-Path -LiteralPath $Dist)) { return }
+  $null = New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Settings)
+  if (-not (Test-Path -LiteralPath $Settings)) {
+    Copy-Item -LiteralPath $Dist -Destination $Settings
+    return
+  }
+  $keyPattern = '^\s*([A-Za-z0-9_-]+)\s*='
+  $tablePattern = '^\s*\['
+  $managed = [ordered]@{}
+  foreach ($line in [IO.File]::ReadAllLines($Dist)) {
+    if ($line -match $tablePattern) { break }
+    if ($line -match $keyPattern -and -not $managed.Contains($Matches[1])) {
+      $managed[$Matches[1]] = $line
+    }
+  }
+  $written = [Collections.Generic.HashSet[string]]::new()
+  $lines = [Collections.Generic.List[string]]::new()
+  $inTable = $false
+  foreach ($line in [IO.File]::ReadAllLines($Settings)) {
+    if (-not $inTable -and $line -match $tablePattern) {
+      foreach ($key in $managed.Keys) {
+        if ($written.Add($key)) { $lines.Add($managed[$key]) }
+      }
+      $inTable = $true
+    }
+    if (-not $inTable -and $line -match $keyPattern -and $managed.Contains($Matches[1])) {
+      # The first line for a managed key becomes the repo's; later duplicates go.
+      if ($written.Add($Matches[1])) { $lines.Add($managed[$Matches[1]]) }
+      continue
+    }
+    $lines.Add($line)
+  }
+  foreach ($key in $managed.Keys) {
+    if ($written.Add($key)) { $lines.Add($managed[$key]) }
+  }
+  $text = ($lines -join "`n") + "`n"
+  if ($text -ne [IO.File]::ReadAllText($Settings)) {
+    [IO.File]::WriteAllText($Settings, $text, [Text.UTF8Encoding]::new($false))
+  }
+}
+
 function Get-StartupShortcutPath {
   return (Join-Path ([Environment]::GetFolderPath('Startup')) 'init.ahk.lnk')
 }
@@ -409,6 +458,8 @@ function Invoke-Setup {
   Set-GitInclude -DotfilesDir $DotfilesDir
   Set-ClaudeConfig -DotfilesDir $DotfilesDir
   Set-AgentSkills -DotfilesDir $DotfilesDir
+  Merge-CodexSettings -Dist (Join-Path $DotfilesDir '.codex\config.toml.dist') `
+    -Settings (Join-Path $HOME '.codex\config.toml')
   # No core.hooksPath here: hooks/pre-push runs `make check`, which needs make and shellspec.
   if (-not $SkipInstall) {
     Set-ProfileExecutionPolicy

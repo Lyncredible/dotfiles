@@ -396,6 +396,63 @@ Describe 'Set-AgentSkills' {
   }
 }
 
+Describe 'Merge-CodexSettings' {
+  BeforeEach {
+    $script:dir = Join-Path $TestDrive ([guid]::NewGuid())
+    $null = New-Item -ItemType Directory -Path $dir
+    $script:dist = Join-Path $dir 'config.toml.dist'
+    $script:settings = Join-Path $dir 'codex' 'config.toml'
+  }
+
+  It 'copies the dist file when there is no config yet' {
+    Set-Content -LiteralPath $dist -Value 'plan_mode_reasoning_effort = "high"'
+    Merge-CodexSettings -Dist $dist -Settings $settings
+    Get-Content $settings | Should -Be 'plan_mode_reasoning_effort = "high"'
+  }
+
+  It 'replaces root keys, adds missing ones before the first table, and keeps tables' {
+    [IO.File]::WriteAllLines($dist, [string[]]@(
+      'plan_mode_reasoning_effort = "high"'
+      'model_reasoning_effort = "medium"'
+      ''
+      '[profiles.repo]'
+      'model = "repo-model"'
+    ))
+    $null = New-Item -ItemType Directory -Force -Path (Split-Path -Parent $settings)
+    [IO.File]::WriteAllLines($settings, [string[]]@(
+      'model = "gpt-5.4"'
+      'model_reasoning_effort = "low"'
+      'model_reasoning_effort = "duplicate"'
+      ''
+      '[profiles.fast]'
+      'plan_mode_reasoning_effort = "low"'
+    ))
+    Merge-CodexSettings -Dist $dist -Settings $settings
+    Get-Content $settings | Should -Be @(
+      'model = "gpt-5.4"'
+      'model_reasoning_effort = "medium"'
+      ''
+      'plan_mode_reasoning_effort = "high"'
+      '[profiles.fast]'
+      'plan_mode_reasoning_effort = "low"'
+    )
+  }
+
+  It 'appends managed keys to a config with no tables, and is idempotent' {
+    [IO.File]::WriteAllLines($dist, [string[]]@('a = 1', 'b = 2'))
+    $null = New-Item -ItemType Directory -Force -Path (Split-Path -Parent $settings)
+    [IO.File]::WriteAllLines($settings, [string[]]@('b = 0', 'c = 3'))
+    Merge-CodexSettings -Dist $dist -Settings $settings
+    Merge-CodexSettings -Dist $dist -Settings $settings
+    Get-Content $settings | Should -Be @('b = 2', 'c = 3', 'a = 1')
+  }
+
+  It 'does nothing without the dist file' {
+    Merge-CodexSettings -Dist (Join-Path $dir 'missing') -Settings $settings
+    Test-Path $settings | Should -BeFalse
+  }
+}
+
 Describe 'repo .gitconfig' {
   It 'loads in Git for Windows, which setup.sh includes it into' {
     $gitconfig = (Resolve-Path (Join-Path $PSScriptRoot '..\..\.gitconfig')).Path

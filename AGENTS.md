@@ -137,6 +137,12 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
     `setup.ps1` merges on Windows (`Merge-ClaudeSettings`).
 - `/.claude/` is gitignored: the old link target, and this repo's project-local settings.
 
+## Codex
+
+- `.codex/config.toml.dist` holds repo-managed Codex defaults. Its root-level keys replace
+  those in `~/.codex/config.toml`; tables and other keys there are left alone. zsh merges at
+  startup (`merge_codex_settings`); `setup.ps1` merges on Windows (`Merge-CodexSettings`).
+
 ## Agent Skills
 
 - Skills live in `.agents/skills/` and are installed to `~/.agents/skills`.
