@@ -193,6 +193,18 @@ FILE
     The output should equal 'subl -n -w'
   End
 
+  It 'raises a low open-file limit'
+    When run run_main_eval 'ulimit -n 256; configure_ulimit; ulimit -n'
+    The status should be success
+    The output should equal '2560'
+  End
+
+  It 'keeps a higher open-file limit'
+    When run run_main_eval 'ulimit -n 3000; configure_ulimit; ulimit -n'
+    The status should be success
+    The output should equal '3000'
+  End
+
   It 'prepends the expected path entries and preserves existing PATH'
     When run run_main_eval '
       print -r -- "${path[1]}"

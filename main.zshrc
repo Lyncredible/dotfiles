@@ -162,8 +162,12 @@ register_tmux_ssh_hook() {
 }
 
 configure_ulimit() {
-  # Work around bug in browserify
-  ulimit -n 2560
+  # Raise a low open-file limit (macOS defaults to 256); never lower a higher one.
+  local wanted=2560
+  if [[ "$(ulimit -n)" != unlimited ]] && (( $(ulimit -n) < wanted )); then
+    ulimit -n "$wanted" 2>/dev/null
+  fi
+  return 0
 }
 
 source_aliases() {
