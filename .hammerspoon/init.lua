@@ -21,7 +21,9 @@ local SnapTo = {
 
 function toggleAudioVideo(audioOrVideo)
   local zoom = hs.application.find("us.zoom.xos")
-  local teams = hs.application.find("com.microsoft.teams")
+  -- teams2 is the new Teams; com.microsoft.teams is classic Teams.
+  local teams = hs.application.find("com.microsoft.teams2")
+    or hs.application.find("com.microsoft.teams")
   if not (zoom == nil) then
     if audioOrVideo == "audio" then
       hs.eventtap.keyStroke({"cmd","shift"}, "a", 0, zoom)
@@ -29,7 +31,7 @@ function toggleAudioVideo(audioOrVideo)
       hs.eventtap.keyStroke({"cmd","shift"}, "v", 0, zoom)
     end
   end
-  if not (teams == null) then
+  if not (teams == nil) then
     if audioOrVideo == "audio" then
       hs.eventtap.keyStroke({"cmd","shift"}, "m", 0, teams)
     else
@@ -165,7 +167,7 @@ end)
 
 function shouldRetainSizeAcrossScreen(window)
   app = window:application():name()
-  return app == 'iTerm2' or app == 'Terminal'
+  return app == 'Ghostty' or app == 'iTerm2' or app == 'Terminal'
 end
 
 function moveWindowOneScreen(window, direction)
@@ -242,6 +244,7 @@ function codingLayout()
       {"Code",                nil, screen, hs.layout.maximized, nil, nil},
       {"Cursor",              nil, screen, hs.layout.maximized, nil, nil},
       {"Google Chrome",       nil, screen, hs.layout.maximized, nil, nil},
+      {"Ghostty",             nil, screen, nil, nil, centerInParent(hs.geometry.size(1285.0, 798.0), screen:fullFrame())},
       {"iTerm2",              nil, screen, nil, nil, centerInParent(hs.geometry.size(1285.0, 798.0), screen:fullFrame())},
       {"Microsoft OneNote",   nil, screen, hs.layout.maximized, nil, nil},
       {"Slack",               nil, screen, hs.layout.maximized, nil, nil},
