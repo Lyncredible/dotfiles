@@ -6,3 +6,5 @@
 # this directory. setup.sh moves it back to ~/.claude; until then, keep it out of git. This
 # also covers project-local Claude settings for this repo.
 /.claude/
+# Karabiner-Elements writes these into ~/.config/karabiner, which links here.
+/karabiner/automatic_backups/
