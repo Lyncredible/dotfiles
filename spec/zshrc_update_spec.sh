@@ -150,7 +150,7 @@ Describe 'dotfiles update helper'
     The file "$TEST_HOME/.git_calls" should not be exist
   End
 
-  It 'does not refresh timestamp when fetch fails'
+  It 'retries in an hour when fetch fails'
     FAKE_EPOCH=2000000000
     export FAKE_EPOCH
     echo 1999910000 > "$TEST_HOME/.dotfiles-update"
@@ -168,10 +168,10 @@ Describe 'dotfiles update helper'
     The status should be success
     The output should include 'Warning: Failed to fetch dotfiles repo.'
     The output should include '0'
-    The contents of file "$TEST_HOME/.dotfiles-update" should equal '1999910000'
+    The contents of file "$TEST_HOME/.dotfiles-update" should equal '1999917200'
   End
 
-  It 'does not refresh timestamp when rebase fails'
+  It 'retries in an hour when rebase fails'
     FAKE_EPOCH=2000000000
     export FAKE_EPOCH
     echo 1999910000 > "$TEST_HOME/.dotfiles-update"
@@ -188,8 +188,9 @@ Describe 'dotfiles update helper'
       '
     The status should be success
     The output should include 'Warning: Failed to rebase dotfiles repo.'
+    The contents of file "$TEST_HOME/.git_calls" should include 'rebase --abort'
     The output should include '0'
-    The contents of file "$TEST_HOME/.dotfiles-update" should equal '1999910000'
+    The contents of file "$TEST_HOME/.dotfiles-update" should equal '1999917200'
   End
 
   It 'updates when the timestamp file is missing'

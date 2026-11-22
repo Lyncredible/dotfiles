@@ -37,7 +37,7 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
   (tracked via `~/.dotfiles_last_update`).
 - Runs `git fetch && git rebase origin/master`.
 - On success, triggers `antigen selfupdate && antigen update`.
-- Silent failure with warnings if network is unavailable.
+- On failure it warns, aborts a failed rebase, and retries an hour later.
 
 ## Antigen cache locking
 

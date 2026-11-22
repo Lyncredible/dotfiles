@@ -49,6 +49,12 @@ write_update_timestamp() {
   printf '%s\n' "$(epoch_now)" > "$1"
 }
 
+# After a failed update, retry in an hour instead of on every new shell: the fetch blocks
+# startup, and offline or with a dirty repo it fails each time.
+write_retry_timestamp() {
+  printf '%s\n' "$(( $(epoch_now) - 60 * 60 * 23 ))" > "$1"
+}
+
 # Deep-merge two JSON files: objects merge key by key, the second file's values win, and
 # lists are combined (the second file's new items appended, duplicates dropped), so a
 # repo-managed permission list can't erase rules added on one machine.
@@ -178,6 +184,8 @@ dotfiles_update_repo() {
   fi
 
   if ! dotfiles_git rebase origin/master >/dev/null; then
+    # Don't leave the repo mid-rebase after a conflict.
+    dotfiles_git rebase --abort >/dev/null 2>&1
     printf 'Warning: Failed to rebase dotfiles repo.\n'
     return 1
   fi
@@ -203,6 +211,8 @@ maybe_update_dotfiles() {
       source "$dotfiles_dir/common.sh"
       SKIP_CHSH=1 "$dotfiles_dir/setup.sh"
     fi
+  else
+    write_retry_timestamp "$update_timestamp_file"
   fi
   popd >/dev/null || return 1
   unset UPDATE_BEFORE_REF
