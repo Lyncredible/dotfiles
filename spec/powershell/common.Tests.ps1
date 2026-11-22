@@ -82,6 +82,37 @@ Describe 'Get-DotfilesMissingTools' {
   }
 }
 
+Describe 'Get-DotfilesEditor' {
+  BeforeEach {
+    $script:ssh = $env:SSH_CONNECTION
+    Remove-Item Env:SSH_CONNECTION -ErrorAction SilentlyContinue
+  }
+  AfterEach { $env:SSH_CONNECTION = $ssh }
+
+  It 'is vim over SSH' {
+    $env:SSH_CONNECTION = '10.0.0.1 22 10.0.0.2 22'
+    Get-DotfilesEditor | Should -Be 'vim'
+  }
+
+  It 'is subl when it is on PATH' {
+    Mock Get-Command { [pscustomobject]@{ Name = 'subl' } } -ParameterFilter { $Name -eq 'subl' }
+    Get-DotfilesEditor -SublimePaths @() | Should -Be 'subl -n -w'
+  }
+
+  It 'quotes the install path when subl is not on PATH' {
+    Mock Get-Command { $null } -ParameterFilter { $Name -eq 'subl' }
+    $subl = Join-Path $TestDrive 'Sublime Text\subl.exe'
+    $null = New-Item -ItemType File -Force -Path $subl
+    Get-DotfilesEditor -SublimePaths @('C:\no\subl.exe', $subl) |
+      Should -Be "`"$subl`" -n -w"
+  }
+
+  It 'is null without Sublime Text' {
+    Mock Get-Command { $null } -ParameterFilter { $Name -eq 'subl' }
+    Get-DotfilesEditor -SublimePaths @('C:\no\subl.exe') | Should -BeNullOrEmpty
+  }
+}
+
 Describe 'Read-DotfilesUpdateTimestamp' {
   It 'returns 0 when the file is missing' {
     Read-DotfilesUpdateTimestamp -Path (Join-Path $TestDrive 'missing') | Should -Be 0

@@ -3,6 +3,9 @@
 
 . (Join-Path $PSScriptRoot 'common.ps1')
 Request-DotfilesUpdate -DotfilesDir (Split-Path -Parent $PSScriptRoot)
+$editor = Get-DotfilesEditor
+if ($editor) { $env:EDITOR = $editor }
+Remove-Variable editor
 # The tab title in p10k.omp.json uses it, as main.zshrc's does.
 $env:WHEREAMI = Get-DotfilesWhereami
 . (Join-Path $PSScriptRoot 'aliases.ps1')

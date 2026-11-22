@@ -113,7 +113,7 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
    Update both when changing window shortcuts.
 
 5. **Editor detection**: SSH → vim, WSL → wslsubl, local → subl.
-   Set in `main.zshrc`.
+   Set in `main.zshrc`; `Get-DotfilesEditor` in `common.ps1` does SSH → vim, else subl.
 
 ## Hooks
 

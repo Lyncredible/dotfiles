@@ -38,6 +38,26 @@ function Get-DotfilesMissingTools {
   return $missing
 }
 
+# Port of selected_editor in main.zshrc: vim over SSH, otherwise Sublime Text, waiting for
+# its window to close. $null when Sublime Text is not installed.
+function Get-DotfilesEditor {
+  param(
+    [string[]]$SublimePaths = @(
+      "$env:ProgramFiles\Sublime Text\subl.exe",
+      "$env:ProgramFiles\Sublime Text 3\subl.exe"
+    )
+  )
+  if ($env:SSH_CONNECTION) { return 'vim' }
+  if (Get-Command subl -CommandType Application -ErrorAction SilentlyContinue) {
+    return 'subl -n -w'
+  }
+  foreach ($path in $SublimePaths) {
+    # Quoted for git, which runs EDITOR through a shell.
+    if (Test-Path -LiteralPath $path) { return "`"$path`" -n -w" }
+  }
+  return $null
+}
+
 function Find-AutoHotkey {
   foreach ($path in $AutoHotkeyPaths) {
     if (Test-Path -LiteralPath $path) { return $path }
