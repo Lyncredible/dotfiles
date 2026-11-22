@@ -108,7 +108,9 @@ merge_claude_settings() {
 }
 
 # Merge repo-managed Codex defaults into config.toml without touching user-owned
-# machine state such as trusted projects or MCP servers.
+# machine state such as trusted projects or MCP servers. Each root-level `key = value` line
+# in the dist file replaces that key's root-level line, or goes before the first table.
+# setup.ps1's Merge-CodexSettings does the same on Windows.
 merge_codex_settings() {
   local codex_dist="$1"
   local codex_settings="$2"
@@ -129,41 +131,51 @@ merge_codex_settings() {
   tmp_file=$("$MKTEMP_BIN" "${codex_settings}.tmp.XXXXXX") || return 1
   # shellcheck disable=SC2016
   if "$AWK_BIN" '
-    BEGIN {
-      managed_key = "plan_mode_reasoning_effort"
-      managed_line = managed_key " = \"high\""
-      in_root = 1
-      wrote_managed = 0
+    function root_key(line) {
+      if (line !~ /^[[:space:]]*[A-Za-z0-9_-]+[[:space:]]*=/) return ""
+      sub(/^[[:space:]]*/, "", line)
+      sub(/[[:space:]]*=.*/, "", line)
+      return line
     }
 
-    in_root && /^[[:space:]]*\[/ {
-      if (!wrote_managed) {
-        print managed_line
-        wrote_managed = 1
+    function write_missing(   i) {
+      for (i = 1; i <= count; i++) {
+        if (!(keys[i] in written)) print managed[keys[i]]
       }
-      in_root = 0
-      print
+      wrote_missing = 1
+    }
+
+    FILENAME == ARGV[1] {
+      if (/^[[:space:]]*\[/) dist_done = 1
+      if (dist_done) next
+      key = root_key($0)
+      if (key != "" && !(key in managed)) {
+        keys[++count] = key
+        managed[key] = $0
+      }
       next
     }
 
-    in_root && $0 ~ "^[[:space:]]*" managed_key "[[:space:]]*=" {
-      if (!wrote_managed) {
-        print managed_line
-        wrote_managed = 1
-      }
-      next
+    !in_table && /^[[:space:]]*\[/ {
+      write_missing()
+      in_table = 1
     }
 
-    {
-      print
+    !in_table {
+      key = root_key($0)
+      if (key in managed) {
+        if (!(key in written)) print managed[key]
+        written[key] = 1
+        next
+      }
     }
+
+    { print }
 
     END {
-      if (!wrote_managed) {
-        print managed_line
-      }
+      if (!wrote_missing) write_missing()
     }
-  ' "$codex_settings" > "$tmp_file"; then
+  ' "$codex_dist" "$codex_settings" > "$tmp_file"; then
     "$MV_BIN" "$tmp_file" "$codex_settings"
     return 0
   fi

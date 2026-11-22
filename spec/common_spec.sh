@@ -281,6 +281,50 @@ TOML
       should include 'plan_mode_reasoning_effort = "low"'
   End
 
+  It 'manages every root-level key in the dist file, not its tables'
+    mkdir -p "$TEST_HOME/.dotfiles/.codex" "$TEST_HOME/.codex"
+    cat > "$TEST_HOME/.dotfiles/.codex/config.toml.dist" <<'TOML'
+plan_mode_reasoning_effort = "high"
+model_reasoning_effort = "medium"
+
+[profiles.repo]
+model = "repo-model"
+TOML
+    cat > "$TEST_HOME/.codex/config.toml" <<'TOML'
+model = "gpt-5.4"
+model_reasoning_effort = "low"
+model_reasoning_effort = "duplicate"
+
+[projects."/Users/yuan"]
+trust_level = "trusted"
+TOML
+    When call merge_codex_settings \
+      "$TEST_HOME/.dotfiles/.codex/config.toml.dist" \
+      "$TEST_HOME/.codex/config.toml"
+    The status should be success
+    The contents of file "$TEST_HOME/.codex/config.toml" should equal "$(cat <<'TOML'
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+
+plan_mode_reasoning_effort = "high"
+[projects."/Users/yuan"]
+trust_level = "trusted"
+TOML
+)"
+  End
+
+  It 'appends managed keys to a config with no tables'
+    mkdir -p "$TEST_HOME/.dotfiles/.codex" "$TEST_HOME/.codex"
+    printf '%s\n' 'a = 1' 'b = 2' > "$TEST_HOME/.dotfiles/.codex/config.toml.dist"
+    printf '%s\n' 'b = 0' 'c = 3' > "$TEST_HOME/.codex/config.toml"
+    When call merge_codex_settings \
+      "$TEST_HOME/.dotfiles/.codex/config.toml.dist" \
+      "$TEST_HOME/.codex/config.toml"
+    The status should be success
+    The contents of file "$TEST_HOME/.codex/config.toml" \
+      should equal "$(printf '%s\n' 'b = 2' 'c = 3' 'a = 1')"
+  End
+
   It 'leaves config.toml untouched when the dist file is missing'
     mkdir -p "$TEST_HOME/.codex"
     cat > "$TEST_HOME/.codex/config.toml" <<'TOML'
