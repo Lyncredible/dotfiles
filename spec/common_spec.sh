@@ -313,6 +313,53 @@ TOML
 )"
   End
 
+  It 'syncs status line settings without changing other TUI settings'
+    mkdir -p "$TEST_HOME/.codex"
+    cat > "$TEST_HOME/dist" <<'TOML'
+[tui]
+status_line = ["model", "context-used"]
+status_line_use_colors = true
+TOML
+    cat > "$TEST_HOME/.codex/config.toml" <<'TOML'
+[tui] # local preferences
+theme = "dark"
+status_line = [ # previously picked ]
+  "git-branch",
+]
+[features]
+hooks = true
+TOML
+    When call merge_codex_settings "$TEST_HOME/dist" "$TEST_HOME/.codex/config.toml"
+    The status should be success
+    The contents of file "$TEST_HOME/.codex/config.toml" should equal "$(cat <<'TOML'
+[tui] # local preferences
+theme = "dark"
+status_line = ["model", "context-used"]
+status_line_use_colors = true
+[features]
+hooks = true
+TOML
+)"
+  End
+
+  It 'adds a missing TUI table once'
+    mkdir -p "$TEST_HOME/.codex"
+    printf '%s\n' '[tui]' 'status_line = ["model"]' > "$TEST_HOME/dist"
+    printf '%s\n' '[features]' 'hooks = true' > "$TEST_HOME/.codex/config.toml"
+    merge_codex_settings "$TEST_HOME/dist" "$TEST_HOME/.codex/config.toml"
+    When call merge_codex_settings "$TEST_HOME/dist" "$TEST_HOME/.codex/config.toml"
+    The status should be success
+    The contents of file "$TEST_HOME/.codex/config.toml" \
+      should equal "$(cat <<'TOML'
+[features]
+hooks = true
+
+[tui]
+status_line = ["model"]
+TOML
+)"
+  End
+
   It 'appends managed keys to a config with no tables'
     mkdir -p "$TEST_HOME/.dotfiles/.codex" "$TEST_HOME/.codex"
     printf '%s\n' 'a = 1' 'b = 2' > "$TEST_HOME/.dotfiles/.codex/config.toml.dist"

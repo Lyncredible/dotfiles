@@ -140,9 +140,10 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 
 ## Codex
 
-- `.codex/config.toml.dist` holds repo-managed Codex defaults. Its root-level keys replace
-  those in `~/.codex/config.toml`; tables and other keys there are left alone. zsh merges at
-  startup (`merge_codex_settings`); `setup.ps1` merges on Windows (`Merge-CodexSettings`).
+- `.codex/config.toml.dist` holds repo-managed Codex defaults. Its root keys and the two
+  status line keys in `[tui]` replace those in `~/.codex/config.toml`; other settings are left
+  alone. Keep managed values on a single line. zsh merges at startup (`merge_codex_settings`);
+  `setup.ps1` merges on Windows (`Merge-CodexSettings`).
 
 ## Agent Skills
 

@@ -438,6 +438,44 @@ Describe 'Merge-CodexSettings' {
     )
   }
 
+  It 'syncs status line settings without changing other TUI settings' {
+    Set-Content -LiteralPath $dist -Value @(
+      '[tui]'
+      'status_line = ["model", "context-used"]'
+      'status_line_use_colors = true'
+    )
+    $null = New-Item -ItemType Directory -Force -Path (Split-Path -Parent $settings)
+    Set-Content -LiteralPath $settings -Value @(
+      '[tui] # local preferences'
+      'theme = "dark"'
+      'status_line = [ # previously picked ]'
+      '  "git-branch",'
+      ']'
+      '[features]'
+      'hooks = true'
+    )
+    Merge-CodexSettings -Dist $dist -Settings $settings
+    Get-Content $settings | Should -Be @(
+      '[tui] # local preferences'
+      'theme = "dark"'
+      'status_line = ["model", "context-used"]'
+      'status_line_use_colors = true'
+      '[features]'
+      'hooks = true'
+    )
+  }
+
+  It 'adds a missing TUI table once' {
+    Set-Content -LiteralPath $dist -Value @('[tui]', 'status_line = ["model"]')
+    $null = New-Item -ItemType Directory -Force -Path (Split-Path -Parent $settings)
+    Set-Content -LiteralPath $settings -Value @('[features]', 'hooks = true')
+    Merge-CodexSettings -Dist $dist -Settings $settings
+    Merge-CodexSettings -Dist $dist -Settings $settings
+    Get-Content $settings | Should -Be @(
+      '[features]', 'hooks = true', '', '[tui]', 'status_line = ["model"]'
+    )
+  }
+
   It 'appends managed keys to a config with no tables, and is idempotent' {
     [IO.File]::WriteAllLines($dist, [string[]]@('a = 1', 'b = 2'))
     $null = New-Item -ItemType Directory -Force -Path (Split-Path -Parent $settings)

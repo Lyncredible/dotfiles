@@ -108,8 +108,8 @@ merge_claude_settings() {
 }
 
 # Merge repo-managed Codex defaults into config.toml without touching user-owned
-# machine state such as trusted projects or MCP servers. Each root-level `key = value` line
-# in the dist file replaces that key's root-level line, or goes before the first table.
+# machine state such as trusted projects or MCP servers. Manage root keys and the
+# two status line keys in [tui]; leave other table settings alone.
 # setup.ps1's Merge-CodexSettings does the same on Windows.
 merge_codex_settings() {
   local codex_dist="$1"
@@ -131,49 +131,71 @@ merge_codex_settings() {
   tmp_file=$("$MKTEMP_BIN" "${codex_settings}.tmp.XXXXXX") || return 1
   # shellcheck disable=SC2016
   if "$AWK_BIN" '
-    function root_key(line) {
+    function setting_key(line, section) {
       if (line !~ /^[[:space:]]*[A-Za-z0-9_-]+[[:space:]]*=/) return ""
       sub(/^[[:space:]]*/, "", line)
       sub(/[[:space:]]*=.*/, "", line)
-      return line
+      if (section == "") return line
+      if (section == "tui" && line ~ /^status_line(_use_colors)?$/) return "tui." line
+      return ""
     }
 
-    function write_missing(   i) {
+    function write_missing(section,   i, key) {
       for (i = 1; i <= count; i++) {
-        if (!(keys[i] in written)) print managed[keys[i]]
+        key = keys[i]
+        if (sections[key] == section && !(key in written)) {
+          print managed[key]
+          written[key] = 1
+        }
       }
-      wrote_missing = 1
+    }
+
+    function table(line) {
+      return line ~ /^[[:space:]]*\[tui\][[:space:]]*(#.*)?$/ ? "tui" : "other"
     }
 
     FILENAME == ARGV[1] {
-      if (/^[[:space:]]*\[/) dist_done = 1
-      if (dist_done) next
-      key = root_key($0)
+      if (/^[[:space:]]*\[/) dist_section = table($0)
+      key = setting_key($0, dist_section)
       if (key != "" && !(key in managed)) {
         keys[++count] = key
         managed[key] = $0
+        sections[key] = dist_section
+        if (dist_section == "tui") has_tui_defaults = 1
       }
       next
     }
 
-    !in_table && /^[[:space:]]*\[/ {
-      write_missing()
-      in_table = 1
+    skipping_status_array {
+      if (/^[^#]*\][[:space:]]*(#.*)?$/) skipping_status_array = 0
+      next
     }
 
-    !in_table {
-      key = root_key($0)
+    /^[[:space:]]*\[/ {
+      write_missing(section)
+      section = table($0)
+      if (section == "tui") saw_tui = 1
+    }
+
+    {
+      key = setting_key($0, section)
       if (key in managed) {
         if (!(key in written)) print managed[key]
         written[key] = 1
+        if (key == "tui.status_line" && /^[^=]*=[[:space:]]*\[/ &&
+            !/^[^#]*\][[:space:]]*(#.*)?$/) skipping_status_array = 1
         next
       }
+      print
     }
 
-    { print }
-
     END {
-      if (!wrote_missing) write_missing()
+      write_missing(section)
+      if (has_tui_defaults && !saw_tui) {
+        print ""
+        print "[tui]"
+        write_missing("tui")
+      }
     }
   ' "$codex_dist" "$codex_settings" > "$tmp_file"; then
     "$MV_BIN" "$tmp_file" "$codex_settings"
