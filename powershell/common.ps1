@@ -1,6 +1,8 @@
 # Shared PowerShell helpers for profile.ps1, update.ps1, and setup.ps1. PowerShell 7 (pwsh)
 # only; install.ps1 is the one script that must also run in Windows PowerShell 5.1.
 
+. (Join-Path $PSScriptRoot 'codex.ps1')
+
 # Windows tools. Setup skips a package when its Command is on PATH or one of its Paths exists.
 $AutoHotkeyPaths = @(
   "$env:ProgramFiles\AutoHotkey\v2\AutoHotkey.exe",
@@ -236,6 +238,8 @@ function Invoke-DotfilesUpdate {
 
     if ($before -ne $after) {
       & (Join-Path $DotfilesDir 'setup.ps1') -SkipInstall
+    } else {
+      Sync-DotfilesCodexSettings -DotfilesDir $DotfilesDir
     }
     Update-DotfilesTools
   } finally {

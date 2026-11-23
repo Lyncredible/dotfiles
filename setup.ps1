@@ -277,91 +277,6 @@ function Set-ClaudeConfig {
     -Applied (Join-Path $ClaudeDir '.dotfiles-settings.json')
 }
 
-# Port of merge_codex_settings in common.sh. Manage root keys and the two status line
-# keys in [tui]; leave other table settings alone.
-function Merge-CodexSettings {
-  param(
-    [Parameter(Mandatory)][string]$Dist,
-    [Parameter(Mandatory)][string]$Settings
-  )
-  if (-not (Test-Path -LiteralPath $Dist)) { return }
-  $null = New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Settings)
-  if (-not (Test-Path -LiteralPath $Settings)) {
-    Copy-Item -LiteralPath $Dist -Destination $Settings
-    return
-  }
-  $tablePattern = '^\s*\['
-  $tuiPattern = '^\s*\[tui\]\s*(#.*)?$'
-  $arrayEndPattern = '^[^#]*\]\s*(#.*)?$'
-  $managed = @{ root = [ordered]@{}; tui = [ordered]@{}; other = [ordered]@{} }
-  $written = @{
-    root = [Collections.Generic.HashSet[string]]::new()
-    tui = [Collections.Generic.HashSet[string]]::new()
-    other = [Collections.Generic.HashSet[string]]::new()
-  }
-  $settingKey = {
-    param($Line, $Section)
-    if ($Line -cmatch '^\s*([A-Za-z0-9_-]+)\s*=') {
-      $key = $Matches[1]
-      if ($Section -eq 'root' -or
-          ($Section -eq 'tui' -and $key -cmatch '^status_line(_use_colors)?$')) {
-        $key
-      }
-    }
-  }
-  $section = 'root'
-  foreach ($line in [IO.File]::ReadAllLines($Dist)) {
-    if ($line -match $tablePattern) {
-      $section = if ($line -cmatch $tuiPattern) { 'tui' } else { 'other' }
-    }
-    $key = & $settingKey $line $section
-    if ($key -and -not $managed[$section].Contains($key)) {
-      $managed[$section][$key] = $line
-    }
-  }
-  $lines = [Collections.Generic.List[string]]::new()
-  $writeMissing = {
-    param($Section)
-    foreach ($key in $managed[$Section].Keys) {
-      if ($written[$Section].Add($key)) { $lines.Add($managed[$Section][$key]) }
-    }
-  }
-  $section = 'root'
-  $sawTui = $false
-  $skippingStatusArray = $false
-  foreach ($line in [IO.File]::ReadAllLines($Settings)) {
-    if ($skippingStatusArray) {
-      if ($line -match $arrayEndPattern) { $skippingStatusArray = $false }
-      continue
-    }
-    if ($line -match $tablePattern) {
-      & $writeMissing $section
-      $section = if ($line -cmatch $tuiPattern) { 'tui' } else { 'other' }
-      if ($section -eq 'tui') { $sawTui = $true }
-    }
-    $key = & $settingKey $line $section
-    if ($key -and $managed[$section].Contains($key)) {
-      if ($written[$section].Add($key)) { $lines.Add($managed[$section][$key]) }
-      if ($section -eq 'tui' -and $key -eq 'status_line' -and
-          $line -match '^[^=]*=\s*\[' -and $line -notmatch $arrayEndPattern) {
-        $skippingStatusArray = $true
-      }
-      continue
-    }
-    $lines.Add($line)
-  }
-  & $writeMissing $section
-  if (-not $sawTui -and $managed['tui'].Count) {
-    $lines.Add('')
-    $lines.Add('[tui]')
-    & $writeMissing 'tui'
-  }
-  $text = ($lines -join "`n") + "`n"
-  if ($text -ne [IO.File]::ReadAllText($Settings)) {
-    [IO.File]::WriteAllText($Settings, $text, [Text.UTF8Encoding]::new($false))
-  }
-}
-
 function Get-StartupShortcutPath {
   return (Join-Path ([Environment]::GetFolderPath('Startup')) 'init.ahk.lnk')
 }
@@ -494,8 +409,7 @@ function Invoke-Setup {
   Set-GitInclude -DotfilesDir $DotfilesDir
   Set-ClaudeConfig -DotfilesDir $DotfilesDir
   Set-AgentSkills -DotfilesDir $DotfilesDir
-  Merge-CodexSettings -Dist (Join-Path $DotfilesDir '.codex\config.toml.dist') `
-    -Settings (Join-Path $HOME '.codex\config.toml')
+  Sync-DotfilesCodexSettings -DotfilesDir $DotfilesDir
   # No core.hooksPath here: hooks/pre-push runs `make check`, which needs make and shellspec.
   if (-not $SkipInstall) {
     Set-ProfileExecutionPolicy

@@ -2,7 +2,14 @@
 # Local changes go in ~/.pwsh_pre.ps1 or ~/.pwsh_post.ps1, not here. PowerShell 7 only.
 
 . (Join-Path $PSScriptRoot 'common.ps1')
-Request-DotfilesUpdate -DotfilesDir (Split-Path -Parent $PSScriptRoot)
+$profileDotfilesDir = Split-Path -Parent $PSScriptRoot
+try {
+  Sync-DotfilesCodexSettings -DotfilesDir $profileDotfilesDir
+} catch {
+  Write-Warning "Failed to sync Codex settings: $_"
+}
+Request-DotfilesUpdate -DotfilesDir $profileDotfilesDir
+Remove-Variable profileDotfilesDir
 $editor = Get-DotfilesEditor
 if ($editor) { $env:EDITOR = $editor }
 Remove-Variable editor

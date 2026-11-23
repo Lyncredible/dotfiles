@@ -226,6 +226,27 @@ Describe 'Update-DotfilesRepo' {
   }
 }
 
+Describe 'Sync-DotfilesCodexSettings' {
+  It 'applies an updated repo status line without replacing local settings' {
+    $repo = Join-Path $TestDrive 'repo'
+    $distDir = Join-Path $repo '.codex'
+    $settings = Join-Path $TestDrive 'home' '.codex' 'config.toml'
+    $null = New-Item -ItemType Directory -Force -Path $distDir, (Split-Path -Parent $settings)
+    Set-Content -LiteralPath (Join-Path $distDir 'config.toml.dist') -Value @(
+      '[tui]', 'status_line = ["current-dir"]'
+    )
+    Set-Content -LiteralPath $settings -Value @(
+      '[tui]', 'status_line = ["model"]', 'theme = "dark"'
+    )
+
+    Sync-DotfilesCodexSettings -DotfilesDir $repo -Settings $settings
+
+    Get-Content $settings | Should -Be @(
+      '[tui]', 'status_line = ["current-dir"]', 'theme = "dark"'
+    )
+  }
+}
+
 Describe 'Invoke-DotfilesUpdate' {
   BeforeEach {
     $script:dir = Join-Path $TestDrive ([guid]::NewGuid())
@@ -237,6 +258,7 @@ Describe 'Invoke-DotfilesUpdate' {
     $script:lock = Join-Path $dir 'lock'
     Mock Update-DotfilesTools {}
     Mock Update-DotfilesRepo { $true }
+    Mock Sync-DotfilesCodexSettings {}
   }
 
   It 'reruns setup without installs when HEAD moved, then updates tools' {
@@ -248,10 +270,13 @@ Describe 'Invoke-DotfilesUpdate' {
     Should -Invoke Update-DotfilesTools -Times 1 -Exactly
   }
 
-  It 'skips setup when HEAD did not move' {
+  It 'syncs Codex settings without rerunning setup when HEAD did not move' {
     Mock Get-DotfilesHead { 'aaa' }
     Invoke-DotfilesUpdate -DotfilesDir $dir -TimestampFile $stamp -LockFile $lock
     Test-Path (Join-Path $dir 'setup-ran') | Should -BeFalse
+    Should -Invoke Sync-DotfilesCodexSettings -Times 1 -Exactly -ParameterFilter {
+      $DotfilesDir -eq $dir
+    }
     Should -Invoke Update-DotfilesTools -Times 1 -Exactly
   }
 
