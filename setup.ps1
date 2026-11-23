@@ -364,17 +364,24 @@ function Install-Modules {
   }
 }
 
-# .p10k.zsh and ghostty/config expect MesloLGM Nerd Font.
+# Ghostty uses the Mono variant of JetBrainsMono Nerd Font.
 function Install-NerdFont {
-  $fontDirs = @(
-    (Join-Path $env:WINDIR 'Fonts'),
-    (Join-Path $env:LOCALAPPDATA 'Microsoft\Windows\Fonts')
+  param(
+    [string[]]$FontDirs = @(
+      (Join-Path $env:WINDIR 'Fonts'),
+      (Join-Path $env:LOCALAPPDATA 'Microsoft\Windows\Fonts')
+    )
   )
-  $found = Get-ChildItem -Path $fontDirs -Filter 'MesloLGM*Nerd*' -ErrorAction SilentlyContinue
-  if ($found) { return }
-  if (-not (Get-Command oh-my-posh -ErrorAction SilentlyContinue)) { return }
-  Write-Host 'Installing Meslo Nerd Font...'
-  & oh-my-posh font install Meslo
+  foreach ($style in @('Regular', 'Bold', 'Italic', 'BoldItalic')) {
+    $file = "JetBrainsMonoNerdFontMono-$style.ttf"
+    $paths = $fontDirs | ForEach-Object { Join-Path $_ $file }
+    if (-not (Test-Path -LiteralPath $paths -PathType Leaf | Where-Object { $_ })) {
+      if (-not (Get-Command oh-my-posh -ErrorAction SilentlyContinue)) { return }
+      Write-Host 'Installing JetBrainsMono Nerd Font...'
+      & oh-my-posh font install JetBrainsMono
+      return
+    }
+  }
 }
 
 # Share .gitconfig with macOS and Linux, like ensure_git_config in setup.sh. Adds the include
@@ -419,8 +426,8 @@ function Invoke-Setup {
       Write-Warning 'winget is missing; install oh-my-posh, fzf, uv, and AutoHotkey yourself.'
     }
     Install-Modules
-    Install-NerdFont
   }
+  Install-NerdFont
   # Also on -SkipInstall, so the daily update restarts AutoHotkey with the new init.ahk.
   Set-AutoHotkeyStartup -DotfilesDir $DotfilesDir
 }

@@ -101,8 +101,9 @@ Zsh shell, Powerlevel10k, window management, terminal configs.
 
 ## Gotchas
 
-1. **Powerlevel10k requires Nerd Fonts** (MesloLGM).
-   Icons break without proper fonts installed.
+1. **Powerlevel10k needs a Nerd Font for icons.** Setup installs JetBrainsMono Nerd Font
+   Mono for the current user on macOS, Linux, and Windows. Ghostty and the bundled iTerm2
+   profile are configured to use that family.
 
 2. **Git remote uses a custom SSH host alias**:
    `git@github.lync:Lyncredible/dotfiles.git`.

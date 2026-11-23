@@ -396,6 +396,34 @@ Describe 'Set-AgentSkills' {
   }
 }
 
+Describe 'Install-NerdFont' {
+  BeforeAll {
+    function oh-my-posh { throw 'Unexpected call to oh-my-posh' }
+  }
+
+  BeforeEach {
+    $fontDir = Join-Path $TestDrive ([guid]::NewGuid())
+    $null = New-Item -ItemType Directory -Path $fontDir
+    Mock oh-my-posh {}
+  }
+
+  It 'installs JetBrainsMono when only Meslo is installed' {
+    Set-Content -LiteralPath (Join-Path $fontDir 'MesloLGMNerdFont-Regular.ttf') -Value 'font'
+    Install-NerdFont -FontDirs @($fontDir)
+    Should -Invoke oh-my-posh -Times 1 -Exactly -ParameterFilter {
+      ($args -join ' ') -eq 'font install JetBrainsMono'
+    }
+  }
+
+  It 'skips installation when all four Mono styles are present' {
+    foreach ($style in @('Regular', 'Bold', 'Italic', 'BoldItalic')) {
+      Set-Content -LiteralPath (Join-Path $fontDir "JetBrainsMonoNerdFontMono-$style.ttf") -Value 'font'
+    }
+    Install-NerdFont -FontDirs @($fontDir)
+    Should -Invoke oh-my-posh -Times 0 -Exactly
+  }
+}
+
 Describe 'Merge-CodexSettings' {
   BeforeEach {
     $script:dir = Join-Path $TestDrive ([guid]::NewGuid())

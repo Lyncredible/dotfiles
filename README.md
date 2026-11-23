@@ -23,11 +23,14 @@ Clone in SSH mode
 sh -c "$(curl -sL --proto-redir -all,https https://raw.githubusercontent.com/Lyncredible/dotfiles/master/install.sh)" - -s
 ```
 
+Setup installs JetBrainsMono Nerd Font Mono for the current user on macOS and Linux.
+Ghostty and the bundled iTerm2 profile use it for prompt icons.
+
 ### Windows (PowerShell 7)
 Run from any PowerShell, including the built-in Windows PowerShell 5.1. Installs git and
 PowerShell 7 (`pwsh`) if needed, clones to `~\.dotfiles`, and runs `setup.ps1` with pwsh. That
 points the pwsh `$PROFILE` at `powershell\profile.ps1` and Ghostty at the shared config, installs
-oh-my-posh, fzf, uv, PSFzf, AutoHotkey, and the Meslo Nerd Font, and runs `init.ahk` at logon. The
+oh-my-posh, fzf, uv, PSFzf, AutoHotkey, and JetBrainsMono Nerd Font, and runs `init.ahk` at logon. The
 prompt and colors mirror `.p10k.zsh` and zsh-syntax-highlighting. Windows PowerShell 5.1 does not
 load the profile; open `pwsh` instead.
 ```

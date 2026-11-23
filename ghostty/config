@@ -4,7 +4,7 @@
 # setup.sh and setup.ps1 write those wrappers. Linux and Windows share keys-alt.
 cursor-click-to-move = true
 cursor-style = block
-font-family = JetBrains Mono
+font-family = JetBrainsMono Nerd Font Mono
 shell-integration-features = no-cursor,ssh-terminfo
 theme = Dimmed Monokai
 window-width = 160

@@ -11,7 +11,7 @@ setup() {
   TEST_ANTIGEN_DIR="$TEST_HOME/.antigen"
   TEST_PATH="$TEST_BIN:/bin:/usr/bin"
   TEST_SHELL="/bin/bash"
-  unset TEST_SKIP_CHSH
+  unset TEST_SKIP_CHSH TEST_XDG_DATA_HOME TEST_FONT_DOWNLOAD_FAIL
 
   write_fake_grep
 
@@ -43,6 +43,19 @@ STUB
 exit 0
 STUB
 
+  make_stub curl <<'STUB'
+#!/bin/sh
+[ "${FONT_DOWNLOAD_FAIL:-0}" = 0 ] || exit 1
+while [ "$1" != --output ]; do shift; done
+printf '%s\n' "$3" >> "$HOME/.font_downloads"
+printf 'test font\n' > "$2"
+STUB
+
+  make_stub fc-cache <<'STUB'
+#!/bin/sh
+exit 0
+STUB
+
   unset TEST_UNAME
   make_stub uname <<'STUB'
 #!/bin/sh
@@ -67,6 +80,8 @@ run_setup() {
   CHSH_BIN="${TEST_CHSH_BIN:-$TEST_BIN/chsh}" \
   SKIP_CHSH="${TEST_SKIP_CHSH:-}" \
   UNAME_BIN="$TEST_BIN/uname" \
+  XDG_DATA_HOME="${TEST_XDG_DATA_HOME:-}" \
+  FONT_DOWNLOAD_FAIL="${TEST_FONT_DOWNLOAD_FAIL:-}" \
   FAKE_UNAME="${TEST_UNAME:-Linux}" \
     /bin/sh "$SHELLSPEC_PROJECT_ROOT/setup.sh"
 }
@@ -105,6 +120,38 @@ Describe 'setup.sh'
       should include "chsh:-s $TEST_BIN/zsh"
     The contents of file "$TEST_HOME/.setup_calls" \
       should include "-C $TEST_DOTFILES_DIR config core.hooksPath hooks"
+  End
+
+  It 'installs the JetBrains Mono Nerd Font styles into the Linux user font directory'
+    mkdir -p "$TEST_ANTIGEN_DIR"
+    TEST_XDG_DATA_HOME="$TEST_HOME/data"
+    When run run_setup
+    The status should be success
+    The file "$TEST_HOME/data/fonts/JetBrainsMonoNerdFontMono-Regular.ttf" should be exist
+    The file "$TEST_HOME/data/fonts/JetBrainsMonoNerdFontMono-Bold.ttf" should be exist
+    The file "$TEST_HOME/data/fonts/JetBrainsMonoNerdFontMono-Italic.ttf" should be exist
+    The file "$TEST_HOME/data/fonts/JetBrainsMonoNerdFontMono-BoldItalic.ttf" should be exist
+  End
+
+  It 'installs the font on macOS and skips downloads on rerun'
+    mkdir -p "$TEST_ANTIGEN_DIR"
+    TEST_UNAME=Darwin
+    run_setup >/dev/null
+    rm "$TEST_HOME/.font_downloads"
+    When run run_setup
+    The status should be success
+    The file "$TEST_HOME/Library/Fonts/JetBrainsMonoNerdFontMono-Regular.ttf" should be exist
+    The path "$TEST_HOME/.font_downloads" should not be exist
+  End
+
+  It 'completes setup if font downloads are unavailable'
+    mkdir -p "$TEST_ANTIGEN_DIR"
+    TEST_FONT_DOWNLOAD_FAIL=1
+    When run run_setup
+    The status should be success
+    The stderr should include 'Warning: could not install JetBrainsMono Nerd Font.'
+    The path "$TEST_HOME/.local/share/fonts/JetBrainsMonoNerdFontMono-Regular.ttf" \
+      should not be exist
   End
 
   It 'links Hammerspoon and Karabiner on macOS'
